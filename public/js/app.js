@@ -1765,7 +1765,7 @@ async function subscribeToPush() {
     const permission = await Notification.requestPermission();
     if (permission !== 'granted') {
       alert('Bạn đã từ chối cấp quyền thông báo. Vui lòng mở Cài đặt trình duyệt để cho phép.');
-      if (btn) btn.innerHTML = '🔔 Bật thông báo (Miễn phí)';
+      if (btn) btn.innerHTML = '🔔 Bật thông báo';
       return;
     }
 
