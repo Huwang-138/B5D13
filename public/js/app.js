@@ -1026,14 +1026,20 @@ function appendNotificationHTML(n, highlight = false) {
 
 socket.on('newNotification', (notif) => {
   if (notif.targetUser && state.user && state.user.id !== notif.targetUser) return;
+  if (notif.targetGroup && state.myGroup !== notif.targetGroup) return;
+
   appendNotificationHTML(notif, true);
   if (document.getElementById('notif-dropdown').classList.contains('hidden')) {
     unreadNotifs++;
     updateNotifBadge();
     
-    // Auto show a transient toast
-    const shortMsg = notif.message.length > 50 ? notif.message.substring(0, 50) + '...' : notif.message;
-    toast('🔔 ' + shortMsg, notif.type || 'info');
+    // Auto show a transient toast ONLY if the user is not the one who triggered it
+    if (notif.triggeredBy && state.user && notif.triggeredBy === state.user.id) {
+      // Do not show toast for self-triggered actions
+    } else {
+      const shortMsg = notif.message.length > 50 ? notif.message.substring(0, 50) + '...' : notif.message;
+      toast('🔔 ' + shortMsg, notif.type || 'info');
+    }
   }
 });
 

@@ -296,40 +296,54 @@
           <!-- TAB: CÀI ĐẶT -->
           <!-- ========================================== -->
           <div id="tab-cai-dat" class="app-tab-content animate-in">
-            <div class="section-header">
-              <div class="section-title">⚙️ Cài đặt tài khoản</div>
+            <div class="section-header" style="margin-bottom: 30px;">
+              <div class="section-title" style="font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--cyan), var(--purple-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">⚙️ Cài đặt tài khoản</div>
             </div>
             <div class="settings-grid">
               <!-- Avatar Settings -->
-              <div class="card" style="flex:1; min-width:300px;">
-                <div class="creator-section-title" style="margin-bottom:16px;">Chọn Avatar</div>
-                <div class="avatar-grid" id="avatar-grid"></div>
-                <div style="margin-top:16px;display:flex;align-items:center;gap:10px;">
-                  <label class="btn btn-secondary btn-sm" for="avatar-file-input" style="cursor:pointer;">📤 Tải ảnh lên</label>
-                  <input id="avatar-file-input" type="file" accept="image/*" style="display:none;" onchange="handleAvatarFile(event)" />
-                  <span style="font-size:12px;color:var(--text-3);">Tối đa 2MB</span>
+              <div class="card settings-card">
+                <div class="settings-card-header">
+                  <div class="settings-icon-box" style="background: rgba(6, 182, 212, 0.1); color: var(--cyan);">👤</div>
+                  <div class="settings-card-title">Ảnh đại diện</div>
+                </div>
+                <div class="settings-card-body">
+                  <p class="settings-desc">Chọn một avatar dễ thương hoặc tải ảnh của riêng bạn lên nhé.</p>
+                  <div class="avatar-grid" id="avatar-grid"></div>
+                  <div class="upload-box">
+                    <label class="btn btn-secondary w-full" for="avatar-file-input" style="cursor:pointer; padding: 12px; justify-content: center; border: 1px dashed var(--border);">
+                      <span style="font-size: 16px;">📤</span> Tải ảnh từ thiết bị
+                    </label>
+                    <input id="avatar-file-input" type="file" accept="image/*" style="display:none;" onchange="handleAvatarFile(event)" />
+                    <div class="upload-hint">Định dạng hỗ trợ: JPG, PNG, GIF (Tối đa 2MB)</div>
+                  </div>
                 </div>
               </div>
               
               <!-- Password Settings -->
-              <div class="card" style="flex:1; min-width:300px;">
-                <div class="creator-section-title" style="margin-bottom:16px;">Đổi mật khẩu</div>
-                <div style="display:flex;flex-direction:column;gap:14px;">
-                  <div class="input-group">
-                    <label class="input-label">Mật khẩu cũ</label>
-                    <input id="old-password" class="input" type="password" placeholder="Nhập mật khẩu cũ..." oninput="checkSettingsChanges()" />
-                  </div>
-                  <div class="input-group">
-                    <label class="input-label">Mật khẩu mới</label>
-                    <input id="new-password" class="input" type="password" placeholder="Nhập mật khẩu mới..." oninput="checkSettingsChanges()" />
-                  </div>
-                  <div class="input-group">
-                    <label class="input-label">Xác nhận mật khẩu mới</label>
-                    <input id="confirm-password" class="input" type="password" placeholder="Nhập lại mật khẩu mới..." oninput="checkSettingsChanges()" />
+              <div class="card settings-card">
+                <div class="settings-card-header">
+                  <div class="settings-icon-box" style="background: rgba(244, 63, 94, 0.1); color: var(--rose);">🔒</div>
+                  <div class="settings-card-title">Bảo mật & Mật khẩu</div>
+                </div>
+                <div class="settings-card-body">
+                  <p class="settings-desc">Cập nhật mật khẩu thường xuyên để bảo vệ tài khoản của bạn.</p>
+                  <div class="settings-form" style="display:flex; flex-direction:column; gap:16px;">
+                    <div class="input-group">
+                      <label class="input-label">Mật khẩu hiện tại</label>
+                      <input id="old-password" class="input settings-input" type="password" placeholder="Nhập mật khẩu cũ..." oninput="checkSettingsChanges()" />
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label">Mật khẩu mới</label>
+                      <input id="new-password" class="input settings-input" type="password" placeholder="Nhập mật khẩu mới..." oninput="checkSettingsChanges()" />
+                    </div>
+                    <div class="input-group">
+                      <label class="input-label">Xác nhận mật khẩu mới</label>
+                      <input id="confirm-password" class="input settings-input" type="password" placeholder="Nhập lại mật khẩu mới..." oninput="checkSettingsChanges()" />
+                    </div>
                   </div>
                 </div>
-                <div style="margin-top:20px;">
-                  <button id="btn-save-settings" class="btn btn-primary w-full" onclick="saveSettings()" disabled>💾 Lưu thay đổi</button>
+                <div class="settings-card-footer">
+                  <button id="btn-save-settings" class="btn btn-primary w-full btn-lg" onclick="saveSettings()" disabled>💾 Lưu thay đổi</button>
                 </div>
               </div>
             </div>

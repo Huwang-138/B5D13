@@ -74,6 +74,8 @@ const notificationSchema = new mongoose.Schema({
   message: { type: String, required: true },
   type: { type: String, default: 'info' }, // info, warning, success
   targetUser: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, // null = for all
+  targetGroup: { type: Number, default: null },
+  triggeredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
 }, { timestamps: true });
 
 const Violation = mongoose.model('Violation', violationSchema);
@@ -268,9 +270,24 @@ app.post('/api/violations', authMiddleware, adminOnly, async (req, res) => {
 // ─── Notifications Routes ─────────────────────────────────────────
 app.get('/api/notifications', authMiddleware, async (req, res) => {
   try {
+    const session = await Session.findOne({ active: true }).lean();
+    let myGroupId = null;
+    if (session) {
+      for (const g of session.groups) {
+        if (g.members.some(m => m.toString() === req.user._id.toString()) || 
+            (g.fixedMembers && g.fixedMembers.some(m => m.toString() === req.user._id.toString()))) {
+          myGroupId = g.groupId;
+          break;
+        }
+      }
+    }
+
     // Get global notifications and user-specific notifications
     const notifs = await Notification.find({
-      $or: [{ targetUser: null }, { targetUser: req.user._id }]
+      $and: [
+        { $or: [{ targetUser: null }, { targetUser: req.user._id }] },
+        { $or: [{ targetGroup: null }, { targetGroup: myGroupId }] }
+      ]
     }).sort('-createdAt').limit(50).lean();
 
     // Generate dynamic birthday notifications
@@ -503,8 +520,10 @@ app.post('/api/session/join', authMiddleware, async (req, res) => {
     
     // Tạo notification
     const notif = await Notification.create({
-      message: `${req.user.fullName} vừa vào ${targetGroup.name} môn ${session.subject}.`,
-      type: 'info'
+      message: `${req.user.fullName} vừa vào ${targetGroup.name}.`,
+      type: 'success',
+      targetGroup: targetGroup.groupId,
+      triggeredBy: req.user._id
     });
     io.emit('newNotification', notif);
 
@@ -565,8 +584,10 @@ app.post('/api/session/spin', authMiddleware, async (req, res) => {
 
     // Tạo notification
     const notif = await Notification.create({
-      message: `${req.user.fullName} vừa bốc thăm vào ${chosen.name} môn ${session.subject}.`,
-      type: 'info'
+      message: `${req.user.fullName} vừa bốc thăm vào ${chosen.name}.`,
+      type: 'success',
+      targetGroup: chosen.groupId,
+      triggeredBy: req.user._id
     });
     io.emit('newNotification', notif);
 
