@@ -27,7 +27,7 @@
       </div>
     </div>
     <div class="nav-right">
-      <button id="btn-admin-toggle" class="btn btn-secondary btn-sm hidden" onclick="toggleAdminUserMode()">🎓 Chế độ HV</button>
+      <button id="btn-admin-toggle" class="btn btn-secondary btn-sm hidden" onclick="toggleAdminUserMode()">🎓 Học viên</button>
       <button class="btn btn-ghost btn-sm" onclick="logout()" id="btn-logout">Đăng xuất</button>
     </div>
   </nav>
@@ -43,11 +43,11 @@
         <form class="login-form" onsubmit="handleLogin(event)">
           <div class="input-group">
             <label class="input-label" for="login-username">Tài khoản</label>
-            <input id="login-username" class="input" type="text" placeholder="vd: nguyenvana" autocomplete="username" required />
+            <input id="login-username" class="input" type="text" placeholder="VD: nguyenvana" autocomplete="username" required />
           </div>
           <div class="input-group">
             <label class="input-label" for="login-password">Mật khẩu</label>
-            <input id="login-password" class="input" type="password" placeholder="vd: 01012000@" autocomplete="current-password" required />
+            <input id="login-password" class="input" type="password" placeholder="VD: 01012000@" autocomplete="current-password" required />
           </div>
           <button id="login-btn" type="submit" class="btn btn-primary login-btn">
             <span id="login-btn-text">Đăng nhập</span>
@@ -55,7 +55,7 @@
           </button>
         </form>
         <div class="login-hint">
-          💡 Tài khoản: tên không dấu viết liền | Mật khẩu: ngày sinh + @ (vd: nguyenvana và 01012000@)
+          💡 Tài khoản: tên không dấu viết liền | Mật khẩu: ngày sinh + @ (VD: nguyenvana và 01012000@)
         </div>
       </div>
     </div>
@@ -101,7 +101,7 @@
       </div>
 
       <!-- Random Slider for Random mode -->
-      <div id="slider-trigger-section" class="hidden animate-in">
+      <div id="slider-trigger-section" class="hidden animate-in" style="margin-top:24px;">
         <div class="slider-trigger-box">
           <div class="slider-trigger-icon">🎰</div>
           <p class="slider-trigger-text">Chế độ <strong>Ngẫu nhiên</strong> — Bấm nút để quay xổ số nhóm!</p>
@@ -164,13 +164,13 @@
           <button class="btn btn-rose btn-sm" onclick="stopSession()">⏹ Kết thúc</button>
         </div>
 
-        <div class="session-creator">
+        <div id="session-creator-box" class="session-creator">
           <div class="card creator-card">
             <div class="creator-section-title">📝 Thông tin phiên</div>
             <div style="display:flex;flex-direction:column;gap:14px;">
               <div class="input-group">
                 <label class="input-label">Tên môn học</label>
-                <input id="f-subject" class="input" type="text" placeholder="vd: Lập trình Web" />
+                <input id="f-subject" class="input" type="text" placeholder="VD: Kỹ thuật lập trình" />
               </div>
               <div class="input-group">
                 <label class="input-label">Phương thức</label>
@@ -193,7 +193,8 @@
               </div>
               <div class="input-group">
                 <label class="input-label">Số lượng nhóm</label>
-                <input id="f-group-count" class="input" type="number" min="1" max="25" placeholder="vd: 3" />
+                <input id="f-group-count" class="input" type="number" min="1" max="25" placeholder="VD: 3" oninput="updateGroupHint()" />
+                <div id="group-capacity-hint" style="color:var(--text-2);font-size:12px;margin-top:2px;"></div>
               </div>
               <button id="btn-create-session" class="btn btn-primary" onclick="createSession()">🚀 Tạo phiên chia nhóm</button>
             </div>

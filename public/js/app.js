@@ -57,8 +57,10 @@ socket.on('sessionUpdated', (session) => {
       alert.style.display = 'flex';
       document.getElementById('active-session-name').textContent =
         ` "${session.subject}" — ${session.mode === 'manual' ? 'Tự chọn' : 'Random'} — ${session.groups.length} nhóm`;
+      document.getElementById('session-creator-box')?.classList.add('hidden');
     } else {
       alert.classList.add('hidden');
+      document.getElementById('session-creator-box')?.classList.remove('hidden');
     }
   }
 });
@@ -99,6 +101,7 @@ function toast(message, type = 'info') {
 function showView(id) {
   document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
   document.getElementById(id).classList.add('active');
+  document.body.style.overflow = id === 'view-login' ? 'hidden' : '';
 }
 
 function showLoginView() {
@@ -138,10 +141,10 @@ function updateNavbar() {
   if (state.user.role === 'admin') {
     toggleBtn.classList.remove('hidden');
     if (state.isAdminInUserMode) {
-      toggleBtn.textContent = '🛠️ Trang Quản trị';
+      toggleBtn.textContent = '🛠️ Admin';
       toggleBtn.style.background = 'var(--amber)';
     } else {
-      toggleBtn.textContent = '🎓 Chế độ Học viên';
+      toggleBtn.textContent = '🎓 Học viên';
       toggleBtn.style.background = '';
     }
   } else {
@@ -368,8 +371,10 @@ async function loadAdminSession() {
       alert.style.display = 'flex';
       document.getElementById('active-session-name').textContent =
         ` "${data.session.subject}" — ${data.session.mode === 'manual' ? 'Tự chọn' : 'Random'} — ${data.session.groups.length} nhóm`;
+      document.getElementById('session-creator-box')?.classList.add('hidden');
     } else {
       alert.classList.add('hidden');
+      document.getElementById('session-creator-box')?.classList.remove('hidden');
     }
   } catch (err) { toast(err.message, 'error'); }
 }
@@ -511,6 +516,17 @@ async function changeCapacity(groupId, delta) {
 }
 
 // ─── Admin Actions ────────────────────────────────────────────────────
+function updateGroupHint() {
+  const count = parseInt(document.getElementById('f-group-count').value);
+  const hint = document.getElementById('group-capacity-hint');
+  if (!hint) return;
+  if (!count || count <= 0) { hint.textContent = ''; return; }
+  const base = Math.floor(25 / count);
+  const rem = 25 % count;
+  if (rem === 0) hint.textContent = `Khoảng ${base} người/nhóm`;
+  else hint.textContent = `Khoảng ${base} - ${base+1} người/nhóm`;
+}
+
 async function createSession() {
   const subject    = document.getElementById('f-subject').value.trim() || 'Môn học';
   const mode       = document.querySelector('input[name="f-mode"]:checked')?.value || 'manual';
@@ -675,7 +691,8 @@ async function spinSlider() {
     const winnerGroupName = data.groupName;
     const groups = sliderState.groups;
 
-    buildSlotTrack(groups, winnerGroupId);
+    sliderState.shuffledGroups = [...groups].sort(() => 0.5 - Math.random());
+    buildSlotTrack(sliderState.shuffledGroups, winnerGroupId);
 
     const track = document.getElementById('slot-track');
     const itemWidth = 110;
@@ -684,7 +701,7 @@ async function spinSlider() {
 
     const lastRepeatStart = (REPEATS - 1) * totalGroups;
     let winnerIdxInLastRepeat = 0;
-    groups.forEach((g, i) => {
+    sliderState.shuffledGroups.forEach((g, i) => {
       if (g.groupId === winnerGroupId) winnerIdxInLastRepeat = i;
     });
     const winnerAbsoluteIdx = lastRepeatStart + winnerIdxInLastRepeat;
@@ -697,10 +714,10 @@ async function spinSlider() {
 
     await new Promise(r => setTimeout(r, 50));
 
-    track.style.transition = 'transform 8s cubic-bezier(0.05, 0.9, 0.1, 1)';
+    track.style.transition = 'transform 5s cubic-bezier(0.05, 0.9, 0.1, 1)';
     track.style.transform = `translateX(${finalTranslate}px)`;
 
-    await new Promise(r => setTimeout(r, 8200));
+    await new Promise(r => setTimeout(r, 5200));
 
     const allItems = track.querySelectorAll('.slot-item');
     allItems.forEach(el => el.classList.remove('winner'));
