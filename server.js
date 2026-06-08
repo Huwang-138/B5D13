@@ -382,13 +382,30 @@ app.post('/api/violations/:id/appeal', authMiddleware, async (req, res) => {
       return res.status(403).json({ error: 'Không có quyền khiếu nại lỗi của người khác' });
     }
 
+    const messageText = `${req.user.fullName} vừa khiếu nại về lỗi ${violation.type} (-${violation.points} điểm)`;
     const notif = await Notification.create({
-      message: `${req.user.fullName} vừa khiếu nại về lỗi ${violation.type} (-${violation.points} điểm)`,
+      message: messageText,
       type: 'warning',
       targetRole: 'admin',
       triggeredBy: req.user._id
     });
     io.emit('newNotification', notif);
+
+    // Send Web Push Notification to Admins
+    const admins = await User.find({ role: 'admin' });
+    const pushPayload = JSON.stringify({
+      title: 'Có khiếu nại mới ⚠️',
+      body: messageText,
+      url: '/'
+    });
+    
+    admins.forEach(admin => {
+      if (admin.pushSubscriptions && admin.pushSubscriptions.length > 0) {
+        admin.pushSubscriptions.forEach(sub => {
+          webpush.sendNotification(sub, pushPayload).catch(e => {});
+        });
+      }
+    });
 
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }

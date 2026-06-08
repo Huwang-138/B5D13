@@ -159,6 +159,44 @@ function toggleMobileSidebar() {
   }
 }
 
+// ─── Swipe Gestures for Sidebar ───────────────────────────────────────
+let touchstartX = 0;
+let touchendX = 0;
+const SWIPE_THRESHOLD = 50;
+
+document.addEventListener('touchstart', e => {
+  touchstartX = e.changedTouches[0].screenX;
+});
+
+document.addEventListener('touchend', e => {
+  touchendX = e.changedTouches[0].screenX;
+  if (window.innerWidth <= 768) {
+    handleSwipeGesture();
+  }
+});
+
+function handleSwipeGesture() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('mobile-overlay');
+  if (!sidebar || !overlay) return;
+
+  // Vuốt từ TRÁI sang PHẢI (Mở sidebar) - chỉ nhận diện nếu vuốt từ rìa màn hình (<30px)
+  if (touchendX - touchstartX > SWIPE_THRESHOLD && touchstartX < 30) {
+    if (!sidebar.classList.contains('show')) {
+      sidebar.classList.add('show');
+      overlay.classList.add('show');
+    }
+  }
+  
+  // Vuốt từ PHẢI sang TRÁI (Đóng sidebar)
+  if (touchstartX - touchendX > SWIPE_THRESHOLD) {
+    if (sidebar.classList.contains('show')) {
+      sidebar.classList.remove('show');
+      overlay.classList.remove('show');
+    }
+  }
+}
+
 function updateNavbar() {
   if (!state.user) return;
   const avatarEl = document.getElementById('sidebar-avatar');
@@ -1005,14 +1043,6 @@ function switchAppTab(tabId, btn) {
   }
 }
 
-// ─── Mobile Sidebar ───────────────────────────────────────────────────
-function toggleMobileSidebar() {
-  const sidebar = document.getElementById('sidebar');
-  const overlay = document.getElementById('mobile-overlay');
-  if (sidebar) sidebar.classList.toggle('show');
-  if (overlay) overlay.classList.toggle('show');
-}
-
 // ─── Notifications Logic ──────────────────────────────────────────────
 let unreadNotifs = 0;
 let isNotifDragging = false;
@@ -1771,13 +1801,13 @@ async function subscribeToPush() {
     } else {
       const errData = await res.json();
       alert('Lỗi đăng ký: ' + (errData.error || 'Unknown error'));
-      if (btn) btn.innerHTML = '🔔 Bật thông báo (Miễn phí)';
+      if (btn) btn.innerHTML = '🔔 Bật thông báo';
     }
 
   } catch (error) {
     console.error('Lỗi khi đăng ký push:', error);
     alert('Có lỗi xảy ra: ' + error.message);
     const btn = document.getElementById('btn-subscribe-push');
-    if (btn) btn.innerHTML = '🔔 Bật thông báo (Miễn phí)';
+    if (btn) btn.innerHTML = '🔔 Bật thông báo';
   }
 }

@@ -9,6 +9,7 @@
     content="Trang web dành riêng cho học viên của trung đội B5D13, Học viện Kỹ thuật và Công nghệ an ninh" />
   <link rel="stylesheet" href="/css/style.css" />
   <link rel="manifest" href="/manifest.json" />
+  <link rel="apple-touch-icon" href="/img/logo.png" />
   <script src="/socket.io/socket.io.js"></script>
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👥</text></svg>" />
@@ -95,9 +96,12 @@
             </div>
           </div>
           <div class="sidebar-nav" style="padding-top: 10px;">
-            <button class="side-tab active" data-tab="tab-danh-sach-loi" onclick="switchAppTab('tab-danh-sach-loi', this)">📋 DANH SÁCH VI PHẠM</button>
-            <button class="side-tab" data-tab="tab-chia-nhom" onclick="switchAppTab('tab-chia-nhom', this)">👥 PHÂN CHIA NHÓM</button>
-            <button class="side-tab" data-tab="tab-cai-dat" onclick="switchAppTab('tab-cai-dat', this)">⚙️ CÀI ĐẶT</button>
+            <button class="side-tab active" data-tab="tab-danh-sach-loi"
+              onclick="switchAppTab('tab-danh-sach-loi', this)">📋 DANH SÁCH VI PHẠM</button>
+            <button class="side-tab" data-tab="tab-chia-nhom" onclick="switchAppTab('tab-chia-nhom', this)">👥 PHÂN CHIA
+              NHÓM</button>
+            <button class="side-tab" data-tab="tab-cai-dat" onclick="switchAppTab('tab-cai-dat', this)">⚙️ CÀI
+              ĐẶT</button>
           </div>
         </div>
         <div class="sidebar-bottom" style="padding: 16px;">
@@ -139,7 +143,8 @@
 
             <!-- Admin/User Toggle (in-tab) -->
             <div id="admin-toggle-bar" style="display:flex; margin-bottom: 12px; justify-content:flex-end;">
-              <button id="btn-admin-toggle" class="btn btn-secondary btn-sm hidden" onclick="toggleAdminUserMode()">🎓 Học viên</button>
+              <button id="btn-admin-toggle" class="btn btn-secondary btn-sm hidden" onclick="toggleAdminUserMode()">🎓
+                Học viên</button>
             </div>
 
             <!-- View User (Chia nhóm) -->
@@ -317,7 +322,8 @@
                 <!-- Row 1: Loại lỗi -->
                 <div class="input-group">
                   <label class="input-label">Loại lỗi</label>
-                  <select id="v-type" class="input" style="padding: 0 12px; height: 42px;" onchange="onViolationTypeChange()">
+                  <select id="v-type" class="input" style="padding: 0 12px; height: 42px;"
+                    onchange="onViolationTypeChange()">
                     <option value="Không xếp hàng điểm danh hoặc xếp sai chỗ">Không xếp hàng điểm danh hoặc xếp sai chỗ
                     </option>
                     <option value="Không xếp hàng đi lên lớp/về kí túc xá">Không xếp hàng đi lên lớp/về kí túc xá
@@ -346,7 +352,8 @@
                   </div>
                   <div class="input-group" style="width:70px; flex-shrink:0;">
                     <label class="input-label">Điểm trừ</label>
-                    <input id="v-points" class="input" type="number" min="0" value="1" style="padding: 0 12px; height: 42px; text-align: center;" />
+                    <input id="v-points" class="input" type="number" min="0" value="1"
+                      style="padding: 0 12px; height: 42px; text-align: center;" />
                   </div>
                   <button class="btn btn-rose" onclick="addViolation()"
                     style="white-space:nowrap; padding:0 24px; height:42px; flex-shrink:0;">📝 Ghi lỗi</button>
@@ -354,7 +361,8 @@
               </div>
               <div id="v-note-group" class="hidden" style="margin-top:12px;">
                 <label class="input-label">Ghi chú (bắt buộc khi chọn "Khác")</label>
-                <input id="v-note" class="input" type="text" placeholder="Mô tả cụ thể lỗi vi phạm..." style="padding: 0 12px; height: 42px;" />
+                <input id="v-note" class="input" type="text" placeholder="Mô tả cụ thể lỗi vi phạm..."
+                  style="padding: 0 12px; height: 42px;" />
               </div>
             </div>
 
@@ -408,16 +416,21 @@
               style="position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px;"
               onclick="if(event.target===this)this.classList.add('hidden')">
               <div class="card" style="width:100%;max-width:480px;padding:0;overflow:hidden;">
-                <div
-                  style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;">
+                <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;">
                   <span style="font-weight:700;font-size:15px;">🏆 Bảng xếp hạng điểm trừ</span>
                   <button class="btn btn-ghost" style="padding:4px 8px;font-size:18px;"
                     onclick="document.getElementById('leaderboard-overlay').classList.add('hidden')">✕</button>
                 </div>
                 <div style="display:flex; border-bottom:1px solid rgba(255,255,255,0.05); padding: 0 10px;">
-                  <button id="lb-tab-all" class="lb-tab active" onclick="switchLbTab('all')" style="flex:1; padding: 10px; background:none; border:none; color:var(--cyan); border-bottom: 2px solid var(--cyan); font-weight: 600; cursor:pointer;">Cả lớp</button>
-                  <button id="lb-tab-sq1" class="lb-tab" onclick="switchLbTab('sq1')" style="flex:1; padding: 10px; background:none; border:none; color:var(--text-2); border-bottom: 2px solid transparent; font-weight: 600; cursor:pointer;">Tiểu đội 1</button>
-                  <button id="lb-tab-sq2" class="lb-tab" onclick="switchLbTab('sq2')" style="flex:1; padding: 10px; background:none; border:none; color:var(--text-2); border-bottom: 2px solid transparent; font-weight: 600; cursor:pointer;">Tiểu đội 2</button>
+                  <button id="lb-tab-all" class="lb-tab active" onclick="switchLbTab('all')"
+                    style="flex:1; padding: 10px; background:none; border:none; color:var(--cyan); border-bottom: 2px solid var(--cyan); font-weight: 600; cursor:pointer;">Cả
+                    lớp</button>
+                  <button id="lb-tab-sq1" class="lb-tab" onclick="switchLbTab('sq1')"
+                    style="flex:1; padding: 10px; background:none; border:none; color:var(--text-2); border-bottom: 2px solid transparent; font-weight: 600; cursor:pointer;">Tiểu
+                    đội 1</button>
+                  <button id="lb-tab-sq2" class="lb-tab" onclick="switchLbTab('sq2')"
+                    style="flex:1; padding: 10px; background:none; border:none; color:var(--text-2); border-bottom: 2px solid transparent; font-weight: 600; cursor:pointer;">Tiểu
+                    đội 2</button>
                 </div>
                 <div style="max-height:60vh;overflow-y:auto;" id="leaderboard-body"></div>
               </div>
@@ -503,8 +516,7 @@
 
               <!-- Notifications Settings -->
               <div class="card settings-card">
-                <div class="settings-card-header"
-                  onclick="toggleSettingsCard('notif-settings-body', 'arrow-notif')"
+                <div class="settings-card-header" onclick="toggleSettingsCard('notif-settings-body', 'arrow-notif')"
                   style="cursor: pointer; justify-content: space-between;">
                   <div style="display: flex; align-items: center; gap: 16px;">
                     <div class="settings-icon-box" style="background: rgba(16, 185, 129, 0.1); color: var(--green);">🔔
@@ -517,9 +529,11 @@
                 <div class="settings-card-body hidden" id="notif-settings-body">
                   <div style="display:flex; flex-direction:column; gap:12px;">
                     <p style="font-size: 13px; color: var(--text-2); line-height: 1.5;">
-                      Bật thông báo hệ thống để nhận tin nhắn ngay cả khi bạn không mở ứng dụng. Hỗ trợ thông báo ghi lỗi và chúc mừng sinh nhật.
+                      Bật thông báo hệ thống để nhận tin nhắn ngay cả khi bạn không mở ứng dụng.
                     </p>
-                    <button class="btn btn-secondary" onclick="subscribeToPush()" id="btn-subscribe-push" style="justify-content: center; padding: 12px; background: rgba(16, 185, 129, 0.1); color: var(--green); border-color: rgba(16, 185, 129, 0.2);">🔔 Bật thông báo (Miễn phí)</button>
+                    <button class="btn btn-secondary" onclick="subscribeToPush()" id="btn-subscribe-push"
+                      style="justify-content: center; padding: 12px; background: rgba(16, 185, 129, 0.1); color: var(--green); border-color: rgba(16, 185, 129, 0.2);">🔔
+                      Bật thông báo (Miễn phí)</button>
                   </div>
                 </div>
               </div>

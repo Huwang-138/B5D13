@@ -1,19 +1,19 @@
 {
-  "name": "Quản lý Lớp học",
-  "short_name": "Quản lý Lớp",
-  "description": "Ứng dụng chia và chọn nhóm lớp học",
+  "name": "Trung đội B5D13",
+  "short_name": "B5D13",
+  "description": "Ứng dụng dành riêng cho học viên B5D13",
   "start_url": "/",
   "display": "standalone",
   "background_color": "#070b14",
   "theme_color": "#070b14",
   "icons": [
     {
-      "src": "/img/default-avatar.png",
+      "src": "/img/logo.png",
       "sizes": "192x192",
       "type": "image/png"
     },
     {
-      "src": "/img/default-avatar.png",
+      "src": "/img/logo.png",
       "sizes": "512x512",
       "type": "image/png"
     }
