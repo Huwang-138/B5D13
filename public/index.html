@@ -136,6 +136,11 @@
           <!-- ========================================== -->
           <div id="tab-chia-nhom" class="app-tab-content animate-in">
 
+            <!-- Admin/User Toggle (in-tab) -->
+            <div id="admin-toggle-bar" style="display:none; margin-bottom: 12px; justify-content:flex-end;">
+              <button id="btn-admin-toggle" class="btn btn-secondary btn-sm hidden" onclick="toggleAdminUserMode()">🎓 Học viên</button>
+            </div>
+
             <!-- View User (Chia nhóm) -->
             <div id="view-user" class="view active" style="padding:0; min-height:auto;">
               <div class="main-content" style="padding:0;">
@@ -304,11 +309,6 @@
           <!-- ========================================== -->
           <div id="tab-danh-sach-loi" class="app-tab-content active animate-in">
 
-            <!-- Admin/User Toggle (in-tab) -->
-            <div id="admin-toggle-bar" style="display:none; margin-bottom: 12px; justify-content:flex-end;">
-              <button id="btn-admin-toggle" class="btn btn-secondary btn-sm hidden" onclick="toggleAdminUserMode()">🎓 Học viên</button>
-            </div>
-
             <!-- ADMIN ADD VIOLATION BOX -->
             <div id="violation-admin-box" class="card creator-card hidden" style="margin-bottom:24px;">
               <div class="creator-section-title" style="margin-bottom: 15px;">🛑 Ghi lỗi học viên</div>
@@ -316,7 +316,7 @@
                 <!-- Row 1: Loại lỗi -->
                 <div class="input-group">
                   <label class="input-label">Loại lỗi</label>
-                  <select id="v-type" class="input" style="padding: 10px;" onchange="onViolationTypeChange()">
+                  <select id="v-type" class="input" style="padding: 0 12px; height: 42px;" onchange="onViolationTypeChange()">
                     <option value="Không xếp hàng điểm danh hoặc xếp sai chỗ">Không xếp hàng điểm danh hoặc xếp sai chỗ
                     </option>
                     <option value="Không xếp hàng đi lên lớp/về kí túc xá">Không xếp hàng đi lên lớp/về kí túc xá
@@ -339,21 +339,21 @@
 
                 <!-- Row 2: Học viên, Điểm trừ, Nút -->
                 <div style="display:flex; gap:12px; align-items:flex-end;">
-                  <div class="input-group" style="flex:2; min-width:0;">
+                  <div class="input-group" style="flex:1; min-width:0;">
                     <label class="input-label">Học viên</label>
-                    <select id="v-user" class="input" style="padding: 10px;"></select>
+                    <select id="v-user" class="input" style="padding: 0 12px; height: 42px;"></select>
                   </div>
-                  <div class="input-group" style="flex:1; min-width:80px; max-width: 120px;">
+                  <div class="input-group" style="width:70px; flex-shrink:0;">
                     <label class="input-label">Điểm trừ</label>
-                    <input id="v-points" class="input" type="number" min="0" value="1" />
+                    <input id="v-points" class="input" type="number" min="0" value="1" style="padding: 0 12px; height: 42px; text-align: center;" />
                   </div>
                   <button class="btn btn-rose" onclick="addViolation()"
-                    style="white-space:nowrap; padding:0 24px; height:42px;">📝 Ghi lỗi</button>
+                    style="white-space:nowrap; padding:0 24px; height:42px; flex-shrink:0;">📝 Ghi lỗi</button>
                 </div>
               </div>
               <div id="v-note-group" class="hidden" style="margin-top:12px;">
                 <label class="input-label">Ghi chú (bắt buộc khi chọn "Khác")</label>
-                <input id="v-note" class="input" type="text" placeholder="Mô tả cụ thể lỗi vi phạm..." />
+                <input id="v-note" class="input" type="text" placeholder="Mô tả cụ thể lỗi vi phạm..." style="padding: 0 12px; height: 42px;" />
               </div>
             </div>
 
@@ -408,10 +408,15 @@
               onclick="if(event.target===this)this.classList.add('hidden')">
               <div class="card" style="width:100%;max-width:480px;padding:0;overflow:hidden;">
                 <div
-                  style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.05);">
+                  style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;">
                   <span style="font-weight:700;font-size:15px;">🏆 Bảng xếp hạng điểm trừ</span>
                   <button class="btn btn-ghost" style="padding:4px 8px;font-size:18px;"
                     onclick="document.getElementById('leaderboard-overlay').classList.add('hidden')">✕</button>
+                </div>
+                <div style="display:flex; border-bottom:1px solid rgba(255,255,255,0.05); padding: 0 10px;">
+                  <button id="lb-tab-all" class="lb-tab active" onclick="switchLbTab('all')" style="flex:1; padding: 10px; background:none; border:none; color:var(--cyan); border-bottom: 2px solid var(--cyan); font-weight: 600; cursor:pointer;">Cả lớp</button>
+                  <button id="lb-tab-sq1" class="lb-tab" onclick="switchLbTab('sq1')" style="flex:1; padding: 10px; background:none; border:none; color:var(--text-2); border-bottom: 2px solid transparent; font-weight: 600; cursor:pointer;">Tiểu đội 1</button>
+                  <button id="lb-tab-sq2" class="lb-tab" onclick="switchLbTab('sq2')" style="flex:1; padding: 10px; background:none; border:none; color:var(--text-2); border-bottom: 2px solid transparent; font-weight: 600; cursor:pointer;">Tiểu đội 2</button>
                 </div>
                 <div style="max-height:60vh;overflow-y:auto;" id="leaderboard-body"></div>
               </div>

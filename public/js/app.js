@@ -193,7 +193,7 @@ function updateNavbar() {
 
 function setAvatarEl(el, avatar, fullName) {
   if (avatar && avatar.startsWith('data:')) {
-    el.innerHTML = `<img src="${avatar}" alt="${fullName}" />`;
+    el.innerHTML = `<img src="${avatar}" alt="${fullName}" style="width: 100%; height: 100%; object-fit: cover;" />`;
   } else if (avatar) {
     el.textContent = avatar;
     el.style.background = 'none';
@@ -1231,31 +1231,73 @@ async function addViolation() {
   }
 }
 
+let currentLeaderboardData = [];
+
 async function showLeaderboard() {
   const overlay = document.getElementById('leaderboard-overlay');
   const body = document.getElementById('leaderboard-body');
   if (!overlay || !body) return;
+  
+  switchLbTabStyles('all');
   overlay.classList.remove('hidden');
   body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-2);font-size:13px;">Đang tải...</div>';
   try {
     const list = await API.get('/api/violations/leaderboard');
-    if (!list.length) { body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:13px;">Không có dữ liệu</div>'; return; }
-    body.innerHTML = list.map((u, i) => {
-      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `<span style="font-size:13px;color:var(--text-3);min-width:20px;display:inline-block;text-align:center;">${i + 1}</span>`;
-      const pts = u.totalDeducted;
-      const color = pts === 0 ? 'var(--green)' : pts <= 10 ? 'var(--amber)' : 'var(--rose)';
-      const roleTag = u.role === 'admin' ? '<span style="font-size:10px;background:rgba(139,92,246,0.2);color:var(--purple);border-radius:4px;padding:1px 5px;margin-left:6px;">Admin</span>' : '';
-      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid rgba(255,255,255,0.03);">
-        <div style="display:flex;align-items:center;gap:10px;">
-          <span style="font-size:16px;min-width:24px;text-align:center;">${medal}</span>
-          <span style="font-size:13px;color:var(--text-1);">${u.fullName}${roleTag}</span>
-        </div>
-        <span style="font-size:13px;color:${color};">${pts > 0 ? `-${pts}` : '0'}</span>
-      </div>`;
-    }).join('');
+    currentLeaderboardData = list;
+    renderLeaderboard('all');
   } catch (err) {
     body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--rose);font-size:13px;">Lỗi tải dữ liệu</div>';
   }
+}
+
+function switchLbTabStyles(tabId) {
+  ['all', 'sq1', 'sq2'].forEach(id => {
+    const btn = document.getElementById('lb-tab-' + id);
+    if (!btn) return;
+    if (id === tabId) {
+      btn.style.color = 'var(--cyan)';
+      btn.style.borderBottom = '2px solid var(--cyan)';
+    } else {
+      btn.style.color = 'var(--text-2)';
+      btn.style.borderBottom = '2px solid transparent';
+    }
+  });
+}
+
+function switchLbTab(tabId) {
+  switchLbTabStyles(tabId);
+  renderLeaderboard(tabId);
+}
+
+function renderLeaderboard(tabId) {
+  const body = document.getElementById('leaderboard-body');
+  if (!body) return;
+  
+  let list = currentLeaderboardData;
+  if (tabId === 'sq2') {
+    list = list.filter(u => u.squad === 2);
+  } else if (tabId === 'sq1') {
+    list = list.filter(u => u.squad === 1);
+  }
+  
+  if (!list.length) { 
+    body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:13px;">Không có dữ liệu</div>'; 
+    return; 
+  }
+  
+  body.innerHTML = list.map((u, i) => {
+    const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `<span style="font-size:13px;color:var(--text-3);min-width:20px;display:inline-block;text-align:center;">${i + 1}</span>`;
+    const pts = u.totalDeducted;
+    const color = pts === 0 ? 'var(--green)' : pts <= 10 ? 'var(--amber)' : 'var(--rose)';
+    const roleTag = u.role === 'admin' ? '<span style="font-size:10px;background:rgba(139,92,246,0.2);color:var(--purple);border-radius:4px;padding:1px 5px;margin-left:6px;">Admin</span>' : '';
+    return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid rgba(255,255,255,0.03);">
+      <div style="display:flex;align-items:center;gap:10px;">
+        <span style="font-size:16px;min-width:24px;text-align:center;">${medal}</span>
+        <span style="font-size:13px;color:var(--text-1);">${u.fullName}${roleTag}</span>
+      </div>
+      <span style="font-size:13px;color:${color};">${pts > 0 ? `-${pts}` : '0'}</span>
+    </div>`;
+  }).join('');
 }
 
 async function appealViolation(violationId) {
@@ -1293,51 +1335,16 @@ loadClassMembersBackground = async function (isAdmin) {
   }
 }
 
-// ─── Init ─────────────────────────────────────────────────────────────
-function makeDraggableNotif() {
-  const wrapper = document.getElementById('notif-wrapper');
-  if (!wrapper) return;
-
-  let startX, startY, initialX, initialY;
-
-  wrapper.addEventListener('touchstart', (e) => {
-    isNotifDragging = false;
-    startX = e.touches[0].clientX;
-    startY = e.touches[0].clientY;
-    const rect = wrapper.getBoundingClientRect();
-    initialX = rect.left;
-    initialY = rect.top;
-  }, { passive: true });
-
-  wrapper.addEventListener('touchmove', (e) => {
-    if (window.innerWidth > 768) return;
-
-    const dx = e.touches[0].clientX - startX;
-    const dy = e.touches[0].clientY - startY;
-
-    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
-      isNotifDragging = true;
-      e.preventDefault();
-
-      let newX = initialX + dx;
-      let newY = initialY + dy;
-
-      newX = Math.max(0, Math.min(newX, window.innerWidth - wrapper.offsetWidth));
-      newY = Math.max(0, Math.min(newY, window.innerHeight - wrapper.offsetHeight));
-
-      wrapper.style.left = newX + 'px';
-      wrapper.style.top = newY + 'px';
-      wrapper.style.bottom = 'auto';
-      wrapper.style.right = 'auto';
-    }
-  }, { passive: false });
-}
+// Removed makeDraggableNotif function
 
 function init() {
-  makeDraggableNotif();
   if (state.token && state.user) {
     if (state.user.role === 'admin') showAdminView();
     else showUserView();
+
+    // Tự động chọn tab danh sách vi phạm khi load trang
+    const violationTab = document.querySelector('[data-tab="tab-danh-sach-loi"]');
+    if (violationTab) switchAppTab('tab-danh-sach-loi', violationTab);
   } else {
     showLoginView();
   }

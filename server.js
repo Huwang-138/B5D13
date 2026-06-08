@@ -43,6 +43,7 @@ const userSchema = new mongoose.Schema({
   phone: String,
   role: { type: String, enum: ['admin', 'user'], default: 'user' },
   avatar: { type: String, default: '' }, // emoji or base64 data URL
+  squad: { type: Number, default: 1 }
 }, { timestamps: true });
 
 const sessionSchema = new mongoose.Schema({
@@ -283,7 +284,7 @@ app.get('/api/violations/my-points', authMiddleware, async (req, res) => {
 
 app.get('/api/violations/leaderboard', authMiddleware, adminOnly, async (req, res) => {
   try {
-    const users = await User.find({}, 'fullName stt role').lean();
+    const users = await User.find({}, 'fullName stt role squad').lean();
     const violations = await Violation.find({}).lean();
     const map = {};
     violations.forEach(v => {
@@ -296,6 +297,7 @@ app.get('/api/violations/leaderboard', authMiddleware, adminOnly, async (req, re
       fullName: u.fullName,
       stt: u.stt,
       role: u.role,
+      squad: u.squad || 1,
       totalDeducted: map[u._id.toString()] || 0
     })).sort((a, b) => b.totalDeducted - a.totalDeducted);
     res.json(result);
@@ -700,6 +702,18 @@ app.get('*', (req, res) => {
 mongoose.connect(MONGODB_URI).then(async () => {
   console.log('✅ Connected to MongoDB');
   await seedDatabase();
+  
+  // Migration: update existing squad 2 members if they exist and are not set
+  try {
+    const squad2Names = ["Nguyễn Phương Duy", "Nguyễn Tuấn Đạt", "Nguyễn Đăng Hải", "Lê Quang Quốc Hiệu", "Đào Văn Xuân Hoàng", "Nguyễn Hữu Hoàng", "Huỳnh Quốc Khải", "Phan Huỳnh Khang", "Trần Lê Na", "Nguyễn Hải Long", "Trịnh Duy Tuấn", "Lê Thanh Tùng", "Lê Phước Vinh"];
+    await User.updateMany(
+      { fullName: { $in: squad2Names }, squad: { $ne: 2 } },
+      { $set: { squad: 2 } }
+    );
+  } catch(e) {
+    console.error("Migration error:", e);
+  }
+
   server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 }).catch(err => {
   console.error('❌ MongoDB connection error:', err.message);
