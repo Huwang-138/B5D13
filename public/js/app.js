@@ -934,7 +934,7 @@ function antiInspectAlert(e) {
   if (warned) return;
   warned = true;
 
-  const msg = "Hải Long ơi anh biết em định làm gì đấy, đừng có mà táy máy!!";
+  const msg = "Hải Long ơi đừng có mà táy máy!!";
 
   // Phát tiếng còi hú báo động
   playSiren();

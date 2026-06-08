@@ -7,12 +7,27 @@ const multer = require('multer');
 const http = require('http');
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
+const fs = require('fs');
 
 const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] },
 });
+
+// Tự động copy hình nền từ thư mục Downloads của người dùng
+const downloadPath = 'C:\\Users\\MY PC\\Downloads\\575123615_122198137130055590_5274563177042386692_n.jpg';
+const destPath = path.join(__dirname, 'public', 'bg.jpg');
+if (fs.existsSync(downloadPath)) {
+  try {
+    fs.copyFileSync(downloadPath, destPath);
+    console.log('✅ Background image copied to public/bg.jpg');
+  } catch (err) {
+    console.error('❌ Failed to copy background image:', err.message);
+  }
+} else {
+  console.log('ℹ️ Background image not found in Downloads, using default style/cache');
+}
 
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/quanly_lop';
