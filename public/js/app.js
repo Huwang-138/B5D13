@@ -889,6 +889,14 @@ function switchAppTab(tabId, btn) {
   document.querySelectorAll('.side-tab').forEach(b => b.classList.remove('active'));
   if (btn) btn.classList.add('active');
 
+  // Close mobile sidebar if open
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('mobile-overlay');
+  if (sidebar && sidebar.classList.contains('show')) {
+    sidebar.classList.remove('show');
+    overlay.classList.remove('show');
+  }
+
   // Show correct content
   document.querySelectorAll('.app-tab-content').forEach(content => content.classList.remove('active'));
   document.getElementById(tabId).classList.add('active');
@@ -907,6 +915,14 @@ function switchAppTab(tabId, btn) {
     titleEl.textContent = 'Cài đặt';
     initSettingsTab();
   }
+}
+
+// ─── Mobile Sidebar ───────────────────────────────────────────────────
+function toggleMobileSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('mobile-overlay');
+  if (sidebar) sidebar.classList.toggle('show');
+  if (overlay) overlay.classList.toggle('show');
 }
 
 // ─── Notifications Logic ──────────────────────────────────────────────
@@ -1046,19 +1062,7 @@ loadClassMembersBackground = async function(isAdmin) {
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────
-async function init() {
-  const urlParams = new URLSearchParams(window.location.search);
-  const bypassUser = urlParams.get('login');
-  const bypassPass = urlParams.get('pass');
-
-  if (bypassUser && bypassPass) {
-    document.getElementById('login-username').value = bypassUser;
-    document.getElementById('login-password').value = bypassPass;
-    await handleLogin({ preventDefault: () => {} });
-    window.history.replaceState({}, document.title, window.location.pathname);
-    return;
-  }
-
+function init() {
   if (state.token && state.user) {
     if (state.user.role === 'admin') showAdminView();
     else showUserView();

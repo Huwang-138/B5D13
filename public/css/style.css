@@ -206,6 +206,7 @@ select.input option { background: var(--bg-2); }
   flex-direction: column;
   padding: 20px 0;
   backdrop-filter: blur(20px);
+  transition: transform 0.3s ease;
 }
 .sidebar-logo {
   font-size: 26px;
@@ -803,6 +804,28 @@ select.input option { background: var(--bg-2); }
 .no-session-sub { font-size: 13px; color: var(--text-2); }
 
 /* ─── Responsive ─────────────────────────────────────────────── */
+.mobile-menu-btn { display: none; background: none; border: none; font-size: 24px; color: var(--text-1); cursor: pointer; padding: 4px; margin-right: 12px; }
+.mobile-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.5); z-index: 900; backdrop-filter: blur(4px); transition: opacity 0.3s; opacity: 0; pointer-events: none; }
+.mobile-overlay.show { opacity: 1; pointer-events: auto; }
+
+@media (max-width: 768px) {
+  .mobile-menu-btn { display: block; }
+  .mobile-overlay { display: block; }
+  .sidebar { position: fixed; height: 100%; z-index: 1000; transform: translateX(-100%); width: 260px; box-shadow: 0 0 20px rgba(0,0,0,0.5); }
+  .sidebar.show { transform: translateX(0); }
+  
+  .top-header { padding: 0 16px; }
+  .content-scroll { padding: 16px; }
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .admin-groups-grid { grid-template-columns: 1fr; }
+  .creator-card { padding: 16px; }
+  #violation-admin-box { padding: 16px; }
+  .avatar-grid { grid-template-columns: repeat(5, 1fr); }
+  .notif-dropdown { width: 300px; right: -20px; }
+  .page-title { font-size: 16px; }
+  .main-content { padding: 0; }
+}
+
 @media (max-width: 480px) {
   .stats-grid { gap: 8px; }
   .stat-card { padding: 10px 6px; }

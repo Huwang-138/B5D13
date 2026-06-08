@@ -54,8 +54,10 @@
        APP LAYOUT (SIDEBAR + MAIN)
     ═══════════════════════════════════════════════════════════════ -->
     <div id="app-layout" class="hidden layout-container">
+      <!-- Mobile Overlay -->
+      <div id="mobile-overlay" class="mobile-overlay hidden" onclick="toggleMobileSidebar()"></div>
       <!-- Sidebar -->
-      <aside class="sidebar">
+      <aside id="sidebar" class="sidebar">
         <div class="sidebar-logo">B5D13</div>
         <div class="sidebar-nav">
           <button class="side-tab active" data-tab="tab-chia-nhom" onclick="switchAppTab('tab-chia-nhom', this)">👥 Chia nhóm</button>
@@ -70,7 +72,8 @@
       <div class="main-wrapper">
         <!-- Top Header -->
         <header class="top-header">
-          <div class="header-left">
+          <div class="header-left" style="display:flex; align-items:center;">
+            <button class="mobile-menu-btn" onclick="toggleMobileSidebar()">☰</button>
             <h2 id="current-tab-title" style="margin:0; font-size: 20px; font-weight: 600;">Chia nhóm</h2>
           </div>
           <div class="header-right">
@@ -148,7 +151,7 @@
             </div>
 
             <!-- View Admin (Chia nhóm) -->
-            <div id="view-admin" class="view hidden" style="padding:0; min-height:auto;">
+            <div id="view-admin" class="view" style="padding:0; min-height:auto;">
               <div class="main-content" style="padding:0;">
                 <div class="admin-header" style="margin-bottom:20px;">
                   <h1 class="page-title">🛠️ BẢNG QUẢN TRỊ</h1>
