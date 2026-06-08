@@ -17,19 +17,17 @@
 
   <!-- ─── Navbar ──────────────────────────────────────────────── -->
   <nav id="navbar" class="hidden">
-    <div class="nav-logo">
-      <div class="nav-logo-icon">👥</div>
-      <div class="nav-logo-text">Quản lý Nhóm</div>
-    </div>
-    <div class="nav-right">
-      <div id="nav-user-info" class="nav-user" onclick="openProfileModal()">
+    <div class="nav-left">
+      <div id="nav-user-info" class="nav-user" onclick="openProfileModal()" style="cursor:pointer;">
         <div class="nav-avatar" id="nav-avatar-el">👤</div>
         <div>
           <div class="nav-username" id="nav-username-el">—</div>
           <div id="nav-role-el" class="nav-role-badge"></div>
         </div>
       </div>
-      <button id="btn-admin-toggle" class="btn btn-secondary btn-sm hidden" onclick="toggleAdminUserMode()">🎓 Chế độ HS</button>
+    </div>
+    <div class="nav-right">
+      <button id="btn-admin-toggle" class="btn btn-secondary btn-sm hidden" onclick="toggleAdminUserMode()">🎓 Chế độ HV</button>
       <button class="btn btn-ghost btn-sm" onclick="logout()" id="btn-logout">Đăng xuất</button>
     </div>
   </nav>
@@ -154,7 +152,6 @@
       <div class="admin-tabs">
         <button class="admin-tab active" data-tab="tab-session" onclick="switchTab('tab-session', this)">🎯 Tạo phiên</button>
         <button class="admin-tab" data-tab="tab-manage" onclick="switchTab('tab-manage', this)">📋 Quản lý</button>
-        <button class="admin-tab" data-tab="tab-fixed" onclick="switchTab('tab-fixed', this)">🔒 Cố định</button>
         <button class="admin-tab" data-tab="tab-history" onclick="switchTab('tab-history', this)">📜 Lịch sử</button>
       </div>
 
@@ -184,14 +181,14 @@
                     <input type="radio" name="f-mode" value="manual" checked />
                     <div>
                       <div class="radio-label">🖱️ Tự chọn nhóm</div>
-                      <div class="radio-sub">Học sinh tự bấm vào nhóm muốn tham gia</div>
+                      <div class="radio-sub">Học viên tự bấm vào nhóm muốn tham gia</div>
                     </div>
                   </label>
                   <label class="radio-option">
                     <input type="radio" name="f-mode" value="random" />
                     <div>
                       <div class="radio-label">🎰 Bốc thăm ngẫu nhiên</div>
-                      <div class="radio-sub">Học sinh bốc thăm để vào nhóm ngẫu nhiên</div>
+                      <div class="radio-sub">Học viên bốc thăm để vào nhóm ngẫu nhiên</div>
                     </div>
                   </label>
                 </div>
@@ -230,19 +227,14 @@
             </div>
             <div id="unassigned-list" class="unassigned-list"></div>
           </div>
-        </div>
-      </div>
-
-      <!-- Tab: Xếp cố định -->
-      <div id="tab-fixed" class="admin-tab-content animate-in">
-        <div id="no-active-session-fixed-msg" class="no-session-placeholder">
-          <div class="no-session-icon">🔒</div>
-          <div class="no-session-title">Cần có phiên hoạt động</div>
-          <div class="no-session-sub">Tạo phiên trước, sau đó bạn có thể xếp cố định thành viên.</div>
-        </div>
-        <div id="fixed-content" class="hidden">
-          <p style="color:var(--text-2);font-size:13px;margin-bottom:16px;">Học sinh bị xếp cố định sẽ không thể tự chọn hoặc đổi nhóm.</p>
-          <div id="fixed-assign-list" class="assign-list" style="max-height:600px;"></div>
+          <!-- Fixed Assignments -->
+          <div style="margin-top:20px; border-top: 1px solid var(--border); padding-top: 20px;">
+            <div class="section-header">
+              <div class="section-title">🔒 Xếp cố định</div>
+            </div>
+            <p style="color:var(--text-2);font-size:13px;margin-bottom:16px;">Học viên bị xếp cố định sẽ không thể tự chọn hoặc đổi nhóm.</p>
+            <div id="fixed-assign-list" class="assign-list" style="max-height:600px;"></div>
+          </div>
         </div>
       </div>
 

@@ -132,7 +132,7 @@ function updateNavbar() {
   const roleEl = document.getElementById('nav-role-el');
   roleEl.innerHTML = state.user.role === 'admin'
     ? '<span class="badge badge-amber">👑 Admin</span>'
-    : '<span class="badge badge-cyan">🎓 HS</span>';
+    : '<span class="badge badge-cyan">🎓 HV</span>';
 
   const toggleBtn = document.getElementById('btn-admin-toggle');
   if (state.user.role === 'admin') {
@@ -141,7 +141,7 @@ function updateNavbar() {
       toggleBtn.textContent = '🛠️ Trang Quản trị';
       toggleBtn.style.background = 'var(--amber)';
     } else {
-      toggleBtn.textContent = '🎓 Chế độ HS';
+      toggleBtn.textContent = '🎓 Chế độ HV';
       toggleBtn.style.background = '';
     }
   } else {
@@ -177,7 +177,7 @@ function toggleAdminUserMode() {
     updateNavbar();
     showView('view-user');
     fetchSessionStatus();
-    toast('🎓 Đã chuyển sang chế độ Học sinh', 'info');
+    toast('🎓 Đã chuyển sang chế độ Học viên', 'info');
   }
 }
 
@@ -372,7 +372,6 @@ async function loadAdminSession() {
     state.isFixed = data.isFixed || false;
     renderAdminStats(data);
     updateManageTab(data);
-    updateFixedTab(data);
     const alert = document.getElementById('active-session-alert');
     if (data.active) {
       alert.classList.remove('hidden');
@@ -396,13 +395,7 @@ function updateManageTab(data) {
   document.getElementById('manage-session-title').textContent =
     `📋 ${data.session.subject} — ${data.session.mode === 'manual' ? 'Tự chọn' : 'Random'}`;
   renderAdminGroups(data.session);
-}
 
-function updateFixedTab(data) {
-  const noMsg = document.getElementById('no-active-session-fixed-msg');
-  const content = document.getElementById('fixed-content');
-  if (!data.active || !data.session) { noMsg.classList.remove('hidden'); content.classList.add('hidden'); return; }
-  noMsg.classList.add('hidden'); content.classList.remove('hidden');
   if (state.members.length > 0) {
     renderFixedAssignList(data.session);
   } else {
@@ -618,7 +611,7 @@ function switchTab(tabId, btn) {
   document.getElementById(tabId).classList.add('active');
   if (btn) btn.classList.add('active');
   if (tabId === 'tab-history') loadHistory();
-  if (tabId === 'tab-manage' || tabId === 'tab-fixed') loadAdminSession();
+  if (tabId === 'tab-manage') loadAdminSession();
 }
 
 // ─── Random Slider (Slot Machine) ─────────────────────────────────────
