@@ -941,6 +941,8 @@ function switchAppTab(tabId, btn) {
     loadViolations();
     if(state.user?.role === 'admin') {
       document.getElementById('violation-admin-box').classList.remove('hidden');
+    } else {
+      document.getElementById('violation-admin-box').classList.add('hidden');
     }
   }
   if (tabId === 'tab-cai-dat') {
@@ -959,8 +961,10 @@ function toggleMobileSidebar() {
 
 // ─── Notifications Logic ──────────────────────────────────────────────
 let unreadNotifs = 0;
+let isNotifDragging = false;
 
 function toggleNotifDropdown(e) {
+  if (isNotifDragging) return;
   if (e) e.stopPropagation();
   const drop = document.getElementById('notif-dropdown');
   drop.classList.toggle('hidden');
@@ -1094,7 +1098,47 @@ loadClassMembersBackground = async function(isAdmin) {
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────
+function makeDraggableNotif() {
+  const wrapper = document.getElementById('notif-wrapper');
+  if (!wrapper) return;
+  
+  let startX, startY, initialX, initialY;
+
+  wrapper.addEventListener('touchstart', (e) => {
+    isNotifDragging = false;
+    startX = e.touches[0].clientX;
+    startY = e.touches[0].clientY;
+    const rect = wrapper.getBoundingClientRect();
+    initialX = rect.left;
+    initialY = rect.top;
+  }, { passive: true });
+
+  wrapper.addEventListener('touchmove', (e) => {
+    if (window.innerWidth > 768) return;
+    
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+      isNotifDragging = true;
+      e.preventDefault();
+      
+      let newX = initialX + dx;
+      let newY = initialY + dy;
+      
+      newX = Math.max(0, Math.min(newX, window.innerWidth - wrapper.offsetWidth));
+      newY = Math.max(0, Math.min(newY, window.innerHeight - wrapper.offsetHeight));
+      
+      wrapper.style.left = newX + 'px';
+      wrapper.style.top = newY + 'px';
+      wrapper.style.bottom = 'auto';
+      wrapper.style.right = 'auto';
+    }
+  }, { passive: false });
+}
+
 function init() {
+  makeDraggableNotif();
   if (state.token && state.user) {
     if (state.user.role === 'admin') showAdminView();
     else showUserView();
