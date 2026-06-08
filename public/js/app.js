@@ -132,7 +132,7 @@ function updateNavbar() {
   const roleEl = document.getElementById('nav-role-el');
   roleEl.innerHTML = state.user.role === 'admin'
     ? '<span class="badge badge-amber">👑 Admin</span>'
-    : '<span class="badge badge-cyan">🎓 HV</span>';
+    : '<span class="badge badge-cyan">🎓 Học viên</span>';
 
   const toggleBtn = document.getElementById('btn-admin-toggle');
   if (state.user.role === 'admin') {
@@ -141,7 +141,7 @@ function updateNavbar() {
       toggleBtn.textContent = '🛠️ Trang Quản trị';
       toggleBtn.style.background = 'var(--amber)';
     } else {
-      toggleBtn.textContent = '🎓 Chế độ HV';
+      toggleBtn.textContent = '🎓 Chế độ Học viên';
       toggleBtn.style.background = '';
     }
   } else {
@@ -763,6 +763,7 @@ const AVATARS = ['😀','😎','🤩','🦸','🧑‍💻','👨‍🎓','👩�
 function openProfileModal() {
   if (!state.user) return;
   document.getElementById('profile-fullname').textContent = state.user.fullName;
+  document.getElementById('btn-save-profile').disabled = true;
   API.get('/api/user/me').then(user => {
     document.getElementById('profile-dob').textContent = `📅 ${user.dob}`;
     document.getElementById('profile-hometown').textContent = `📍 ${user.hometown}`;
@@ -793,6 +794,7 @@ function selectAvatar(emoji, el) {
   bigAvatar.textContent = emoji;
   bigAvatar.style.background = 'none';
   bigAvatar.style.fontSize = '26px';
+  checkProfileChanges();
 }
 
 function handleAvatarFile(event) {
@@ -806,14 +808,25 @@ function handleAvatarFile(event) {
     const bigAvatar = document.getElementById('profile-big-avatar');
     bigAvatar.innerHTML = `<img src="${b64}" alt="avatar" />`;
     document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
+    checkProfileChanges();
   };
   reader.readAsDataURL(file);
+}
+
+function checkProfileChanges() {
+  const oldP = document.getElementById('old-password').value;
+  const newP = document.getElementById('new-password').value;
+  const cfmP = document.getElementById('confirm-password').value;
+  
+  const hasChanges = (oldP || newP || cfmP) || (state.selectedAvatarEmoji !== null);
+  document.getElementById('btn-save-profile').disabled = !hasChanges;
 }
 
 async function saveProfile() {
   const oldPassword = document.getElementById('old-password').value;
   const newPassword = document.getElementById('new-password').value;
   const confirmPassword = document.getElementById('confirm-password').value;
+  const btn = document.getElementById('btn-save-profile');
 
   if (newPassword && newPassword !== confirmPassword) {
     toast('Mật khẩu xác nhận không khớp!', 'error'); return;
@@ -828,6 +841,9 @@ async function saveProfile() {
 
   if (!Object.keys(body).length) { toast('Không có thay đổi nào', 'info'); return; }
 
+  btn.disabled = true;
+  btn.textContent = '⏳ Đang lưu...';
+
   try {
     const updated = await API.patch('/api/user/profile', body);
     state.user = { ...state.user, ...updated };
@@ -835,7 +851,12 @@ async function saveProfile() {
     updateNavbar();
     toast('✅ Đã lưu thay đổi thành công!', 'success');
     closeProfileModal();
-  } catch (err) { toast(err.message, 'error'); }
+  } catch (err) { 
+    toast(err.message, 'error');
+  } finally {
+    btn.textContent = '💾 Lưu thay đổi';
+    checkProfileChanges();
+  }
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────

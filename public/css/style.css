@@ -228,7 +228,7 @@ select.input option { background: var(--bg-2); }
 /* ─── Login View ─────────────────────────────────────────────── */
 #view-login {
   display: flex; align-items: center; justify-content: center;
-  min-height: 100vh;
+  min-height: 100dvh;
 }
 #view-login.view:not(.active) { display: none; }
 .login-container { width: 100%; max-width: 400px; padding: 16px; }
@@ -378,6 +378,17 @@ select.input option { background: var(--bg-2); }
   position: absolute; inset: 0; z-index: 3; pointer-events: none;
   border: 2px solid rgba(139,92,246,0.5);
   border-radius: var(--radius-lg);
+}
+
+.slot-center-line {
+  position: absolute;
+  top: 0; bottom: 0; left: 50%;
+  width: 4px;
+  background: linear-gradient(180deg, transparent, var(--amber), transparent);
+  transform: translateX(-50%);
+  z-index: 4;
+  box-shadow: 0 0 10px var(--amber);
+  border-radius: 2px;
 }
 
 .slot-track {
