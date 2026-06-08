@@ -934,13 +934,12 @@ function antiInspectAlert(e) {
   if (warned) return;
   warned = true;
 
-  const title = "Anh Hoàng yêu quý của em cho biết:";
   const msg = "Đm Hải Long ơi anh biết em đang định làm gì đấy, đừng có mà táy máy!!";
 
   // Phát tiếng còi hú báo động
   playSiren();
 
-  // Đổi giao diện màn hình nhấp nháy liên tục đỏ/đen cực căng
+  // Đổi giao diện màn hình nhấp nháy liên tục đỏ/đen cực căng và hiển thị hộp thoại Custom Alert
   document.body.innerHTML = `
     <style>
       @keyframes blink {
@@ -960,33 +959,99 @@ function antiInspectAlert(e) {
         text-align: center;
         padding: 20px;
         box-sizing: border-box;
-        animation: blink 0.4s infinite;
-        font-family: system-ui, -apple-system, sans-serif;
+        animation: blink 0.3s infinite;
+        font-family: 'Arial Black', Impact, sans-serif;
+        position: relative;
       }
       .troll-title {
-        font-size: 46px;
+        font-size: 64px;
         margin-bottom: 24px;
         text-transform: uppercase;
-        border: 6px solid currentColor;
-        padding: 15px 30px;
-        border-radius: 10px;
+        letter-spacing: 5px;
+      }
+
+      /* Hộp thoại Custom Alert giả lập */
+      .custom-alert-overlay {
+        position: fixed;
+        top: 0; left: 0; width: 100vw; height: 100vh;
+        display: flex; align-items: center; justify-content: center;
+        background: rgba(0, 0, 0, 0.85);
+        z-index: 999999;
+      }
+      .custom-alert-box {
+        background: #202124;
+        color: #e8eaed;
+        border-radius: 8px;
+        width: 480px;
+        max-width: 90%;
+        box-shadow: 0 4px 24px rgba(0,0,0,0.8);
+        font-family: system-ui, -apple-system, sans-serif;
+        overflow: hidden;
+        border: 1px solid #3c4043;
+        text-align: left;
+        animation: scaleUp 0.15s ease-out;
+      }
+      @keyframes scaleUp {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+      }
+      .custom-alert-header {
+        padding: 16px 24px;
+        font-size: 16px;
+        font-weight: 600;
+        border-bottom: 1px solid #3c4043;
+        color: #ffffff;
+      }
+      .custom-alert-body {
+        padding: 24px;
+        font-size: 14px;
+        line-height: 1.6;
+        color: #bdc1c6;
+        font-weight: normal;
+      }
+      .custom-alert-footer {
+        padding: 12px 24px;
+        display: flex;
+        justify-content: flex-end;
+        border-top: 1px solid #3c4043;
+        background: #303134;
+      }
+      .custom-alert-btn {
+        background: #8ab4f8;
+        color: #202124;
+        border: none;
+        padding: 8px 24px;
+        border-radius: 4px;
+        font-size: 14px;
+        font-weight: 600;
+        cursor: pointer;
+        outline: none;
+        transition: background 0.2s;
+      }
+      .custom-alert-btn:hover {
+        background: #aecbfa;
       }
     </style>
+    
     <div class="troll-screen">
-      <div style="font-size: 120px; margin-bottom: 20px;">🚨</div>
-      <div class="troll-title">${title}</div>
-      <div style="font-size: 28px; max-width: 800px; line-height: 1.5;">${msg}</div>
+      <div class="troll-title">🚨 WARNING 🚨</div>
+      <div style="font-size: 36px; letter-spacing: 2px;">ACCESS DENIED</div>
+
+      <div class="custom-alert-overlay" id="custom-alert">
+        <div class="custom-alert-box">
+          <div class="custom-alert-header">Anh Hoàng yêu quý của em cho biết</div>
+          <div class="custom-alert-body">${msg}</div>
+          <div class="custom-alert-footer">
+            <button class="custom-alert-btn" onclick="document.getElementById('custom-alert').style.display='none'">OK</button>
+          </div>
+        </div>
+      </div>
     </div>
   `;
 
   // Spam log console làm đơ trình duyệt nếu cố tình mở DevTools
   setInterval(() => {
     console.log("%c" + msg, "color: red; font-size: 30px; font-weight: bold; background: black; padding: 10px; border-radius: 5px;");
-  }, 100);
-
-  // Hiển thị hộp thoại cảnh báo (trì hoãn 100ms để DOM kịp đổi)
-  setTimeout(() => {
-    alert(`${title}\n\n${msg}`);
   }, 100);
 }
 
