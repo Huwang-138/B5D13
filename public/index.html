@@ -20,27 +20,9 @@
     <!-- ─── Toast Container ──────────────────────────────────────── -->
     <div id="toast-container"></div>
 
-    <!-- ─── Navbar ──────────────────────────────────────────────── -->
-    <nav id="navbar" class="hidden">
-      <div class="nav-left">
-        <div id="nav-user-info" class="nav-user" onclick="openProfileModal()" style="cursor:pointer;">
-          <div class="nav-avatar" id="nav-avatar-el">👤</div>
-          <div>
-            <div class="nav-username" id="nav-username-el">—</div>
-            <div id="nav-role-el" class="nav-role-badge"></div>
-          </div>
-        </div>
-      </div>
-      <div class="nav-right">
-        <button id="btn-admin-toggle" class="btn btn-secondary btn-sm hidden" onclick="toggleAdminUserMode()">🎓 Học
-          viên</button>
-        <button class="btn btn-ghost btn-sm" onclick="logout()" id="btn-logout">Đăng xuất</button>
-      </div>
-    </nav>
-
     <!-- ════════════════════════════════════════════════════════════
        LOGIN VIEW
-  ═══════════════════════════════════════════════════════════════ -->
+    ═══════════════════════════════════════════════════════════════ -->
     <div id="view-login" class="view active">
       <div class="login-container">
         <div class="card login-card animate-in">
@@ -70,210 +52,299 @@
     </div>
 
     <!-- ════════════════════════════════════════════════════════════
-       USER VIEW
-  ═══════════════════════════════════════════════════════════════ -->
-    <div id="view-user" class="view">
-      <div class="main-content">
-
-        <!-- Session Banner -->
-        <div id="session-banner" class="hidden animate-in">
-          <div class="session-info">
-            <div id="sb-subject" class="session-subject">—</div>
-            <div class="session-meta">
-              <span id="sb-mode-badge" class="badge badge-purple">—</span>
-              <span id="sb-groups-badge" class="badge badge-cyan">—</span>
-            </div>
-          </div>
+       APP LAYOUT (SIDEBAR + MAIN)
+    ═══════════════════════════════════════════════════════════════ -->
+    <div id="app-layout" class="hidden layout-container">
+      <!-- Sidebar -->
+      <aside class="sidebar">
+        <div class="sidebar-logo">B5D13</div>
+        <div class="sidebar-nav">
+          <button class="side-tab active" data-tab="tab-chia-nhom" onclick="switchAppTab('tab-chia-nhom', this)">👥 Chia nhóm</button>
+          <button class="side-tab" data-tab="tab-danh-sach-loi" onclick="switchAppTab('tab-danh-sach-loi', this)">📋 Danh sách lỗi</button>
         </div>
-
-        <!-- My Group Card -->
-        <div id="my-group-card" class="hidden animate-in">
-          <div class="my-group-title">Nhóm của bạn</div>
-          <div id="my-group-name" class="my-group-name">—</div>
-          <div id="my-group-fixed-msg" class="my-group-fixed hidden">🔒 Được Admin xếp cố định</div>
+        <div class="sidebar-bottom">
+          <button class="side-tab" data-tab="tab-cai-dat" onclick="switchAppTab('tab-cai-dat', this)">⚙️ Cài đặt</button>
         </div>
+      </aside>
 
-        <!-- No Session Placeholder -->
-        <div id="no-session-placeholder" class="no-session-placeholder">
-          <div class="no-session-icon">📋</div>
-          <div class="no-session-title">Chưa có phiên chia nhóm</div>
-          <div class="no-session-sub">Admin sẽ tạo phiên khi cần chia nhóm.</div>
-        </div>
-
-        <!-- Groups Grid -->
-        <div id="groups-section" class="hidden animate-in">
-          <div class="section-header">
-            <div class="section-title">📊 Danh sách nhóm</div>
+      <!-- Main Content Area -->
+      <div class="main-wrapper">
+        <!-- Top Header -->
+        <header class="top-header">
+          <div class="header-left">
+            <h2 id="current-tab-title" style="margin:0; font-size: 20px; font-weight: 600;">Chia nhóm</h2>
           </div>
-          <div id="groups-grid" class="groups-grid"></div>
-        </div>
-
-        <!-- Random Slider for Random mode -->
-        <div id="slider-trigger-section" class="hidden animate-in" style="margin-top:24px;">
-          <div class="slider-trigger-box">
-            <div class="slider-trigger-icon">🎰</div>
-            <p class="slider-trigger-text">Chế độ <strong>Ngẫu nhiên</strong> — Bấm nút để quay xổ số nhóm!</p>
-            <button class="btn btn-primary btn-lg" id="btn-open-slider" onclick="openSlider()">🎰 Bốc thăm ngẫu
-              nhiên</button>
-          </div>
-        </div>
-
-      </div>
-    </div>
-
-    <!-- ════════════════════════════════════════════════════════════
-       ADMIN VIEW
-  ═══════════════════════════════════════════════════════════════ -->
-    <div id="view-admin" class="view">
-      <div class="main-content">
-        <div class="admin-header">
-          <h1 class="page-title">🛠️ BẢNG QUẢN TRỊ</h1>
-          <p class="page-sub">Quản lý phiên chia nhóm lớp học</p>
-        </div>
-
-        <!-- Stats -->
-        <div class="stats-grid">
-          <div class="card stat-card">
-            <div class="stat-icon">👥</div>
-            <div class="stat-value" style="color:var(--purple)">25</div>
-            <div class="stat-label">Thành viên</div>
-          </div>
-          <div class="card stat-card">
-            <div class="stat-icon">📊</div>
-            <div class="stat-value" id="stat-groups" style="color:var(--cyan)">0</div>
-            <div class="stat-label">Số nhóm</div>
-          </div>
-          <div class="card stat-card">
-            <div class="stat-icon">✅</div>
-            <div class="stat-value" id="stat-assigned" style="color:var(--green)">0</div>
-            <div class="stat-label">Có nhóm</div>
-          </div>
-          <div class="card stat-card">
-            <div class="stat-icon">⏳</div>
-            <div class="stat-value" id="stat-unassigned" style="color:var(--amber)">25</div>
-            <div class="stat-label">Chưa có</div>
-          </div>
-        </div>
-
-        <!-- Tabs -->
-        <div class="admin-tabs">
-          <button class="admin-tab active" data-tab="tab-session" onclick="switchTab('tab-session', this)">🎯 Tạo
-            phiên</button>
-          <button class="admin-tab" data-tab="tab-manage" onclick="switchTab('tab-manage', this)">📋 Quản lý</button>
-          <button class="admin-tab" data-tab="tab-history" onclick="switchTab('tab-history', this)">📜 Lịch sử</button>
-        </div>
-
-        <!-- Tab: Tạo phiên -->
-        <div id="tab-session" class="admin-tab-content active animate-in">
-          <!-- Active session alert -->
-          <div id="active-session-alert" class="hidden active-alert">
-            <div>
-              <span class="alert-label">⚠️ Đang có phiên:</span>
-              <span id="active-session-name"></span>
-            </div>
-            <button class="btn btn-rose btn-sm" onclick="stopSession()">⏹ Kết thúc</button>
-          </div>
-
-          <div id="session-creator-box" class="session-creator">
-            <div class="card creator-card">
-              <div class="creator-section-title">📝 Thông tin phiên</div>
-              <div style="display:flex;flex-direction:column;gap:14px;">
-                <div class="input-group">
-                  <label class="input-label">Tên môn học</label>
-                  <input id="f-subject" class="input" type="text" placeholder="VD: Kỹ thuật lập trình" />
+          <div class="header-right">
+            <!-- Notifications Bell -->
+            <div class="notif-wrapper">
+              <button class="notif-btn" onclick="toggleNotifDropdown(event)">
+                🔔<span id="notif-count" class="notif-badge hidden">0</span>
+              </button>
+              <div id="notif-dropdown" class="notif-dropdown hidden">
+                <div class="notif-header">Thông báo</div>
+                <div id="notif-list" class="notif-list">
+                  <!-- Notifications go here -->
                 </div>
-                <div class="input-group">
-                  <label class="input-label">Phương thức</label>
-                  <div class="radio-group">
-                    <label class="radio-option">
-                      <input type="radio" name="f-mode" value="manual" checked />
-                      <div>
-                        <div class="radio-label">🖱️ Tự chọn nhóm</div>
-                        <div class="radio-sub">Học viên tự bấm vào nhóm muốn tham gia</div>
-                      </div>
-                    </label>
-                    <label class="radio-option">
-                      <input type="radio" name="f-mode" value="random" />
-                      <div>
-                        <div class="radio-label">🎰 Bốc thăm ngẫu nhiên</div>
-                        <div class="radio-sub">Học viên bốc thăm để vào nhóm ngẫu nhiên</div>
-                      </div>
-                    </label>
+              </div>
+            </div>
+            
+            <!-- User Info -->
+            <div class="user-dropdown-wrapper">
+              <div id="nav-user-info" class="nav-user" onclick="openProfileModal()" style="cursor:pointer;">
+                <div class="nav-avatar" id="nav-avatar-el">👤</div>
+                <div class="nav-username" id="nav-username-el">—</div>
+              </div>
+            </div>
+          </div>
+        </header>
+
+        <!-- Content Views -->
+        <div class="content-scroll">
+          
+          <!-- ========================================== -->
+          <!-- TAB: CHIA NHÓM -->
+          <!-- ========================================== -->
+          <div id="tab-chia-nhom" class="app-tab-content active animate-in">
+            <!-- ADMIN TOGGLE HEADER -->
+            <div style="margin-bottom: 20px; display: flex; justify-content: flex-end;">
+                <button id="btn-admin-toggle" class="btn btn-secondary btn-sm hidden" onclick="toggleAdminUserMode()">🎓 Học viên</button>
+            </div>
+
+            <!-- View User (Chia nhóm) -->
+            <div id="view-user" class="view active" style="padding:0; min-height:auto;">
+              <div class="main-content" style="padding:0;">
+                <div id="session-banner" class="hidden animate-in">
+                  <div class="session-info">
+                    <div id="sb-subject" class="session-subject">—</div>
+                    <div class="session-meta">
+                      <span id="sb-mode-badge" class="badge badge-purple">—</span>
+                      <span id="sb-groups-badge" class="badge badge-cyan">—</span>
+                    </div>
                   </div>
                 </div>
-                <div class="input-group">
-                  <label class="input-label">Số lượng nhóm</label>
-                  <input id="f-group-count" class="input" type="number" min="1" max="25" placeholder="VD: 3"
-                    oninput="updateGroupHint()" />
-                  <div id="group-capacity-hint" style="color:var(--text-2);font-size:12px;margin-top:2px;"></div>
+                <div id="my-group-card" class="hidden animate-in">
+                  <div class="my-group-title">Nhóm của bạn</div>
+                  <div id="my-group-name" class="my-group-name">—</div>
+                  <div id="my-group-fixed-msg" class="my-group-fixed hidden">🔒 Được Admin xếp cố định</div>
                 </div>
-                <button id="btn-create-session" class="btn btn-primary" onclick="createSession()">🚀 Tạo phiên chia
-                  nhóm</button>
+                <div id="no-session-placeholder" class="no-session-placeholder">
+                  <div class="no-session-icon">📋</div>
+                  <div class="no-session-title">Chưa có phiên chia nhóm</div>
+                  <div class="no-session-sub">Admin sẽ tạo phiên khi cần chia nhóm.</div>
+                </div>
+                <div id="groups-section" class="hidden animate-in">
+                  <div class="section-header">
+                    <div class="section-title">📊 Danh sách nhóm</div>
+                  </div>
+                  <div id="groups-grid" class="groups-grid"></div>
+                </div>
+                <div id="slider-trigger-section" class="hidden animate-in" style="margin-top:24px;">
+                  <div class="slider-trigger-box">
+                    <div class="slider-trigger-icon">🎰</div>
+                    <p class="slider-trigger-text">Chế độ <strong>Ngẫu nhiên</strong> — Bấm nút để quay xổ số nhóm!</p>
+                    <button class="btn btn-primary btn-lg" id="btn-open-slider" onclick="openSlider()">🎰 Bốc thăm ngẫu nhiên</button>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
-        </div>
 
-        <!-- Tab: Quản lý nhóm -->
-        <div id="tab-manage" class="admin-tab-content animate-in">
-          <div id="no-active-session-msg" class="no-session-placeholder">
-            <div class="no-session-icon">📋</div>
-            <div class="no-session-title">Chưa có phiên hoạt động</div>
-            <div class="no-session-sub">Tạo phiên ở tab "Tạo phiên" để bắt đầu.</div>
+            <!-- View Admin (Chia nhóm) -->
+            <div id="view-admin" class="view hidden" style="padding:0; min-height:auto;">
+              <div class="main-content" style="padding:0;">
+                <div class="admin-header" style="margin-bottom:20px;">
+                  <h1 class="page-title">🛠️ BẢNG QUẢN TRỊ</h1>
+                  <p class="page-sub">Quản lý phiên chia nhóm lớp học</p>
+                </div>
+                <div class="stats-grid">
+                  <div class="card stat-card"><div class="stat-icon">👥</div><div class="stat-value" style="color:var(--purple)">25</div><div class="stat-label">Thành viên</div></div>
+                  <div class="card stat-card"><div class="stat-icon">📊</div><div class="stat-value" id="stat-groups" style="color:var(--cyan)">0</div><div class="stat-label">Số nhóm</div></div>
+                  <div class="card stat-card"><div class="stat-icon">✅</div><div class="stat-value" id="stat-assigned" style="color:var(--green)">0</div><div class="stat-label">Có nhóm</div></div>
+                  <div class="card stat-card"><div class="stat-icon">⏳</div><div class="stat-value" id="stat-unassigned" style="color:var(--amber)">25</div><div class="stat-label">Chưa có</div></div>
+                </div>
+                <div class="admin-tabs">
+                  <button class="admin-tab active" data-tab="tab-session" onclick="switchTab('tab-session', this)">🎯 Tạo phiên</button>
+                  <button class="admin-tab" data-tab="tab-manage" onclick="switchTab('tab-manage', this)">📋 Quản lý</button>
+                  <button class="admin-tab" data-tab="tab-history" onclick="switchTab('tab-history', this)">📜 Lịch sử</button>
+                </div>
+                <div id="tab-session" class="admin-tab-content active animate-in">
+                  <div id="active-session-alert" class="hidden active-alert">
+                    <div><span class="alert-label">⚠️ Đang có phiên:</span><span id="active-session-name"></span></div>
+                    <button class="btn btn-rose btn-sm" onclick="stopSession()">⏹ Kết thúc</button>
+                  </div>
+                  <div id="session-creator-box" class="session-creator">
+                    <div class="card creator-card">
+                      <div class="creator-section-title">📝 Thông tin phiên</div>
+                      <div style="display:flex;flex-direction:column;gap:14px;">
+                        <div class="input-group">
+                          <label class="input-label">Tên môn học</label>
+                          <input id="f-subject" class="input" type="text" placeholder="VD: Kỹ thuật lập trình" />
+                        </div>
+                        <div class="input-group">
+                          <label class="input-label">Phương thức</label>
+                          <div class="radio-group">
+                            <label class="radio-option"><input type="radio" name="f-mode" value="manual" checked /><div><div class="radio-label">🖱️ Tự chọn nhóm</div><div class="radio-sub">Học viên tự bấm vào nhóm muốn tham gia</div></div></label>
+                            <label class="radio-option"><input type="radio" name="f-mode" value="random" /><div><div class="radio-label">🎰 Bốc thăm ngẫu nhiên</div><div class="radio-sub">Học viên bốc thăm để vào nhóm ngẫu nhiên</div></div></label>
+                          </div>
+                        </div>
+                        <div class="input-group">
+                          <label class="input-label">Số lượng nhóm</label>
+                          <input id="f-group-count" class="input" type="number" min="1" max="25" placeholder="VD: 3" oninput="updateGroupHint()" />
+                          <div id="group-capacity-hint" style="color:var(--text-2);font-size:12px;margin-top:2px;"></div>
+                        </div>
+                        <button id="btn-create-session" class="btn btn-primary" onclick="createSession()">🚀 Tạo phiên chia nhóm</button>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                <div id="tab-manage" class="admin-tab-content animate-in">
+                  <div id="no-active-session-msg" class="no-session-placeholder">
+                    <div class="no-session-icon">📋</div><div class="no-session-title">Chưa có phiên hoạt động</div><div class="no-session-sub">Tạo phiên ở tab "Tạo phiên" để bắt đầu.</div>
+                  </div>
+                  <div id="manage-content" class="hidden">
+                    <div class="section-header" style="flex-wrap:wrap;gap:8px;">
+                      <div class="section-title" id="manage-session-title">—</div>
+                      <div class="manage-actions">
+                        <button class="btn btn-secondary btn-sm" onclick="autoAssignRemaining()">🎲 Chia ngẫu nhiên còn lại</button>
+                        <button class="btn btn-ghost btn-sm" onclick="resetSession()">🔄 Reset</button>
+                        <button class="btn btn-rose btn-sm" onclick="stopSession()">⏹ Kết thúc</button>
+                      </div>
+                    </div>
+                    <div id="admin-groups-grid" class="admin-groups-grid"></div>
+                    <div style="margin-top:20px;">
+                      <div class="section-header"><div class="section-title">⏳ Chưa có nhóm (<span id="unassigned-count">0</span>)</div></div>
+                      <div id="unassigned-list" class="unassigned-list"></div>
+                    </div>
+                    <div style="margin-top:20px; border-top: 1px solid var(--border); padding-top: 20px;">
+                      <div class="section-header"><div class="section-title">🔒 Xếp cố định</div></div>
+                      <p style="color:var(--text-2);font-size:13px;margin-bottom:16px;">Học viên bị xếp cố định sẽ không thể tự chọn hoặc đổi nhóm.</p>
+                      <div id="fixed-assign-list" class="assign-list" style="max-height:600px;"></div>
+                    </div>
+                  </div>
+                </div>
+                <div id="tab-history" class="admin-tab-content animate-in">
+                  <div class="section-header" style="margin-bottom:16px;">
+                    <div class="section-title">📜 Lịch sử các phiên</div>
+                    <button class="btn btn-secondary btn-sm" onclick="loadHistory()">🔄 Làm mới</button>
+                  </div>
+                  <div id="history-list"></div>
+                </div>
+              </div>
+            </div>
           </div>
-          <div id="manage-content" class="hidden">
-            <div class="section-header" style="flex-wrap:wrap;gap:8px;">
-              <div class="section-title" id="manage-session-title">—</div>
-              <div class="manage-actions">
-                <button class="btn btn-secondary btn-sm" onclick="autoAssignRemaining()">🎲 Chia ngẫu nhiên còn
-                  lại</button>
-                <button class="btn btn-ghost btn-sm" onclick="resetSession()">🔄 Reset</button>
-                <button class="btn btn-rose btn-sm" onclick="stopSession()">⏹ Kết thúc</button>
-              </div>
-            </div>
-            <div id="admin-groups-grid" class="admin-groups-grid"></div>
-            <!-- Unassigned -->
-            <div style="margin-top:20px;">
-              <div class="section-header">
-                <div class="section-title">⏳ Chưa có nhóm (<span id="unassigned-count">0</span>)</div>
-              </div>
-              <div id="unassigned-list" class="unassigned-list"></div>
-            </div>
-            <!-- Fixed Assignments -->
-            <div style="margin-top:20px; border-top: 1px solid var(--border); padding-top: 20px;">
-              <div class="section-header">
-                <div class="section-title">🔒 Xếp cố định</div>
-              </div>
-              <p style="color:var(--text-2);font-size:13px;margin-bottom:16px;">Học viên bị xếp cố định sẽ không thể tự
-                chọn hoặc đổi nhóm.</p>
-              <div id="fixed-assign-list" class="assign-list" style="max-height:600px;"></div>
-            </div>
-          </div>
-        </div>
 
-        <!-- Tab: Lịch sử -->
-        <div id="tab-history" class="admin-tab-content animate-in">
-          <div class="section-header" style="margin-bottom:16px;">
-            <div class="section-title">📜 Lịch sử các phiên</div>
-            <button class="btn btn-secondary btn-sm" onclick="loadHistory()">🔄 Làm mới</button>
+          <!-- ========================================== -->
+          <!-- TAB: DANH SÁCH LỖI -->
+          <!-- ========================================== -->
+          <div id="tab-danh-sach-loi" class="app-tab-content hidden animate-in">
+            <div class="section-header">
+              <div class="section-title">📋 Quản lý Lỗi Vi Phạm</div>
+            </div>
+            
+            <!-- ADMIN ADD VIOLATION BOX -->
+            <div id="violation-admin-box" class="card creator-card hidden" style="margin-bottom:24px;">
+              <div class="creator-section-title" style="margin-bottom: 15px;">🛑 Ghi lỗi học viên</div>
+              <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
+                <div class="input-group" style="flex:2;min-width:200px;">
+                  <label class="input-label">Học viên</label>
+                  <select id="v-user" class="input" style="padding: 10px;"></select>
+                </div>
+                <div class="input-group" style="flex:2;min-width:200px;">
+                  <label class="input-label">Loại lỗi</label>
+                  <select id="v-type" class="input" style="padding: 10px;">
+                    <option value="Ngủ trong giờ">Ngủ trong giờ</option>
+                    <option value="Mất trật tự">Mất trật tự</option>
+                    <option value="Sử dụng điện thoại">Sử dụng điện thoại</option>
+                    <option value="Nội vụ">Nội vụ</option>
+                    <option value="Xếp hàng">Xếp hàng</option>
+                    <option value="Khác">Khác</option>
+                  </select>
+                </div>
+                <div class="input-group" style="flex:1;min-width:100px;">
+                  <label class="input-label">Điểm trừ</label>
+                  <input id="v-points" class="input" type="number" min="0" value="5" />
+                </div>
+                <button class="btn btn-rose" onclick="addViolation()" style="padding: 10px 20px; height: 42px;">Ghi lỗi</button>
+              </div>
+            </div>
+            
+            <div class="card" style="padding:0; overflow: hidden;">
+              <div style="overflow-x:auto;">
+                <table class="data-table">
+                  <thead>
+                    <tr>
+                      <th>Thời gian</th>
+                      <th>Học viên</th>
+                      <th>Loại lỗi</th>
+                      <th>Điểm phạt</th>
+                      <th>Người ghi</th>
+                    </tr>
+                  </thead>
+                  <tbody id="violation-list">
+                     <tr><td colspan="5" style="text-align:center;color:var(--text-3);padding:20px;">Đang tải dữ liệu...</td></tr>
+                  </tbody>
+                </table>
+              </div>
+            </div>
           </div>
-          <div id="history-list"></div>
-        </div>
 
-      </div>
-    </div>
+          <!-- ========================================== -->
+          <!-- TAB: CÀI ĐẶT -->
+          <!-- ========================================== -->
+          <div id="tab-cai-dat" class="app-tab-content hidden animate-in">
+            <div class="section-header">
+              <div class="section-title">⚙️ Cài đặt tài khoản</div>
+            </div>
+            <div style="display:flex; gap: 24px; flex-wrap: wrap;">
+              <!-- Avatar Settings -->
+              <div class="card" style="flex:1; min-width:300px;">
+                <div class="creator-section-title" style="margin-bottom:16px;">Chọn Avatar</div>
+                <div class="avatar-grid" id="avatar-grid"></div>
+                <div style="margin-top:16px;display:flex;align-items:center;gap:10px;">
+                  <label class="btn btn-secondary btn-sm" for="avatar-file-input" style="cursor:pointer;">📤 Tải ảnh lên</label>
+                  <input id="avatar-file-input" type="file" accept="image/*" style="display:none;" onchange="handleAvatarFile(event)" />
+                  <span style="font-size:12px;color:var(--text-3);">Tối đa 2MB</span>
+                </div>
+              </div>
+              
+              <!-- Password Settings -->
+              <div class="card" style="flex:1; min-width:300px;">
+                <div class="creator-section-title" style="margin-bottom:16px;">Đổi mật khẩu</div>
+                <div style="display:flex;flex-direction:column;gap:14px;">
+                  <div class="input-group">
+                    <label class="input-label">Mật khẩu cũ</label>
+                    <input id="old-password" class="input" type="password" placeholder="Nhập mật khẩu cũ..." oninput="checkSettingsChanges()" />
+                  </div>
+                  <div class="input-group">
+                    <label class="input-label">Mật khẩu mới</label>
+                    <input id="new-password" class="input" type="password" placeholder="Nhập mật khẩu mới..." oninput="checkSettingsChanges()" />
+                  </div>
+                  <div class="input-group">
+                    <label class="input-label">Xác nhận mật khẩu mới</label>
+                    <input id="confirm-password" class="input" type="password" placeholder="Nhập lại mật khẩu mới..." oninput="checkSettingsChanges()" />
+                  </div>
+                </div>
+                <div style="margin-top:20px;">
+                  <button id="btn-save-settings" class="btn btn-primary w-full" onclick="saveSettings()" disabled>💾 Lưu thay đổi</button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+        </div> <!-- End content-scroll -->
+      </div> <!-- End main-wrapper -->
+    </div> <!-- End app-layout -->
 
     <!-- ════════════════════════════════════════════════════════════
-       RANDOM SLIDER OVERLAY
-  ═══════════════════════════════════════════════════════════════ -->
+       MODALS & OVERLAYS
+    ═══════════════════════════════════════════════════════════════ -->
+    
+    <!-- RANDOM SLIDER OVERLAY -->
     <div id="slider-overlay" class="hidden">
       <div class="slider-modal animate-in">
         <div class="slider-modal-header">
           <div class="slider-modal-title">🎰 Bốc thăm ngẫu nhiên</div>
           <div class="slider-modal-sub" id="slider-sub-text">Nhấn nút để hệ thống chọn nhóm cho bạn!</div>
         </div>
-
-        <!-- Slot machine display -->
         <div class="slot-machine">
           <div class="slot-arrow-left">◀</div>
           <div class="slot-window">
@@ -282,30 +353,22 @@
           </div>
           <div class="slot-arrow-right">▶</div>
         </div>
-
-        <!-- Result -->
         <div id="slider-result" class="slider-result hidden">
           <div class="slider-result-label">🎉 Chúc mừng! Bạn vào</div>
           <div id="slider-result-name" class="slider-result-name">—</div>
         </div>
-
         <div class="slider-modal-actions">
-          <button id="slider-spin-btn" class="btn btn-primary btn-lg slider-spin-btn" onclick="spinSlider()">🎰 Bốc
-            thăm!</button>
+          <button id="slider-spin-btn" class="btn btn-primary btn-lg slider-spin-btn" onclick="spinSlider()">🎰 Bốc thăm!</button>
           <button class="btn btn-ghost" onclick="closeSlider()">Đóng</button>
         </div>
       </div>
     </div>
 
-    <!-- ════════════════════════════════════════════════════════════
-       PROFILE MODAL
-  ═══════════════════════════════════════════════════════════════ -->
+    <!-- PROFILE MODAL (Only shows info & Logout now) -->
     <div id="profile-modal" class="hidden">
       <div class="card modal-card animate-in">
         <button class="modal-close" onclick="closeProfileModal()">✕</button>
         <div class="modal-title">👤 Thông tin cá nhân</div>
-
-        <!-- User info display -->
         <div class="profile-info-box">
           <div id="profile-big-avatar" class="profile-big-avatar">👤</div>
           <div>
@@ -314,54 +377,12 @@
             <div id="profile-hometown" class="profile-meta"></div>
           </div>
         </div>
-
-        <!-- Avatar selection -->
-        <div style="margin-bottom:20px;">
-          <div class="creator-section-title" style="margin-bottom:10px;">Chọn Avatar</div>
-          <div class="avatar-grid" id="avatar-grid"></div>
-          <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
-            <label class="btn btn-secondary btn-sm" for="avatar-file-input" style="cursor:pointer;">📤 Tải ảnh
-              lên</label>
-            <input id="avatar-file-input" type="file" accept="image/*" style="display:none;"
-              onchange="handleAvatarFile(event)" />
-            <span style="font-size:11px;color:var(--text-3);">Tối đa 2MB</span>
-          </div>
-        </div>
-
-        <div class="divider"></div>
-
-        <!-- Change password only -->
-        <div style="margin-bottom:20px;">
-          <div class="creator-section-title" style="margin-bottom:10px;">Đổi mật khẩu</div>
-          <div style="display:flex;flex-direction:column;gap:10px;">
-            <div class="input-group">
-              <label class="input-label">Mật khẩu cũ</label>
-              <input id="old-password" class="input" type="password" placeholder="Nhập mật khẩu cũ..."
-                oninput="checkProfileChanges()" />
-            </div>
-            <div class="input-group">
-              <label class="input-label">Mật khẩu mới</label>
-              <input id="new-password" class="input" type="password" placeholder="Nhập mật khẩu mới..."
-                oninput="checkProfileChanges()" />
-            </div>
-            <div class="input-group">
-              <label class="input-label">Xác nhận mật khẩu mới</label>
-              <input id="confirm-password" class="input" type="password" placeholder="Nhập lại mật khẩu mới..."
-                oninput="checkProfileChanges()" />
-            </div>
-          </div>
-        </div>
-
-        <div style="display:flex; gap:10px; margin-top:20px;">
-          <button class="btn btn-ghost w-full" onclick="closeProfileModal()">Hủy</button>
-          <button id="btn-save-profile" class="btn btn-primary w-full" onclick="saveProfile()" disabled>💾 Lưu thay
-            đổi</button>
-        </div>
+        <div class="divider" style="margin:20px 0;"></div>
+        <button class="btn btn-rose w-full" onclick="logout()">Đăng xuất</button>
       </div>
     </div>
 
   </div>
   <script src="/js/app.js"></script>
 </body>
-
 </html>

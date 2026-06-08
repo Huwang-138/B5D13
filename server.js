@@ -17,11 +17,11 @@ const io = new Server(server, {
 
 // Tự động copy hình nền từ thư mục Downloads của người dùng
 const downloadPath = 'C:\\Users\\MY PC\\Downloads\\575123615_122198137130055590_5274563177042386692_n.jpg';
-const destPath = path.join(__dirname, 'public', 'bg.jpg');
+const destPath = path.join(__dirname, 'public', 'background.jpg');
 if (fs.existsSync(downloadPath)) {
   try {
     fs.copyFileSync(downloadPath, destPath);
-    console.log('✅ Background image copied to public/bg.jpg');
+    console.log('✅ Background image copied to public/background.jpg');
   } catch (err) {
     console.error('❌ Failed to copy background image:', err.message);
   }
@@ -30,7 +30,7 @@ if (fs.existsSync(downloadPath)) {
 }
 
 const PORT = process.env.PORT || 3000;
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/quanly_lop';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://huwang1308:O75Pt08SbjdRVfOD@cluster0.3v1tne8.mongodb.net/quanly_lop?appName=Cluster0';
 const JWT_SECRET = process.env.JWT_SECRET || 'qlnhom_super_secret_2025_!@#';
 const JWT_EXPIRES = '30d'; // Token kéo dài 30 ngày
 
@@ -75,6 +75,22 @@ const sessionSchema = new mongoose.Schema({
 
 const User = mongoose.model('User', userSchema);
 const Session = mongoose.model('Session', sessionSchema);
+
+const violationSchema = new mongoose.Schema({
+  user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
+  type: { type: String, required: true },
+  points: { type: Number, default: 0 },
+  recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
+}, { timestamps: true });
+
+const notificationSchema = new mongoose.Schema({
+  message: { type: String, required: true },
+  type: { type: String, default: 'info' }, // info, warning, success
+  targetUser: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, // null = for all
+}, { timestamps: true });
+
+const Violation = mongoose.model('Violation', violationSchema);
+const Notification = mongoose.model('Notification', notificationSchema);
 
 // ─── Seed Data ────────────────────────────────────────────────────
 const STUDENTS = [
@@ -216,6 +232,78 @@ app.get('/api/class/members', authMiddleware, async (req, res) => {
   try {
     const users = await User.find({}, 'stt fullName username dob gender hometown phone role avatar').sort('stt').lean();
     res.json(users);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ─── Violations Routes ────────────────────────────────────────────
+app.get('/api/violations', authMiddleware, async (req, res) => {
+  try {
+    const violations = await Violation.find({})
+      .populate('user', 'fullName stt username')
+      .populate('recordedBy', 'fullName')
+      .sort('-createdAt')
+      .lean();
+    res.json(violations);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/violations', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const { userId, type, points } = req.body;
+    if (!userId || !type) return res.status(400).json({ error: 'Thiếu thông tin lỗi' });
+    
+    const violation = await Violation.create({
+      user: userId,
+      type,
+      points: Number(points) || 0,
+      recordedBy: req.user._id
+    });
+    const populated = await violation.populate('user', 'fullName stt username');
+    
+    // Create notification
+    const notif = await Notification.create({
+      message: `Bạn vừa bị ghi lỗi: ${type} (-${points} điểm)`,
+      type: 'warning',
+      targetUser: userId
+    });
+    io.emit('newNotification', notif); // broadcast to all, client will filter by targetUser if needed
+
+    res.json(populated);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ─── Notifications Routes ─────────────────────────────────────────
+app.get('/api/notifications', authMiddleware, async (req, res) => {
+  try {
+    // Get global notifications and user-specific notifications
+    const notifs = await Notification.find({
+      $or: [{ targetUser: null }, { targetUser: req.user._id }]
+    }).sort('-createdAt').limit(50).lean();
+
+    // Generate dynamic birthday notifications
+    const today = new Date();
+    const users = await User.find({}, 'fullName dob').lean();
+    const birthdayNotifs = [];
+    users.forEach(u => {
+      if (!u.dob) return;
+      const [d, m, y] = u.dob.split('/');
+      if (d && m) {
+        const bday = new Date(today.getFullYear(), parseInt(m) - 1, parseInt(d));
+        const diffTime = bday - today;
+        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        if (diffDays >= 0 && diffDays <= 7) {
+          birthdayNotifs.push({
+            _id: 'bday-' + u._id,
+            message: diffDays === 0 ? `🎉 Hôm nay là sinh nhật của ${u.fullName}! Chúc mừng sinh nhật!` : `🎂 Còn ${diffDays} ngày nữa là sinh nhật của ${u.fullName}`,
+            type: 'success',
+            createdAt: new Date(),
+            targetUser: null
+          });
+        }
+      }
+    });
+
+    res.json([...birthdayNotifs, ...notifs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -419,6 +507,14 @@ app.post('/api/session/join', authMiddleware, async (req, res) => {
     await session.save();
     const populated = await session.populate('groups.members groups.fixedMembers', 'fullName username avatar stt');
     await broadcastSessionUpdate();
+    
+    // Tạo notification
+    const notif = await Notification.create({
+      message: `${req.user.fullName} vừa vào ${targetGroup.name} môn ${session.subject}.`,
+      type: 'info'
+    });
+    io.emit('newNotification', notif);
+
     const myId = uid.toString();
     let myGroup = null, isFixed = false;
     for (const g of populated.groups) {
@@ -473,6 +569,14 @@ app.post('/api/session/spin', authMiddleware, async (req, res) => {
     chosen.members.push(uid);
     await session.save();
     await broadcastSessionUpdate();
+
+    // Tạo notification
+    const notif = await Notification.create({
+      message: `${req.user.fullName} vừa bốc thăm vào ${chosen.name} môn ${session.subject}.`,
+      type: 'info'
+    });
+    io.emit('newNotification', notif);
+
     res.json({ ok: true, groupId: chosen.groupId, groupName: chosen.name });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });

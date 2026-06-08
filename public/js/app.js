@@ -105,25 +105,30 @@ function showView(id) {
 }
 
 function showLoginView() {
-  document.getElementById('navbar').classList.add('hidden');
+  document.getElementById('app-layout').classList.add('hidden');
+  document.getElementById('app-layout').classList.remove('layout-container');
   showView('view-login');
 }
 
 function showUserView() {
-  document.getElementById('navbar').classList.remove('hidden');
+  document.getElementById('app-layout').classList.remove('hidden');
+  document.getElementById('app-layout').classList.add('layout-container');
   updateNavbar();
   showView('view-user');
   loadClassMembersBackground();
   fetchSessionStatus();
+  fetchNotifications();
 }
 
 function showAdminView() {
-  document.getElementById('navbar').classList.remove('hidden');
+  document.getElementById('app-layout').classList.remove('hidden');
+  document.getElementById('app-layout').classList.add('layout-container');
   state.isAdminInUserMode = false;
   updateNavbar();
   showView('view-admin');
   loadClassMembersBackground(true);
   loadAdminSession();
+  fetchNotifications();
 }
 
 // ─── Navbar ───────────────────────────────────────────────────────────
@@ -792,7 +797,14 @@ function openProfileModal() {
   grid.innerHTML = AVATARS.map(a =>
     `<div class="avatar-option ${current === a ? 'selected' : ''}" onclick="selectAvatar('${a}', this)">${a}</div>`
   ).join('');
-  state.selectedAvatarEmoji = null;
+// ─── Profile Modal ──────────────────────────────────────────────────
+function openProfileModal() {
+  document.getElementById('profile-fullname').textContent = state.user.fullName;
+  document.getElementById('profile-dob').textContent = `🎂 ${state.user.dob || 'Chưa cập nhật'}`;
+  document.getElementById('profile-hometown').textContent = `📍 ${state.user.hometown || 'Chưa cập nhật'}`;
+  const bigAvatar = document.getElementById('profile-big-avatar');
+  setAvatarEl(bigAvatar, state.user.avatar, state.user.fullName);
+  bigAvatar.style.fontSize = '30px';
   document.getElementById('profile-modal').classList.remove('hidden');
 }
 
@@ -800,15 +812,28 @@ function closeProfileModal() {
   document.getElementById('profile-modal').classList.add('hidden');
 }
 
+// ─── Settings (Cài đặt Tab) ───────────────────────────────────────────
+function initSettingsTab() {
+  const grid = document.getElementById('avatar-grid');
+  if(grid && grid.children.length === 0) {
+    grid.innerHTML = '';
+    const emojis = ['👤', '👨', '👩', '🧑', '👦', '👧', '👨‍🎓', '👩‍🎓', '🕵️', '👮', '👽', '👻', '🤖', '👾', '🦊', '🐱'];
+    emojis.forEach(e => {
+      const el = document.createElement('div');
+      el.className = 'avatar-option';
+      if (state.user.avatar === e) el.classList.add('selected');
+      el.textContent = e;
+      el.onclick = () => selectAvatar(e, el);
+      grid.appendChild(el);
+    });
+  }
+}
+
 function selectAvatar(emoji, el) {
   document.querySelectorAll('.avatar-option').forEach(e => e.classList.remove('selected'));
   el.classList.add('selected');
   state.selectedAvatarEmoji = emoji;
-  const bigAvatar = document.getElementById('profile-big-avatar');
-  bigAvatar.textContent = emoji;
-  bigAvatar.style.background = 'none';
-  bigAvatar.style.fontSize = '26px';
-  checkProfileChanges();
+  checkSettingsChanges();
 }
 
 function handleAvatarFile(event) {
@@ -819,28 +844,28 @@ function handleAvatarFile(event) {
   reader.onload = e => {
     const b64 = e.target.result;
     state.selectedAvatarEmoji = b64;
-    const bigAvatar = document.getElementById('profile-big-avatar');
-    bigAvatar.innerHTML = `<img src="${b64}" alt="avatar" />`;
     document.querySelectorAll('.avatar-option').forEach(el => el.classList.remove('selected'));
-    checkProfileChanges();
+    checkSettingsChanges();
+    toast('Đã chọn ảnh. Bấm "Lưu thay đổi" để cập nhật.', 'info');
   };
   reader.readAsDataURL(file);
 }
 
-function checkProfileChanges() {
-  const oldP = document.getElementById('old-password').value;
-  const newP = document.getElementById('new-password').value;
-  const cfmP = document.getElementById('confirm-password').value;
+function checkSettingsChanges() {
+  const oldP = document.getElementById('old-password')?.value;
+  const newP = document.getElementById('new-password')?.value;
+  const cfmP = document.getElementById('confirm-password')?.value;
 
   const hasChanges = (oldP || newP || cfmP) || (state.selectedAvatarEmoji !== null);
-  document.getElementById('btn-save-profile').disabled = !hasChanges;
+  const btn = document.getElementById('btn-save-settings');
+  if(btn) btn.disabled = !hasChanges;
 }
 
-async function saveProfile() {
+async function saveSettings() {
   const oldPassword = document.getElementById('old-password').value;
   const newPassword = document.getElementById('new-password').value;
   const confirmPassword = document.getElementById('confirm-password').value;
-  const btn = document.getElementById('btn-save-profile');
+  const btn = document.getElementById('btn-save-settings');
 
   if (newPassword && newPassword !== confirmPassword) {
     toast('Mật khẩu xác nhận không khớp!', 'error'); return;
@@ -864,12 +889,177 @@ async function saveProfile() {
     localStorage.setItem('user', JSON.stringify(state.user));
     updateNavbar();
     toast('✅ Đã lưu thay đổi thành công!', 'success');
-    closeProfileModal();
+    document.getElementById('old-password').value = '';
+    document.getElementById('new-password').value = '';
+    document.getElementById('confirm-password').value = '';
+    state.selectedAvatarEmoji = null;
   } catch (err) {
     toast(err.message, 'error');
   } finally {
     btn.textContent = '💾 Lưu thay đổi';
-    checkProfileChanges();
+    checkSettingsChanges();
+  }
+}
+
+// ─── App Tabs Logic ───────────────────────────────────────────────────
+function switchAppTab(tabId, btn) {
+  // Update sidebar active state
+  document.querySelectorAll('.side-tab').forEach(b => b.classList.remove('active'));
+  if (btn) btn.classList.add('active');
+
+  // Show correct content
+  document.querySelectorAll('.app-tab-content').forEach(content => content.classList.remove('active'));
+  document.getElementById(tabId).classList.add('active');
+
+  // Update header title
+  const titleEl = document.getElementById('current-tab-title');
+  if (tabId === 'tab-chia-nhom') titleEl.textContent = 'Chia nhóm';
+  if (tabId === 'tab-danh-sach-loi') {
+    titleEl.textContent = 'Danh sách lỗi';
+    loadViolations();
+    if(state.user?.role === 'admin') {
+      document.getElementById('violation-admin-box').classList.remove('hidden');
+    }
+  }
+  if (tabId === 'tab-cai-dat') {
+    titleEl.textContent = 'Cài đặt';
+    initSettingsTab();
+  }
+}
+
+// ─── Notifications Logic ──────────────────────────────────────────────
+let unreadNotifs = 0;
+
+function toggleNotifDropdown(e) {
+  if (e) e.stopPropagation();
+  const drop = document.getElementById('notif-dropdown');
+  drop.classList.toggle('hidden');
+  if (!drop.classList.contains('hidden')) {
+    unreadNotifs = 0;
+    updateNotifBadge();
+  }
+}
+
+function updateNotifBadge() {
+  const badge = document.getElementById('notif-count');
+  if (unreadNotifs > 0) {
+    badge.textContent = unreadNotifs;
+    badge.classList.remove('hidden');
+  } else {
+    badge.classList.add('hidden');
+  }
+}
+
+async function fetchNotifications() {
+  try {
+    const list = await API.get('/api/notifications');
+    const container = document.getElementById('notif-list');
+    container.innerHTML = '';
+    if (list.length === 0) {
+      container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:13px;">Không có thông báo nào</div>';
+      return;
+    }
+    list.forEach(n => appendNotificationHTML(n, false));
+  } catch(err) {
+    console.error('Failed to load notifications', err);
+  }
+}
+
+function appendNotificationHTML(n, highlight = false) {
+  const container = document.getElementById('notif-list');
+  const el = document.createElement('div');
+  el.className = 'notif-item';
+  if(highlight) el.style.background = 'rgba(139,92,246,0.1)';
+  
+  let icon = '💬';
+  if (n.type === 'warning') icon = '⚠️';
+  if (n.type === 'success') icon = '🎉';
+  if (n.message.includes('sinh nhật')) icon = '🎂';
+
+  const dateStr = new Date(n.createdAt).toLocaleString('vi-VN');
+  
+  el.innerHTML = `
+    <div style="display:flex; gap:12px;">
+      <div class="notif-icon">${icon}</div>
+      <div class="notif-content">
+        <div class="notif-msg">${n.message}</div>
+        <div class="notif-time">${dateStr}</div>
+      </div>
+    </div>
+  `;
+  container.prepend(el);
+}
+
+socket.on('newNotification', (notif) => {
+  if (notif.targetUser && state.user && state.user.id !== notif.targetUser) return;
+  appendNotificationHTML(notif, true);
+  if (document.getElementById('notif-dropdown').classList.contains('hidden')) {
+    unreadNotifs++;
+    updateNotifBadge();
+    
+    // Auto show a transient toast
+    const shortMsg = notif.message.length > 50 ? notif.message.substring(0, 50) + '...' : notif.message;
+    toast('🔔 ' + shortMsg, notif.type || 'info');
+  }
+});
+
+// ─── Violations Logic ─────────────────────────────────────────────────
+async function loadViolations() {
+  try {
+    const tbody = document.getElementById('violation-list');
+    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Đang tải...</td></tr>';
+    const list = await API.get('/api/violations');
+    tbody.innerHTML = '';
+    if (list.length === 0) {
+      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-3);padding:20px;">Chưa có dữ liệu vi phạm.</td></tr>';
+      return;
+    }
+    list.forEach(v => {
+      const tr = document.createElement('tr');
+      const dateStr = new Date(v.createdAt).toLocaleString('vi-VN');
+      const uname = v.user?.fullName || '?';
+      const rname = v.recordedBy?.fullName || 'Admin';
+      tr.innerHTML = `
+        <td style="color:var(--text-3); font-size:12px;">${dateStr}</td>
+        <td style="font-weight:600;">${uname}</td>
+        <td style="color:var(--amber);">${v.type}</td>
+        <td style="color:var(--rose); font-weight:bold;">-${v.points}</td>
+        <td style="font-size:12px;">${rname}</td>
+      `;
+      tbody.appendChild(tr);
+    });
+  } catch(err) {
+    toast('Lỗi khi tải danh sách vi phạm', 'error');
+  }
+}
+
+async function addViolation() {
+  const userId = document.getElementById('v-user').value;
+  const type = document.getElementById('v-type').value;
+  const points = document.getElementById('v-points').value;
+  
+  if (!userId) { toast('Chưa chọn học viên', 'error'); return; }
+  
+  try {
+    await API.post('/api/violations', { userId, type, points });
+    toast('Đã ghi lỗi thành công!', 'success');
+    loadViolations();
+  } catch(err) {
+    toast(err.message, 'error');
+  }
+}
+
+// Populate violation user dropdown when members are loaded
+const originalLoadMembers = loadClassMembersBackground;
+loadClassMembersBackground = async function(isAdmin) {
+  await originalLoadMembers(isAdmin);
+  // populate #v-user select
+  const sel = document.getElementById('v-user');
+  if(sel && state.members) {
+    sel.innerHTML = '<option value="">-- Chọn học viên --</option>';
+    state.members.forEach(m => {
+      sel.innerHTML += \`<option value="\${m._id}">\${m.stt}. \${m.fullName}</option>\`;
+    });
   }
 }
 
