@@ -218,7 +218,7 @@ select.input option { background: var(--bg-2); }
   flex-shrink: 0;
 }
 .nav-avatar img { width: 100%; height: 100%; object-fit: cover; }
-.nav-username { font-size: 12px; font-weight: 600; max-width: 100px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.nav-username { font-size: 12px; font-weight: 600; max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .nav-role-badge { font-size: 10px; }
 
 /* ─── Views ──────────────────────────────────────────────────── */
@@ -384,10 +384,10 @@ select.input option { background: var(--bg-2); }
   position: absolute;
   top: 0; bottom: 0; left: 50%;
   width: 4px;
-  background: linear-gradient(180deg, transparent, var(--amber), transparent);
+  background: linear-gradient(180deg, transparent, #ffffff, transparent);
   transform: translateX(-50%);
   z-index: 4;
-  box-shadow: 0 0 10px var(--amber);
+  box-shadow: 0 0 12px rgba(255,255,255,0.8);
   border-radius: 2px;
 }
 

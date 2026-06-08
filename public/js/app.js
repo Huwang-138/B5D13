@@ -270,8 +270,6 @@ function renderUserSession(data) {
     document.getElementById('my-group-name').textContent = grp ? grp.name : `Nhóm ${data.myGroup}`;
     const fixedMsg = document.getElementById('my-group-fixed-msg');
     if (data.isFixed) fixedMsg.classList.remove('hidden'); else fixedMsg.classList.add('hidden');
-    const leaveBtn = document.getElementById('btn-leave-group');
-    leaveBtn.style.display = data.isFixed ? 'none' : '';
     sliderTrigger.classList.add('hidden');
     groupsSection.classList.remove('hidden');
   } else {
@@ -337,14 +335,6 @@ async function joinGroup(groupId) {
     state.myGroup = data.myGroup;
     toast(`Đã tham gia Nhóm ${groupId}! 🎉`, 'success');
     // Socket.io sẽ tự cập nhật giao diện qua sự kiện 'sessionUpdated'
-  } catch (err) { toast(err.message, 'error'); }
-}
-
-async function leaveGroup() {
-  try {
-    await API.post('/api/session/leave');
-    state.myGroup = null;
-    toast('Đã rời nhóm', 'info');
   } catch (err) { toast(err.message, 'error'); }
 }
 
@@ -649,7 +639,7 @@ function closeSlider() {
 function buildSlotTrack(groups, winnerGroupId) {
   const track = document.getElementById('slot-track');
   const colors = SLOT_COLORS;
-  const REPEATS = 8;
+  const REPEATS = 25;
   const items = [];
   for (let r = 0; r < REPEATS; r++) {
     groups.forEach((g, i) => {
@@ -690,7 +680,7 @@ async function spinSlider() {
     const track = document.getElementById('slot-track');
     const itemWidth = 110;
     const totalGroups = groups.length;
-    const REPEATS = 8;
+    const REPEATS = 25;
 
     const lastRepeatStart = (REPEATS - 1) * totalGroups;
     let winnerIdxInLastRepeat = 0;
@@ -707,10 +697,10 @@ async function spinSlider() {
 
     await new Promise(r => setTimeout(r, 50));
 
-    track.style.transition = 'transform 3.5s cubic-bezier(0.12, 0.8, 0.3, 1)';
+    track.style.transition = 'transform 8s cubic-bezier(0.05, 0.9, 0.1, 1)';
     track.style.transform = `translateX(${finalTranslate}px)`;
 
-    await new Promise(r => setTimeout(r, 3700));
+    await new Promise(r => setTimeout(r, 8200));
 
     const allItems = track.querySelectorAll('.slot-item');
     allItems.forEach(el => el.classList.remove('winner'));
