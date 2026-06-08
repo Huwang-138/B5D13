@@ -778,27 +778,7 @@ function launchConfetti() {
   }
 }
 
-// ─── Profile Modal ────────────────────────────────────────────────────
-const AVATARS = ['😀', '😎', '🤩', '🦸', '🧑‍💻', '👨‍🎓', '👩‍🎓', '🦊', '🐱', '🐶', '🐸', '🐼', '🦁', '🐯', '🐻', '🦋', '🌈', '⭐', '🔥', '💎', '🚀', '🎮', '🏆', '🎯', '🎨', '🎸', '⚽', '🏀'];
 
-function openProfileModal() {
-  if (!state.user) return;
-  document.getElementById('profile-fullname').textContent = state.user.fullName;
-  document.getElementById('btn-save-profile').disabled = true;
-  API.get('/api/user/me').then(user => {
-    document.getElementById('profile-dob').textContent = `📅 ${user.dob}`;
-    document.getElementById('profile-hometown').textContent = `📍 ${user.hometown}`;
-    const bigAvatar = document.getElementById('profile-big-avatar');
-    setAvatarEl(bigAvatar, user.avatar, user.fullName);
-    document.getElementById('old-password').value = '';
-    document.getElementById('new-password').value = '';
-    document.getElementById('confirm-password').value = '';
-  }).catch(() => { });
-  const grid = document.getElementById('avatar-grid');
-  const current = state.user.avatar;
-  grid.innerHTML = AVATARS.map(a =>
-    `<div class="avatar-option ${current === a ? 'selected' : ''}" onclick="selectAvatar('${a}', this)">${a}</div>`
-  ).join('');
 // ─── Profile Modal ──────────────────────────────────────────────────
 function openProfileModal() {
   document.getElementById('profile-fullname').textContent = state.user.fullName;
