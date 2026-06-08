@@ -82,6 +82,7 @@ const API = {
   get: (path) => API.req('GET', path),
   post: (path, body) => API.req('POST', path, body),
   patch: (path, body) => API.req('PATCH', path, body),
+  delete: (path) => API.req('DELETE', path),
 };
 
 // ─── Toast ────────────────────────────────────────────────────────────
@@ -117,7 +118,7 @@ async function loadFullProfile() {
     state.user = { ...state.user, ...data };
     localStorage.setItem('user', JSON.stringify(state.user));
     updateNavbar();
-  } catch (err) {}
+  } catch (err) { }
 }
 
 function showUserView() {
@@ -162,24 +163,18 @@ function updateNavbar() {
   if (!state.user) return;
   const avatarEl = document.getElementById('sidebar-avatar');
   if (avatarEl) setAvatarEl(avatarEl, state.user.avatar, state.user.fullName);
-  
+
   const nameEl = document.getElementById('sidebar-username');
   if (nameEl) nameEl.textContent = state.user.fullName;
-  
+
   const roleEl = document.getElementById('sidebar-role');
   if (roleEl) roleEl.textContent = state.user.role === 'admin' ? 'Quản trị viên' : 'Học viên';
 
   const dobEl = document.getElementById('sidebar-dob');
-  if (dobEl) dobEl.textContent = `🎂 Sinh nhật: ${state.user.dob || 'Chưa cập nhật'}`;
-  
-  const genderEl = document.getElementById('sidebar-gender');
-  if (genderEl) genderEl.textContent = `⚧ Giới tính: ${state.user.gender || 'Chưa cập nhật'}`;
-  
+  if (dobEl) dobEl.textContent = state.user.dob || 'Chưa cập nhật';
+
   const hometownEl = document.getElementById('sidebar-hometown');
-  if (hometownEl) hometownEl.textContent = `📍 Quê quán: ${state.user.hometown || 'Chưa cập nhật'}`;
-  
-  const phoneEl = document.getElementById('sidebar-phone');
-  if (phoneEl) phoneEl.textContent = `📞 SĐT: ${state.user.phone || 'Chưa cập nhật'}`;
+  if (hometownEl) hometownEl.textContent = state.user.hometown || 'Chưa cập nhật';
 
   const toggleBtn = document.getElementById('btn-admin-toggle');
   if (state.user.role === 'admin') {
@@ -202,7 +197,7 @@ function setAvatarEl(el, avatar, fullName) {
   } else if (avatar) {
     el.textContent = avatar;
     el.style.background = 'none';
-    el.style.fontSize = '16px';
+    el.style.fontSize = ''; // Remove hardcoded 16px so CSS can control it
   } else {
     el.textContent = (fullName || '?').charAt(0).toUpperCase();
     el.style.background = '';
@@ -264,12 +259,12 @@ async function logout() {
   state.isAdminInUserMode = false;
   localStorage.removeItem('token');
   localStorage.removeItem('user');
-  
+
   document.getElementById('sidebar-username').textContent = '—';
   const avatarEl = document.getElementById('sidebar-avatar');
   avatarEl.innerHTML = '👤';
   avatarEl.style.background = '';
-  
+
   showLoginView();
   toast('Đã đăng xuất', 'info');
 }
@@ -355,12 +350,21 @@ function renderGroupsGrid(session, myGroupId, isFixed, mode) {
   if (!grid) return;
 
   const colors = ['var(--purple)', 'var(--cyan)', 'var(--rose)', 'var(--green)', 'var(--amber)', '#ec4899', '#f97316', '#84cc16'];
+  const cooldownEnd = parseInt(localStorage.getItem('groupJoinCooldown') || '0');
+  const now = Date.now();
+  const cdRemaining = Math.max(0, Math.ceil((cooldownEnd - now) / 1000));
+  const inCooldown = cdRemaining > 0;
+
+  if (inCooldown && typeof window.startCooldownTimer === 'function') {
+    window.startCooldownTimer();
+  }
 
   grid.innerHTML = session.groups.map((g, idx) => {
     const pct = g.capacity > 0 ? (g.members.length / g.capacity) * 100 : 0;
     const isFull = g.members.length >= g.capacity;
     const isMyGroup = myGroupId === g.groupId;
-    const canJoin = !isMyGroup && !isFull && !isFixed && mode === 'manual';
+    const isJoinableTarget = !isMyGroup && !isFull && !isFixed && mode === 'manual';
+    const canJoin = isJoinableTarget && !inCooldown;
     const color = colors[idx % colors.length];
     const emptySlots = g.capacity - g.members.length;
 
@@ -387,7 +391,8 @@ function renderGroupsGrid(session, myGroupId, isFixed, mode) {
       </div>
       <div class="group-members">${membersHtml}</div>
       ${emptySlots > 0 ? `<div class="group-empty-slots">+${emptySlots} chỗ trống</div>` : ''}
-      ${canJoin ? `<button class="btn btn-primary btn-sm group-join-btn" onclick="joinGroup(${g.groupId});event.stopPropagation()">Tham gia</button>` : ''}
+      ${isJoinableTarget && !inCooldown ? `<button class="btn btn-primary btn-sm group-join-btn" onclick="joinGroup(${g.groupId});event.stopPropagation()">Tham gia</button>` : ''}
+      ${isJoinableTarget && inCooldown ? `<button class="btn btn-secondary btn-sm group-join-btn" disabled onclick="event.stopPropagation()">⏳ Đợi ${cdRemaining}s</button>` : ''}
       ${isMyGroup ? `<div style="margin-top:8px;font-size:11px;color:var(--green);font-weight:700;">✓ Nhóm của bạn</div>` : ''}
     </div>`;
   }).join('');
@@ -395,14 +400,38 @@ function renderGroupsGrid(session, myGroupId, isFixed, mode) {
 
 // ─── Join / Leave Group ───────────────────────────────────────────────
 let isJoiningGroup = false;
+let cooldownInterval = null;
+window.startCooldownTimer = function () {
+  if (cooldownInterval) return;
+  cooldownInterval = setInterval(() => {
+    const end = parseInt(localStorage.getItem('groupJoinCooldown') || '0');
+    if (Date.now() >= end) {
+      clearInterval(cooldownInterval);
+      cooldownInterval = null;
+    }
+    if (state.session && state.session.active !== false && state.session.mode === 'manual') {
+      renderGroupsGrid(state.session, state.myGroup, state.isFixed, state.session.mode);
+    }
+  }, 1000);
+};
+
 async function joinGroup(groupId) {
   if (isJoiningGroup) return;
+  const cooldownEnd = parseInt(localStorage.getItem('groupJoinCooldown') || '0');
+  if (Date.now() < cooldownEnd) {
+    toast(`Vui lòng đợi ${Math.ceil((cooldownEnd - Date.now()) / 1000)}s để đổi nhóm`, 'warning');
+    return;
+  }
   isJoiningGroup = true;
   try {
     const data = await API.post('/api/session/join', { groupId });
     state.myGroup = data.myGroup;
+    localStorage.setItem('groupJoinCooldown', Date.now() + 15000);
+    window.startCooldownTimer();
+    if (state.session && state.session.active !== false && state.session.mode === 'manual') {
+      renderGroupsGrid(state.session, state.myGroup, state.isFixed, state.session.mode);
+    }
     toast(`Đã tham gia Nhóm ${groupId}! 🎉`, 'success');
-    // Socket.io sẽ tự cập nhật giao diện qua sự kiện 'sessionUpdated'
   } catch (err) {
     toast(err.message, 'error');
   } finally {
@@ -851,9 +880,9 @@ function toggleSettingsCard(bodyId, arrowId) {
 }
 function initSettingsTab() {
   const grid = document.getElementById('avatar-grid');
-  if(grid && grid.children.length === 0) {
+  if (grid && grid.children.length === 0) {
     grid.innerHTML = '';
-    const emojis = ['👤', '👨', '👩', '🧑', '👦', '👧', '👨‍🎓', '👩‍🎓', '🕵️', '👮', '👽', '👻', '🤖', '👾', '🦊', '🐱', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵'];
+    const emojis = ['👤', '👨', '👩', '👦', '👧', '👨‍🎓', '👩‍🎓', '🕵️', '👮', '👽', '👻', '🤖', '👾', '🦊', '🐱', '🐻', '🐼', '🐯', '🦁', '🐮', '🐸'];
     emojis.forEach(e => {
       const el = document.createElement('div');
       el.className = 'avatar-option';
@@ -894,7 +923,7 @@ function checkSettingsChanges() {
 
   const hasChanges = (oldP || newP || cfmP) || (state.selectedAvatarEmoji !== null);
   const btn = document.getElementById('btn-save-settings');
-  if(btn) btn.disabled = !hasChanges;
+  if (btn) btn.disabled = !hasChanges;
 }
 
 async function saveSettings() {
@@ -957,18 +986,18 @@ function switchAppTab(tabId, btn) {
 
   // Update header title
   const titleEl = document.getElementById('current-tab-title');
-  if (tabId === 'tab-chia-nhom') titleEl.textContent = 'Chia nhóm';
+  if (tabId === 'tab-chia-nhom') titleEl.textContent = 'PHÂN CHIA NHÓM';
   if (tabId === 'tab-danh-sach-loi') {
-    titleEl.textContent = 'Danh sách lỗi';
+    titleEl.textContent = 'DANH SÁCH VI PHẠM';
     loadViolations();
-    if(state.user?.role === 'admin') {
+    if (state.user?.role === 'admin') {
       document.getElementById('violation-admin-box').classList.remove('hidden');
     } else {
       document.getElementById('violation-admin-box').classList.add('hidden');
     }
   }
   if (tabId === 'tab-cai-dat') {
-    titleEl.textContent = 'Cài đặt';
+    titleEl.textContent = 'CÀI ĐẶT';
     initSettingsTab();
   }
 }
@@ -1015,8 +1044,8 @@ async function fetchNotifications() {
       container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:13px;">Không có thông báo nào</div>';
       return;
     }
-    list.forEach(n => appendNotificationHTML(n, false));
-  } catch(err) {
+    list.reverse().forEach(n => appendNotificationHTML(n, false));
+  } catch (err) {
     console.error('Failed to load notifications', err);
   }
 }
@@ -1025,15 +1054,17 @@ function appendNotificationHTML(n, highlight = false) {
   const container = document.getElementById('notif-list');
   const el = document.createElement('div');
   el.className = 'notif-item';
-  if(highlight) el.style.background = 'rgba(139,92,246,0.1)';
-  
+  if (highlight) el.style.background = 'rgba(139,92,246,0.1)';
+  el.style.cursor = 'pointer';
+  el.onclick = () => handleNotificationClick(n);
+
   let icon = '💬';
   if (n.type === 'warning') icon = '⚠️';
   if (n.type === 'success') icon = '🎉';
   if (n.message.includes('sinh nhật')) icon = '🎂';
 
   const dateStr = new Date(n.createdAt).toLocaleString('vi-VN');
-  
+
   el.innerHTML = `
     <div style="display:flex; gap:12px;">
       <div class="notif-icon">${icon}</div>
@@ -1046,6 +1077,55 @@ function appendNotificationHTML(n, highlight = false) {
   container.prepend(el);
 }
 
+function handleNotificationClick(n) {
+  const notifDropdown = document.getElementById('notif-dropdown');
+  if (notifDropdown) notifDropdown.classList.add('hidden');
+
+  if (n.type === 'warning' || n.message.includes('lỗi')) {
+    const tabBtn = document.querySelector('[data-tab="tab-danh-sach-loi"]');
+    if (tabBtn) switchAppTab('tab-danh-sach-loi', tabBtn);
+  } else if (n._id && String(n._id).startsWith('bday-')) {
+    const userId = String(n._id).replace('bday-', '');
+    showUserProfileModal(userId);
+  } else if ((n.type === 'success' && n.targetGroup) || n.message.includes('nhóm') || n.message.includes('bốc thăm')) {
+    const tabBtn = document.querySelector('[data-tab="tab-chia-nhom"]');
+    if (tabBtn) switchAppTab('tab-chia-nhom', tabBtn);
+  }
+}
+
+function showUserProfileModal(userId) {
+  let user = null;
+  // Fallback to state.user if viewing own profile
+  if (userId === state.user._id || userId === state.user.id) {
+    user = state.user;
+  } else if (state.members && state.members.length > 0) {
+    user = state.members.find(m => (m._id || m.id) === userId);
+  }
+
+  if (!user) {
+    toast('Không tìm thấy thông tin người dùng', 'warning');
+    return;
+  }
+
+  const overlay = document.getElementById('user-profile-overlay');
+  if (!overlay) return;
+
+  const avatarEl = document.getElementById('modal-user-avatar');
+  setAvatarEl(avatarEl, user.avatar, user.fullName);
+  if (!user.avatar || !user.avatar.startsWith('data:')) {
+    avatarEl.style.fontSize = '40px';
+  }
+
+  document.getElementById('modal-user-name').textContent = user.fullName;
+  document.getElementById('modal-user-role').textContent = user.role === 'admin' ? 'Quản trị viên' : 'Học viên';
+  document.getElementById('modal-user-dob').textContent = user.dob || '—';
+  document.getElementById('modal-user-gender').textContent = user.gender || '—';
+  document.getElementById('modal-user-hometown').textContent = user.hometown || '—';
+  document.getElementById('modal-user-phone').textContent = user.phone || '—';
+
+  overlay.classList.remove('hidden');
+}
+
 socket.on('newNotification', (notif) => {
   if (notif.targetUser && state.user && state.user.id !== notif.targetUser) return;
   if (notif.targetGroup && state.myGroup !== notif.targetGroup) return;
@@ -1054,7 +1134,7 @@ socket.on('newNotification', (notif) => {
   if (document.getElementById('notif-dropdown').classList.contains('hidden')) {
     unreadNotifs++;
     updateNotifBadge();
-    
+
     // Auto show a transient toast ONLY if the user is not the one who triggered it
     if (notif.triggeredBy && state.user && notif.triggeredBy === state.user.id) {
       // Do not show toast for self-triggered actions
@@ -1069,55 +1149,140 @@ socket.on('newNotification', (notif) => {
 async function loadViolations() {
   try {
     const tbody = document.getElementById('violation-list');
-    tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;">Đang tải...</td></tr>';
+    const isAdmin = state.user && state.user.role === 'admin';
+    const COLS = isAdmin ? 5 : 4;
+
+    // Show/hide role-specific UI
+    const userPointsBar = document.getElementById('user-points-bar');
+    if (userPointsBar) userPointsBar.style.display = isAdmin ? 'none' : 'flex';
+    const adminLbBar = document.getElementById('admin-leaderboard-bar');
+    if (adminLbBar) adminLbBar.style.display = isAdmin ? 'flex' : 'none';
+    const colStudent = document.getElementById('col-student-name');
+    if (colStudent) colStudent.style.display = isAdmin ? '' : 'none';
+
+    // Load user points
+    if (!isAdmin) {
+      try {
+        const pts = await API.get('/api/violations/my-points');
+        const el = document.getElementById('user-total-points');
+        if (el) el.textContent = pts.totalDeducted > 0 ? `-${pts.totalDeducted}` : '0';
+      } catch (e) { }
+    }
+
+    tbody.innerHTML = `<tr><td colspan="${COLS}" style="text-align:center;padding:20px;color:var(--text-2);font-size:13px;">Đang tải...</td></tr>`;
     const list = await API.get('/api/violations');
     tbody.innerHTML = '';
     if (list.length === 0) {
-      tbody.innerHTML = '<tr><td colspan="5" style="text-align:center;color:var(--text-3);padding:20px;">Chưa có dữ liệu vi phạm.</td></tr>';
+      tbody.innerHTML = `<tr><td colspan="${COLS}" style="text-align:center;color:var(--text-3);padding:20px;font-size:13px;">Chưa có dữ liệu vi phạm.</td></tr>`;
       return;
     }
+
     list.forEach(v => {
       const tr = document.createElement('tr');
-      const dateStr = new Date(v.createdAt).toLocaleString('vi-VN');
+      const d = new Date(v.createdAt);
+      const dateStr = d.toLocaleDateString('vi-VN') + '<br><span style="font-size:11px;color:var(--text-3);">' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + '</span>';
       const uname = v.user?.fullName || '?';
-      const rname = v.recordedBy?.fullName || 'Admin';
+      const violationLabel = (v.type === 'Khác' && v.note) ? v.note : v.type;
+
+      const studentColHtml = isAdmin ? `<td style="font-size:13px;color:var(--text-1);text-align:center;">${uname}</td>` : '';
+      const actionBtn = isAdmin
+        ? `<button class="btn btn-ghost" style="padding:3px;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;background:rgba(255,255,255,0.05);" title="Xóa lỗi" onclick="deleteViolation('${v._id}');event.stopPropagation();">🗑️</button>`
+        : `<button class="btn btn-ghost" style="padding:3px;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;background:rgba(255,255,255,0.05);" title="Khiếu nại" onclick="appealViolation('${v._id}');event.stopPropagation();">💬</button>`;
+
       tr.innerHTML = `
-        <td style="color:var(--text-3); font-size:12px;">${dateStr}</td>
-        <td style="font-weight:600;">${uname}</td>
-        <td style="color:var(--amber);">${v.type}</td>
-        <td style="color:var(--rose); font-weight:bold;">-${v.points}</td>
-        <td style="font-size:12px;">${rname}</td>
+        <td style="color:var(--text-2);font-size:13px;text-align:center;">${dateStr}</td>
+        ${studentColHtml}
+        <td style="color:var(--amber);font-size:13px;text-align:left;">${violationLabel}</td>
+        <td style="text-align:center;color:var(--rose);font-size:13px;font-weight:700;">-${v.points}</td>
+        <td style="text-align:center;">${actionBtn}</td>
       `;
       tbody.appendChild(tr);
     });
-  } catch(err) {
+  } catch (err) {
     toast('Lỗi khi tải danh sách vi phạm', 'error');
   }
+}
+
+function onViolationTypeChange() {
+  const type = document.getElementById('v-type').value;
+  const noteGroup = document.getElementById('v-note-group');
+  if (noteGroup) noteGroup.classList.toggle('hidden', type !== 'Khác');
+  if (type !== 'Khác') { const ni = document.getElementById('v-note'); if (ni) ni.value = ''; }
 }
 
 async function addViolation() {
   const userId = document.getElementById('v-user').value;
   const type = document.getElementById('v-type').value;
   const points = document.getElementById('v-points').value;
-  
+  const note = document.getElementById('v-note')?.value?.trim() || '';
+
   if (!userId) { toast('Chưa chọn học viên', 'error'); return; }
-  
+  if (type === 'Khác' && !note) { toast('Vui lòng ghi chú nội dung lỗi', 'error'); return; }
+
   try {
-    await API.post('/api/violations', { userId, type, points });
+    await API.post('/api/violations', { userId, type, note, points });
     toast('Đã ghi lỗi thành công!', 'success');
     loadViolations();
-  } catch(err) {
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+async function showLeaderboard() {
+  const overlay = document.getElementById('leaderboard-overlay');
+  const body = document.getElementById('leaderboard-body');
+  if (!overlay || !body) return;
+  overlay.classList.remove('hidden');
+  body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-2);font-size:13px;">Đang tải...</div>';
+  try {
+    const list = await API.get('/api/violations/leaderboard');
+    if (!list.length) { body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:13px;">Không có dữ liệu</div>'; return; }
+    body.innerHTML = list.map((u, i) => {
+      const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `<span style="font-size:13px;color:var(--text-3);min-width:20px;display:inline-block;text-align:center;">${i + 1}</span>`;
+      const pts = u.totalDeducted;
+      const color = pts === 0 ? 'var(--green)' : pts <= 10 ? 'var(--amber)' : 'var(--rose)';
+      const roleTag = u.role === 'admin' ? '<span style="font-size:10px;background:rgba(139,92,246,0.2);color:var(--purple);border-radius:4px;padding:1px 5px;margin-left:6px;">Admin</span>' : '';
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 20px;border-bottom:1px solid rgba(255,255,255,0.03);">
+        <div style="display:flex;align-items:center;gap:10px;">
+          <span style="font-size:16px;min-width:24px;text-align:center;">${medal}</span>
+          <span style="font-size:13px;color:var(--text-1);">${u.fullName}${roleTag}</span>
+        </div>
+        <span style="font-size:13px;color:${color};">${pts > 0 ? `-${pts}` : '0'}</span>
+      </div>`;
+    }).join('');
+  } catch (err) {
+    body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--rose);font-size:13px;">Lỗi tải dữ liệu</div>';
+  }
+}
+
+async function appealViolation(violationId) {
+  if (!confirm('Bạn có chắc chắn muốn gửi khiếu nại về lỗi này?')) return;
+  try {
+    await API.post(`/api/violations/${violationId}/appeal`);
+    toast('Đã gửi khiếu nại thành công, Admin sẽ xem xét.', 'success');
+  } catch (err) {
+    toast(err.message, 'error');
+  }
+}
+
+async function deleteViolation(violationId) {
+  if (!confirm('Bạn có chắc chắn muốn xóa lỗi này?')) return;
+  try {
+    await API.delete(`/api/violations/${violationId}`);
+    toast('Đã xóa lỗi thành công.', 'success');
+    loadViolations();
+  } catch (err) {
     toast(err.message, 'error');
   }
 }
 
 // Populate violation user dropdown when members are loaded
 const originalLoadMembers = loadClassMembersBackground;
-loadClassMembersBackground = async function(isAdmin) {
+loadClassMembersBackground = async function (isAdmin) {
   await originalLoadMembers(isAdmin);
   // populate #v-user select
   const sel = document.getElementById('v-user');
-  if(sel && state.members) {
+  if (sel && state.members) {
     sel.innerHTML = '<option value="">-- Chọn học viên --</option>';
     state.members.forEach(m => {
       sel.innerHTML += `<option value="${m._id}">${m.stt}. ${m.fullName}</option>`;
@@ -1129,7 +1294,7 @@ loadClassMembersBackground = async function(isAdmin) {
 function makeDraggableNotif() {
   const wrapper = document.getElementById('notif-wrapper');
   if (!wrapper) return;
-  
+
   let startX, startY, initialX, initialY;
 
   wrapper.addEventListener('touchstart', (e) => {
@@ -1143,20 +1308,20 @@ function makeDraggableNotif() {
 
   wrapper.addEventListener('touchmove', (e) => {
     if (window.innerWidth > 768) return;
-    
+
     const dx = e.touches[0].clientX - startX;
     const dy = e.touches[0].clientY - startY;
-    
+
     if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
       isNotifDragging = true;
       e.preventDefault();
-      
+
       let newX = initialX + dx;
       let newY = initialY + dy;
-      
+
       newX = Math.max(0, Math.min(newX, window.innerWidth - wrapper.offsetWidth));
       newY = Math.max(0, Math.min(newY, window.innerHeight - wrapper.offsetHeight));
-      
+
       wrapper.style.left = newX + 'px';
       wrapper.style.top = newY + 'px';
       wrapper.style.bottom = 'auto';

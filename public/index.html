@@ -30,15 +30,16 @@
           <form class="login-form" onsubmit="handleLogin(event)">
             <div class="input-group">
               <label class="input-label" for="login-username">Tài khoản</label>
-              <input id="login-username" class="input" type="text" placeholder="Tên đăng nhập/SĐT" autocomplete="username"
-                required />
+              <input id="login-username" class="input" type="text" placeholder="Tên đăng nhập/SĐT"
+                autocomplete="username" required />
             </div>
             <div class="input-group">
               <label class="input-label" for="login-password">Mật khẩu</label>
               <div style="position: relative;">
                 <input id="login-password" class="input" type="password" placeholder="VD: 01012000@"
                   autocomplete="current-password" required style="padding-right: 40px;" />
-                <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility('login-password', this)">👁️</button>
+                <button type="button" class="pwd-toggle-btn"
+                  onclick="togglePasswordVisibility('login-password', this)">👁️</button>
               </div>
             </div>
             <button id="login-btn" type="submit" class="btn btn-primary login-btn">
@@ -60,28 +61,49 @@
       <!-- Mobile Overlay -->
       <div id="mobile-overlay" class="mobile-overlay" onclick="toggleMobileSidebar()"></div>
       <!-- Sidebar -->
-      <aside id="sidebar" class="sidebar" style="display: flex; flex-direction: column; justify-content: space-between;">
+      <aside id="sidebar" class="sidebar"
+        style="display: flex; flex-direction: column; justify-content: space-between;">
         <div>
-          <div class="sidebar-user-info" style="padding: 24px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02);">
-            <div class="profile-info-box" style="margin-bottom: 0; display: flex; align-items: center; gap: 14px; padding: 14px; background: rgba(139,92,246,0.06); border: 1px solid rgba(139,92,246,0.2); border-radius: var(--radius-md);">
-              <div class="nav-avatar profile-big-avatar" id="sidebar-avatar" style="width: 52px; height: 52px; font-size: 26px; flex-shrink: 0;">👤</div>
-              <div style="display: flex; flex-direction: column; overflow: hidden;">
-                <div id="sidebar-username" style="font-size: 16px; font-weight: 700; margin-bottom: 4px; color: var(--text-1); white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">—</div>
-                <div id="sidebar-dob" style="font-size: 12px; color: var(--text-2); margin-bottom: 3px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">🎂 Sinh nhật: —</div>
-                <div id="sidebar-gender" style="font-size: 12px; color: var(--text-2); margin-bottom: 3px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">⚧ Giới tính: —</div>
-                <div id="sidebar-hometown" style="font-size: 12px; color: var(--text-2); margin-bottom: 3px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">📍 Quê quán: —</div>
-                <div id="sidebar-phone" style="font-size: 12px; color: var(--text-2); margin-bottom: 3px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">📞 SĐT: —</div>
+          <div class="sidebar-user-info"
+            style="padding: 16px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02);">
+            <div class="profile-info-box"
+              style="display: flex; align-items: center; gap: 14px; padding: 12px; background: rgba(139,92,246,0.06); border: 1px solid rgba(139,92,246,0.2); border-radius: 16px; cursor: pointer; transition: all 0.2s;"
+              onclick="showUserProfileModal(state.user._id)">
+              <!-- Avatar -->
+              <div class="nav-avatar profile-big-avatar" id="sidebar-avatar"
+                style="width: 64px; height: 64px; font-size: 32px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; border: 2px solid rgba(139,92,246,0.3); flex-shrink: 0;">
+                👤</div>
+
+              <!-- Info Column -->
+              <div style="display: flex; flex-direction: column; flex: 1; min-width: 0;">
+                <div id="sidebar-username"
+                  style="font-size: 16px; font-weight: 700; color: var(--text-1); margin-bottom: 6px; word-break: break-word; line-height: 1.2;">
+                  —</div>
+
+                <div
+                  style="display: flex; gap: 6px; font-size: 12px; color: var(--text-2); align-items: center; margin-bottom: 4px;">
+                  <span style="flex-shrink: 0; width: 14px; text-align: center;">🎂</span>
+                  <span id="sidebar-dob" style="line-height: 1.2; word-break: break-word;">—</span>
+                </div>
+
+                <div style="display: flex; gap: 6px; font-size: 12px; color: var(--text-2); align-items: center;">
+                  <span style="flex-shrink: 0; width: 14px; text-align: center;">📍</span>
+                  <span id="sidebar-hometown" style="line-height: 1.2; word-break: break-word;">—</span>
+                </div>
               </div>
             </div>
           </div>
           <div class="sidebar-nav" style="padding-top: 10px;">
-            <button class="side-tab active" data-tab="tab-chia-nhom" onclick="switchAppTab('tab-chia-nhom', this)">👥 Chia nhóm</button>
-            <button class="side-tab" data-tab="tab-danh-sach-loi" onclick="switchAppTab('tab-danh-sach-loi', this)">📋 Danh sách lỗi</button>
-            <button class="side-tab" data-tab="tab-cai-dat" onclick="switchAppTab('tab-cai-dat', this)">⚙️ Cài đặt</button>
+            <button class="side-tab active" data-tab="tab-chia-nhom" onclick="switchAppTab('tab-chia-nhom', this)">👥
+              PHÂN CHIA NHÓM</button>
+            <button class="side-tab" data-tab="tab-danh-sach-loi" onclick="switchAppTab('tab-danh-sach-loi', this)">📋
+              DANH SÁCH VI PHẠM</button>
+            <button class="side-tab" data-tab="tab-cai-dat" onclick="switchAppTab('tab-cai-dat', this)">⚙️ CÀI
+              ĐẶT</button>
           </div>
         </div>
-        <div class="sidebar-bottom" style="padding: 24px;">
-          <button class="btn btn-rose w-full" onclick="logout()" style="justify-content: center;">🚪 Đăng xuất</button>
+        <div class="sidebar-bottom" style="padding: 16px;">
+          <button class="btn btn-rose w-full" onclick="logout()" style="justify-content: center;">ĐĂNG XUẤT</button>
         </div>
       </aside>
 
@@ -91,9 +113,11 @@
         <header class="top-header">
           <div class="header-left" style="display:flex; align-items:center;">
             <button class="mobile-menu-btn" onclick="toggleMobileSidebar()">☰</button>
-            <h2 id="current-tab-title" style="margin:0; font-size: 20px; font-weight: 600;">Chia nhóm</h2>
+            <h2 id="current-tab-title" style="margin:0; font-size: 20px; font-weight: 600;">CHIA NHÓM</h2>
           </div>
-          <div class="header-right">
+          <div class="header-right" style="display:flex; align-items:center; gap: 12px;">
+            <button id="btn-admin-toggle" class="btn btn-secondary btn-sm hidden" onclick="toggleAdminUserMode()">🎓 Học
+              viên</button>
             <!-- Notifications Bell -->
             <div id="notif-wrapper" class="notif-wrapper">
               <button class="notif-btn" onclick="toggleNotifDropdown(event)">
@@ -111,15 +135,11 @@
 
         <!-- Content Views -->
         <div class="content-scroll">
-          
+
           <!-- ========================================== -->
           <!-- TAB: CHIA NHÓM -->
           <!-- ========================================== -->
           <div id="tab-chia-nhom" class="app-tab-content active animate-in">
-            <!-- ADMIN TOGGLE HEADER -->
-            <div style="margin-bottom: 20px; display: flex; justify-content: flex-end;">
-                <button id="btn-admin-toggle" class="btn btn-secondary btn-sm hidden" onclick="toggleAdminUserMode()">🎓 Học viên</button>
-            </div>
 
             <!-- View User (Chia nhóm) -->
             <div id="view-user" class="view active" style="padding:0; min-height:auto;">
@@ -145,7 +165,7 @@
                 </div>
                 <div id="groups-section" class="hidden animate-in">
                   <div class="section-header">
-                    <div class="section-title">📊 Danh sách nhóm</div>
+                    <div class="section-title">📊 DANH SÁCH NHÓM</div>
                   </div>
                   <div id="groups-grid" class="groups-grid"></div>
                 </div>
@@ -153,7 +173,8 @@
                   <div class="slider-trigger-box">
                     <div class="slider-trigger-icon">🎰</div>
                     <p class="slider-trigger-text">Chế độ <strong>Ngẫu nhiên</strong> — Bấm nút để quay xổ số nhóm!</p>
-                    <button class="btn btn-primary btn-lg" id="btn-open-slider" onclick="openSlider()">🎰 Bốc thăm ngẫu nhiên</button>
+                    <button class="btn btn-primary btn-lg" id="btn-open-slider" onclick="openSlider()">🎰 Bốc thăm ngẫu
+                      nhiên</button>
                   </div>
                 </div>
               </div>
@@ -167,15 +188,34 @@
                   <p class="page-sub">Quản lý phiên chia nhóm lớp học</p>
                 </div>
                 <div class="stats-grid">
-                  <div class="card stat-card"><div class="stat-icon">👥</div><div class="stat-value" style="color:var(--purple)">25</div><div class="stat-label">Thành viên</div></div>
-                  <div class="card stat-card"><div class="stat-icon">📊</div><div class="stat-value" id="stat-groups" style="color:var(--cyan)">0</div><div class="stat-label">Số nhóm</div></div>
-                  <div class="card stat-card"><div class="stat-icon">✅</div><div class="stat-value" id="stat-assigned" style="color:var(--green)">0</div><div class="stat-label">Có nhóm</div></div>
-                  <div class="card stat-card"><div class="stat-icon">⏳</div><div class="stat-value" id="stat-unassigned" style="color:var(--amber)">25</div><div class="stat-label">Chưa có</div></div>
+                  <div class="card stat-card">
+                    <div class="stat-icon">👥</div>
+                    <div class="stat-value" style="color:var(--purple)">25</div>
+                    <div class="stat-label">Thành viên</div>
+                  </div>
+                  <div class="card stat-card">
+                    <div class="stat-icon">📊</div>
+                    <div class="stat-value" id="stat-groups" style="color:var(--cyan)">0</div>
+                    <div class="stat-label">Số nhóm</div>
+                  </div>
+                  <div class="card stat-card">
+                    <div class="stat-icon">✅</div>
+                    <div class="stat-value" id="stat-assigned" style="color:var(--green)">0</div>
+                    <div class="stat-label">Có nhóm</div>
+                  </div>
+                  <div class="card stat-card">
+                    <div class="stat-icon">⏳</div>
+                    <div class="stat-value" id="stat-unassigned" style="color:var(--amber)">25</div>
+                    <div class="stat-label">Chưa có</div>
+                  </div>
                 </div>
                 <div class="admin-tabs">
-                  <button class="admin-tab active" data-tab="tab-session" onclick="switchTab('tab-session', this)">🎯 Tạo phiên</button>
-                  <button class="admin-tab" data-tab="tab-manage" onclick="switchTab('tab-manage', this)">📋 Quản lý</button>
-                  <button class="admin-tab" data-tab="tab-history" onclick="switchTab('tab-history', this)">📜 Lịch sử</button>
+                  <button class="admin-tab active" data-tab="tab-session" onclick="switchTab('tab-session', this)">🎯
+                    Tạo phiên</button>
+                  <button class="admin-tab" data-tab="tab-manage" onclick="switchTab('tab-manage', this)">📋 Quản
+                    lý</button>
+                  <button class="admin-tab" data-tab="tab-history" onclick="switchTab('tab-history', this)">📜 Lịch
+                    sử</button>
                 </div>
                 <div id="tab-session" class="admin-tab-content active animate-in">
                   <div id="active-session-alert" class="hidden active-alert">
@@ -193,41 +233,62 @@
                         <div class="input-group">
                           <label class="input-label">Phương thức</label>
                           <div class="radio-group">
-                            <label class="radio-option"><input type="radio" name="f-mode" value="manual" checked /><div><div class="radio-label">🖱️ Tự chọn nhóm</div><div class="radio-sub">Học viên tự bấm vào nhóm muốn tham gia</div></div></label>
-                            <label class="radio-option"><input type="radio" name="f-mode" value="random" /><div><div class="radio-label">🎰 Bốc thăm ngẫu nhiên</div><div class="radio-sub">Học viên bốc thăm để vào nhóm ngẫu nhiên</div></div></label>
+                            <label class="radio-option"><input type="radio" name="f-mode" value="manual" checked />
+                              <div>
+                                <div class="radio-label">🖱️ Tự chọn nhóm</div>
+                                <div class="radio-sub">Học viên tự bấm vào nhóm muốn tham gia</div>
+                              </div>
+                            </label>
+                            <label class="radio-option"><input type="radio" name="f-mode" value="random" />
+                              <div>
+                                <div class="radio-label">🎰 Bốc thăm ngẫu nhiên</div>
+                                <div class="radio-sub">Học viên bốc thăm để vào nhóm ngẫu nhiên</div>
+                              </div>
+                            </label>
                           </div>
                         </div>
                         <div class="input-group">
                           <label class="input-label">Số lượng nhóm</label>
-                          <input id="f-group-count" class="input" type="number" min="1" max="25" placeholder="VD: 3" oninput="updateGroupHint()" />
-                          <div id="group-capacity-hint" style="color:var(--text-2);font-size:12px;margin-top:2px;"></div>
+                          <input id="f-group-count" class="input" type="number" min="1" max="25" placeholder="VD: 3"
+                            oninput="updateGroupHint()" />
+                          <div id="group-capacity-hint" style="color:var(--text-2);font-size:12px;margin-top:2px;">
+                          </div>
                         </div>
-                        <button id="btn-create-session" class="btn btn-primary" onclick="createSession()">🚀 Tạo phiên chia nhóm</button>
+                        <button id="btn-create-session" class="btn btn-primary" onclick="createSession()">🚀 Tạo phiên
+                          chia nhóm</button>
                       </div>
                     </div>
                   </div>
                 </div>
                 <div id="tab-manage" class="admin-tab-content animate-in">
                   <div id="no-active-session-msg" class="no-session-placeholder">
-                    <div class="no-session-icon">📋</div><div class="no-session-title">Chưa có phiên hoạt động</div><div class="no-session-sub">Tạo phiên ở tab "Tạo phiên" để bắt đầu.</div>
+                    <div class="no-session-icon">📋</div>
+                    <div class="no-session-title">Chưa có phiên hoạt động</div>
+                    <div class="no-session-sub">Tạo phiên ở tab "Tạo phiên" để bắt đầu.</div>
                   </div>
                   <div id="manage-content" class="hidden">
                     <div class="section-header" style="flex-wrap:wrap;gap:8px;">
                       <div class="section-title" id="manage-session-title">—</div>
                       <div class="manage-actions">
-                        <button class="btn btn-secondary btn-sm" onclick="autoAssignRemaining()">🎲 Chia ngẫu nhiên còn lại</button>
+                        <button class="btn btn-secondary btn-sm" onclick="autoAssignRemaining()">🎲 Chia ngẫu nhiên còn
+                          lại</button>
                         <button class="btn btn-ghost btn-sm" onclick="resetSession()">🔄 Reset</button>
                         <button class="btn btn-rose btn-sm" onclick="stopSession()">⏹ Kết thúc</button>
                       </div>
                     </div>
                     <div id="admin-groups-grid" class="admin-groups-grid"></div>
                     <div style="margin-top:20px;">
-                      <div class="section-header"><div class="section-title">⏳ Chưa có nhóm (<span id="unassigned-count">0</span>)</div></div>
+                      <div class="section-header">
+                        <div class="section-title">⏳ Chưa có nhóm (<span id="unassigned-count">0</span>)</div>
+                      </div>
                       <div id="unassigned-list" class="unassigned-list"></div>
                     </div>
                     <div style="margin-top:20px; border-top: 1px solid var(--border); padding-top: 20px;">
-                      <div class="section-header"><div class="section-title">🔒 Xếp cố định</div></div>
-                      <p style="color:var(--text-2);font-size:13px;margin-bottom:16px;">Học viên bị xếp cố định sẽ không thể tự chọn hoặc đổi nhóm.</p>
+                      <div class="section-header">
+                        <div class="section-title">🔒 Xếp cố định</div>
+                      </div>
+                      <p style="color:var(--text-2);font-size:13px;margin-bottom:16px;">Học viên bị xếp cố định sẽ không
+                        thể tự chọn hoặc đổi nhóm.</p>
                       <div id="fixed-assign-list" class="assign-list" style="max-height:600px;"></div>
                     </div>
                   </div>
@@ -247,53 +308,112 @@
           <!-- TAB: DANH SÁCH LỖI -->
           <!-- ========================================== -->
           <div id="tab-danh-sach-loi" class="app-tab-content animate-in">
-            <div class="section-header">
-              <div class="section-title">📋 Quản lý Lỗi Vi Phạm</div>
-            </div>
-            
+
             <!-- ADMIN ADD VIOLATION BOX -->
             <div id="violation-admin-box" class="card creator-card hidden" style="margin-bottom:24px;">
               <div class="creator-section-title" style="margin-bottom: 15px;">🛑 Ghi lỗi học viên</div>
-              <div style="display:flex;gap:12px;align-items:flex-end;flex-wrap:wrap;">
-                <div class="input-group" style="flex:2;min-width:200px;">
-                  <label class="input-label">Học viên</label>
-                  <select id="v-user" class="input" style="padding: 10px;"></select>
-                </div>
-                <div class="input-group" style="flex:2;min-width:200px;">
+              <div style="display:flex; flex-direction:column; gap:12px;">
+                <!-- Row 1: Loại lỗi -->
+                <div class="input-group">
                   <label class="input-label">Loại lỗi</label>
-                  <select id="v-type" class="input" style="padding: 10px;">
-                    <option value="Ngủ trong giờ">Ngủ trong giờ</option>
-                    <option value="Mất trật tự">Mất trật tự</option>
-                    <option value="Sử dụng điện thoại">Sử dụng điện thoại</option>
-                    <option value="Nội vụ">Nội vụ</option>
-                    <option value="Xếp hàng">Xếp hàng</option>
+                  <select id="v-type" class="input" style="padding: 10px;" onchange="onViolationTypeChange()">
+                    <option value="Không xếp hàng điểm danh hoặc xếp sai chỗ">Không xếp hàng điểm danh hoặc xếp sai chỗ
+                    </option>
+                    <option value="Không xếp hàng đi lên lớp/về kí túc xá">Không xếp hàng đi lên lớp/về kí túc xá
+                    </option>
+                    <option value="Xếp hàng bấm điện thoại">Xếp hàng bấm điện thoại</option>
+                    <option value="Nội vụ giường không gọn gàng/đồ cá nhân để lung tung">Nội vụ giường không gọn gàng/đồ
+                      cá nhân để lung tung</option>
+                    <option value="Bị giáo viên nhắc nhở">Bị giáo viên nhắc nhở</option>
+                    <option value="Không làm vệ sinh khu vực/làm không sạch">Không làm vệ sinh khu vực/làm không sạch
+                    </option>
+                    <option value="Trốn phân công nhiệm vụ không lí do">Trốn phân công nhiệm vụ không lí do</option>
+                    <option value="Vắng điểm danh">Vắng điểm danh</option>
+                    <option value="Trong giờ hành chính lên lớp, vắng mặt không báo cáo (Trừ việc đi vệ sinh)">Trong giờ
+                      hành chính lên lớp, vắng mặt không báo cáo (Trừ việc đi vệ sinh)</option>
+                    <option value="Lên lớp muộn (Quá 20-30p)">Lên lớp muộn (Quá 20-30p)</option>
+                    <option value="Quá ồn ào trong lớp">Quá ồn ào trong lớp</option>
                     <option value="Khác">Khác</option>
                   </select>
                 </div>
-                <div class="input-group" style="flex:1;min-width:100px;">
-                  <label class="input-label">Điểm trừ</label>
-                  <input id="v-points" class="input" type="number" min="0" value="5" />
+
+                <!-- Row 2: Học viên, Điểm trừ, Nút -->
+                <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
+                  <div class="input-group" style="flex:2; min-width:200px;">
+                    <label class="input-label">Học viên</label>
+                    <select id="v-user" class="input" style="padding: 10px;"></select>
+                  </div>
+                  <div class="input-group" style="flex:1; min-width:80px; max-width: 120px;">
+                    <label class="input-label">Điểm trừ</label>
+                    <input id="v-points" class="input" type="number" min="0" value="1" />
+                  </div>
+                  <button class="btn btn-rose" onclick="addViolation()"
+                    style="white-space:nowrap; padding:0 24px; height:42px;">📝 Ghi lỗi</button>
                 </div>
-                <button class="btn btn-rose" onclick="addViolation()">📝 Ghi lỗi</button>
+              </div>
+              <div id="v-note-group" class="hidden" style="margin-top:12px;">
+                <label class="input-label">Ghi chú (bắt buộc khi chọn "Khác")</label>
+                <input id="v-note" class="input" type="text" placeholder="Mô tả cụ thể lỗi vi phạm..." />
               </div>
             </div>
-            
+
+            <!-- USER POINTS BAR + REFRESH BUTTON (same row) -->
+            <div id="user-points-bar"
+              style="display:none; margin-bottom: 12px; align-items:center; justify-content:space-between; gap:8px;">
+              <div
+                style="background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.25); border-radius:12px; padding: 10px 18px; display:flex; align-items:center; gap:10px;">
+                <span style="font-size:18px;">📊</span>
+                <div>
+                  <div style="font-size:11px; color:var(--text-2); text-transform:uppercase; letter-spacing:0.5px;">Tổng
+                    điểm bị trừ</div>
+                  <div id="user-total-points" style="font-size:20px; font-weight:700; color:var(--rose);">0</div>
+                </div>
+              </div>
+              <button class="btn btn-ghost btn-sm" onclick="loadViolations()"
+                style="gap:6px; font-size:13px; align-self:flex-end;">🔄 Làm mới</button>
+            </div>
+
+            <!-- ADMIN LEADERBOARD BUTTON -->
+            <div id="admin-leaderboard-bar" style="display:none; margin-bottom: 12px; justify-content:flex-end;">
+              <button class="btn btn-secondary btn-sm" onclick="showLeaderboard()" style="gap:6px;">🏆 Top
+                điểm trừ</button>
+            </div>
+
+
             <div class="card" style="padding:0; overflow: hidden;">
-              <div style="overflow-x:auto;">
-                <table class="data-table">
+              <div>
+                <table class="data-table" style="table-layout:fixed; width:100%;">
                   <thead>
                     <tr>
-                      <th>Thời gian</th>
-                      <th>Học viên</th>
-                      <th>Loại lỗi</th>
-                      <th>Điểm phạt</th>
-                      <th>Người ghi</th>
+                      <th style="text-align:center; width:90px;">Thời gian</th>
+                      <th id="col-student-name" style="text-align:center; width:110px;">Học viên</th>
+                      <th style="text-align:left;">Lỗi vi phạm</th>
+                      <th style="text-align:center; width:60px;">Điểm phạt</th>
+                      <th id="col-action-head" style="text-align:center; width:40px;"></th>
                     </tr>
                   </thead>
                   <tbody id="violation-list">
-                     <tr><td colspan="5" style="text-align:center;color:var(--text-3);padding:20px;">Đang tải dữ liệu...</td></tr>
+                    <tr>
+                      <td colspan="5" style="text-align:center;color:var(--text-3);padding:20px;">Đang tải dữ liệu...
+                      </td>
+                    </tr>
                   </tbody>
                 </table>
+              </div>
+            </div>
+
+            <!-- LEADERBOARD MODAL -->
+            <div id="leaderboard-overlay" class="hidden"
+              style="position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);display:flex;align-items:center;justify-content:center;padding:16px;"
+              onclick="if(event.target===this)this.classList.add('hidden')">
+              <div class="card" style="width:100%;max-width:480px;padding:0;overflow:hidden;">
+                <div
+                  style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;border-bottom:1px solid rgba(255,255,255,0.05);">
+                  <span style="font-weight:700;font-size:15px;">🏆 Bảng xếp hạng điểm trừ</span>
+                  <button class="btn btn-ghost" style="padding:4px 8px;font-size:18px;"
+                    onclick="document.getElementById('leaderboard-overlay').classList.add('hidden')">✕</button>
+                </div>
+                <div style="max-height:60vh;overflow-y:auto;" id="leaderboard-body"></div>
               </div>
             </div>
           </div>
@@ -302,68 +422,82 @@
           <!-- TAB: CÀI ĐẶT -->
           <!-- ========================================== -->
           <div id="tab-cai-dat" class="app-tab-content animate-in">
-            <div class="settings-grid" style="display:flex; flex-direction:column; gap:20px; max-width: 600px; margin: 0 auto;">
+            <div class="settings-grid">
               <!-- Avatar Settings -->
               <div class="card settings-card">
-                <div class="settings-card-header" onclick="toggleSettingsCard('avatar-settings-body', 'arrow-avatar')" style="cursor: pointer; justify-content: space-between;">
+                <div class="settings-card-header" onclick="toggleSettingsCard('avatar-settings-body', 'arrow-avatar')"
+                  style="cursor: pointer; justify-content: space-between;">
                   <div style="display: flex; align-items: center; gap: 16px;">
-                    <div class="settings-icon-box" style="background: rgba(6, 182, 212, 0.1); color: var(--cyan);">👤</div>
+                    <div class="settings-icon-box" style="background: rgba(6, 182, 212, 0.1); color: var(--cyan);">👤
+                    </div>
                     <div class="settings-card-title">Avatar</div>
                   </div>
-                  <div class="settings-arrow" id="arrow-avatar" style="transition: transform 0.3s; color: var(--text-2);">▼</div>
+                  <div class="settings-arrow" id="arrow-avatar"
+                    style="transition: transform 0.3s; color: var(--text-2);">▼</div>
                 </div>
                 <div class="settings-card-body hidden" id="avatar-settings-body">
-                  <p class="settings-desc">Chọn một avatar dễ thương hoặc tải ảnh của riêng bạn lên nhé.</p>
                   <div class="avatar-grid" id="avatar-grid"></div>
                   <div class="upload-box">
-                    <label class="btn btn-secondary w-full" for="avatar-file-input" style="cursor:pointer; padding: 12px; justify-content: center; border: 1px dashed var(--border);">
+                    <label class="btn btn-secondary w-full" for="avatar-file-input"
+                      style="cursor:pointer; padding: 12px; justify-content: center; border: 1px dashed var(--border);">
                       <span style="font-size: 16px;">📤</span> Tải ảnh từ thiết bị
                     </label>
-                    <input id="avatar-file-input" type="file" accept="image/*" style="display:none;" onchange="handleAvatarFile(event)" />
+                    <input id="avatar-file-input" type="file" accept="image/*" style="display:none;"
+                      onchange="handleAvatarFile(event)" />
                     <div class="upload-hint">Định dạng hỗ trợ: JPG, PNG, GIF (Tối đa 2MB)</div>
                   </div>
                 </div>
               </div>
-              
+
               <!-- Password Settings -->
               <div class="card settings-card">
-                <div class="settings-card-header" onclick="toggleSettingsCard('password-settings-body', 'arrow-password')" style="cursor: pointer; justify-content: space-between;">
+                <div class="settings-card-header"
+                  onclick="toggleSettingsCard('password-settings-body', 'arrow-password')"
+                  style="cursor: pointer; justify-content: space-between;">
                   <div style="display: flex; align-items: center; gap: 16px;">
-                    <div class="settings-icon-box" style="background: rgba(244, 63, 94, 0.1); color: var(--rose);">🔒</div>
+                    <div class="settings-icon-box" style="background: rgba(244, 63, 94, 0.1); color: var(--rose);">🔒
+                    </div>
                     <div class="settings-card-title">Mật khẩu</div>
                   </div>
-                  <div class="settings-arrow" id="arrow-password" style="transition: transform 0.3s; color: var(--text-2);">▼</div>
+                  <div class="settings-arrow" id="arrow-password"
+                    style="transition: transform 0.3s; color: var(--text-2);">▼</div>
                 </div>
                 <div class="settings-card-body hidden" id="password-settings-body">
-                  <p class="settings-desc">Cập nhật mật khẩu thường xuyên để bảo vệ tài khoản của bạn.</p>
                   <div class="settings-form" style="display:flex; flex-direction:column; gap:16px;">
                     <div class="input-group">
                       <label class="input-label">Mật khẩu hiện tại</label>
                       <div class="password-input-wrapper">
-                        <input id="old-password" class="input settings-input" type="password" placeholder="Nhập mật khẩu cũ..." oninput="checkSettingsChanges()" />
-                        <button class="password-toggle" type="button" onclick="togglePasswordVisibility('old-password', this)">👁️</button>
+                        <input id="old-password" class="input settings-input" type="password"
+                          placeholder="Nhập mật khẩu cũ..." oninput="checkSettingsChanges()" />
+                        <button class="pwd-toggle-btn" type="button"
+                          onclick="togglePasswordVisibility('old-password', this)">👁️</button>
                       </div>
                     </div>
                     <div class="input-group">
                       <label class="input-label">Mật khẩu mới</label>
                       <div class="password-input-wrapper">
-                        <input id="new-password" class="input settings-input" type="password" placeholder="Nhập mật khẩu mới..." oninput="checkSettingsChanges()" />
-                        <button class="password-toggle" type="button" onclick="togglePasswordVisibility('new-password', this)">👁️</button>
+                        <input id="new-password" class="input settings-input" type="password"
+                          placeholder="Nhập mật khẩu mới..." oninput="checkSettingsChanges()" />
+                        <button class="pwd-toggle-btn" type="button"
+                          onclick="togglePasswordVisibility('new-password', this)">👁️</button>
                       </div>
                     </div>
                     <div class="input-group">
                       <label class="input-label">Xác nhận mật khẩu mới</label>
                       <div class="password-input-wrapper">
-                        <input id="confirm-password" class="input settings-input" type="password" placeholder="Nhập lại mật khẩu mới..." oninput="checkSettingsChanges()" />
-                        <button class="password-toggle" type="button" onclick="togglePasswordVisibility('confirm-password', this)">👁️</button>
+                        <input id="confirm-password" class="input settings-input" type="password"
+                          placeholder="Nhập lại mật khẩu mới..." oninput="checkSettingsChanges()" />
+                        <button class="pwd-toggle-btn" type="button"
+                          onclick="togglePasswordVisibility('confirm-password', this)">👁️</button>
                       </div>
                     </div>
                   </div>
                 </div>
               </div>
-              
-              <div style="margin-top: 10px;">
-                <button id="btn-save-settings" class="btn btn-primary w-full" onclick="saveSettings()" disabled>💾 Lưu thay đổi</button>
+
+              <div>
+                <button id="btn-save-settings" class="btn btn-primary w-full btn-lg" style="border-radius: 16px;"
+                  onclick="saveSettings()" disabled>💾 Lưu thay đổi</button>
               </div>
             </div>
           </div>
@@ -375,7 +509,7 @@
     <!-- ════════════════════════════════════════════════════════════
        MODALS & OVERLAYS
     ═══════════════════════════════════════════════════════════════ -->
-    
+
     <!-- RANDOM SLIDER OVERLAY -->
     <div id="slider-overlay" class="hidden">
       <div class="slider-modal animate-in">
@@ -396,14 +530,56 @@
           <div id="slider-result-name" class="slider-result-name">—</div>
         </div>
         <div class="slider-modal-actions">
-          <button id="slider-spin-btn" class="btn btn-primary btn-lg slider-spin-btn" onclick="spinSlider()">🎰 Bốc thăm!</button>
+          <button id="slider-spin-btn" class="btn btn-primary btn-lg slider-spin-btn" onclick="spinSlider()">🎰 Bốc
+            thăm!</button>
           <button class="btn btn-ghost" onclick="closeSlider()">Đóng</button>
         </div>
       </div>
     </div>
 
+    <!-- USER PROFILE MODAL -->
+    <div id="user-profile-overlay" class="hidden"
+      style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
+      <div
+        style="background: linear-gradient(to bottom, #2a2a3e, #181824); width: 90%; max-width: 400px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 15px 40px rgba(0,0,0,0.6); overflow: hidden; animation: slideUp 0.3s ease;">
+        <div style="padding: 30px 24px 24px; text-align: center; position: relative;">
+          <button onclick="document.getElementById('user-profile-overlay').classList.add('hidden')"
+            style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 20px; color: var(--text-2); cursor: pointer; transition: color 0.2s;"
+            onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-2)'">✕</button>
+
+          <div id="modal-user-avatar"
+            style="width: 86px; height: 86px; font-size: 40px; margin: 0 auto 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(139,92,246,0.15); border: 2px solid rgba(139,92,246,0.4); box-shadow: 0 6px 20px rgba(0,0,0,0.3); overflow: hidden;">
+            👤</div>
+
+          <h2 id="modal-user-name"
+            style="font-size: 22px; color: #fff; margin-bottom: 4px; font-weight: 700; letter-spacing: 0.5px;">—</h2>
+          <div id="modal-user-role" style="font-size: 14px; color: var(--text-2); margin-bottom: 24px;">—</div>
+
+          <div
+            style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px 12px; text-align: left; background: rgba(0,0,0,0.3); padding: 18px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.03);">
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <span style="width: 20px; text-align: center; display: inline-block;">🎂</span>
+              <span id="modal-user-dob" style="font-size: 13.5px; color: #f8fafc; font-weight: 500;">—</span>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <span style="width: 20px; text-align: center; display: inline-block;">⚧</span>
+              <span id="modal-user-gender" style="font-size: 13.5px; color: #f8fafc; font-weight: 500;">—</span>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <span style="width: 20px; text-align: center; display: inline-block;">📍</span>
+              <span id="modal-user-hometown" style="font-size: 13.5px; color: #f8fafc; font-weight: 500;">—</span>
+            </div>
+            <div style="display: flex; gap: 10px; align-items: center;">
+              <span style="width: 20px; text-align: center; display: inline-block;">📞</span>
+              <span id="modal-user-phone" style="font-size: 13.5px; color: #f8fafc; font-weight: 500;">—</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
 
   </div>
   <script src="/js/app.js"></script>
 </body>
+
 </html>

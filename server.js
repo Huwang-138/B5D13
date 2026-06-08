@@ -66,6 +66,7 @@ const Session = mongoose.model('Session', sessionSchema);
 const violationSchema = new mongoose.Schema({
   user: { type: mongoose.Schema.Types.ObjectId, ref: 'User', required: true },
   type: { type: String, required: true },
+  note: { type: String, default: '' },
   points: { type: Number, default: 0 },
   recordedBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User' },
 }, { timestamps: true });
@@ -75,6 +76,7 @@ const notificationSchema = new mongoose.Schema({
   type: { type: String, default: 'info' }, // info, warning, success
   targetUser: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null }, // null = for all
   targetGroup: { type: Number, default: null },
+  targetRole: { type: String, default: null },
   triggeredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
 }, { timestamps: true });
 
@@ -233,7 +235,8 @@ app.get('/api/class/members', authMiddleware, async (req, res) => {
 // ─── Violations Routes ────────────────────────────────────────────
 app.get('/api/violations', authMiddleware, async (req, res) => {
   try {
-    const violations = await Violation.find({})
+    const filter = req.user.role === 'admin' ? {} : { user: req.user._id };
+    const violations = await Violation.find(filter)
       .populate('user', 'fullName stt username')
       .populate('recordedBy', 'fullName')
       .sort('-createdAt')
@@ -244,26 +247,87 @@ app.get('/api/violations', authMiddleware, async (req, res) => {
 
 app.post('/api/violations', authMiddleware, adminOnly, async (req, res) => {
   try {
-    const { userId, type, points } = req.body;
+    const { userId, type, note, points } = req.body;
     if (!userId || !type) return res.status(400).json({ error: 'Thiếu thông tin lỗi' });
+    if (type === 'Khác' && !note?.trim()) return res.status(400).json({ error: 'Vui lòng ghi chú nội dung lỗi' });
     
     const violation = await Violation.create({
       user: userId,
       type,
+      note: note?.trim() || '',
       points: Number(points) || 0,
       recordedBy: req.user._id
     });
     const populated = await violation.populate('user', 'fullName stt username');
     
     // Create notification
+    const noteText = note?.trim() ? ` (${note.trim()})` : '';
     const notif = await Notification.create({
-      message: `Bạn vừa bị ghi lỗi: ${type} (-${points} điểm)`,
+      message: `Bạn vừa bị ghi lỗi: ${type}${noteText} (-${points} điểm)`,
       type: 'warning',
       targetUser: userId
     });
-    io.emit('newNotification', notif); // broadcast to all, client will filter by targetUser if needed
+    io.emit('newNotification', notif);
 
     res.json(populated);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/violations/my-points', authMiddleware, async (req, res) => {
+  try {
+    const violations = await Violation.find({ user: req.user._id }).lean();
+    const totalDeducted = violations.reduce((sum, v) => sum + (v.points || 0), 0);
+    res.json({ totalDeducted, count: violations.length });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/violations/leaderboard', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const users = await User.find({}, 'fullName stt role').lean();
+    const violations = await Violation.find({}).lean();
+    const map = {};
+    violations.forEach(v => {
+      const uid = v.user.toString();
+      if (!map[uid]) map[uid] = 0;
+      map[uid] += v.points || 0;
+    });
+    const result = users.map(u => ({
+      _id: u._id,
+      fullName: u.fullName,
+      stt: u.stt,
+      role: u.role,
+      totalDeducted: map[u._id.toString()] || 0
+    })).sort((a, b) => b.totalDeducted - a.totalDeducted);
+    res.json(result);
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/violations/:id/appeal', authMiddleware, async (req, res) => {
+  try {
+    const violation = await Violation.findById(req.params.id).populate('user');
+    if (!violation) return res.status(404).json({ error: 'Không tìm thấy lỗi' });
+    if (violation.user._id.toString() !== req.user._id.toString()) {
+      return res.status(403).json({ error: 'Không có quyền khiếu nại lỗi của người khác' });
+    }
+
+    const notif = await Notification.create({
+      message: `${req.user.fullName} vừa khiếu nại về lỗi ${violation.type} (-${violation.points} điểm)`,
+      type: 'warning',
+      targetRole: 'admin',
+      triggeredBy: req.user._id
+    });
+    io.emit('newNotification', notif);
+
+    res.json({ success: true });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.delete('/api/violations/:id', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const violation = await Violation.findByIdAndDelete(req.params.id);
+    if (!violation) return res.status(404).json({ error: 'Không tìm thấy lỗi' });
+    
+    res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -286,31 +350,50 @@ app.get('/api/notifications', authMiddleware, async (req, res) => {
     const notifs = await Notification.find({
       $and: [
         { $or: [{ targetUser: null }, { targetUser: req.user._id }] },
-        { $or: [{ targetGroup: null }, { targetGroup: myGroupId }] }
+        { $or: [{ targetGroup: null }, { targetGroup: myGroupId }] },
+        { $or: [{ targetRole: null }, { targetRole: req.user.role }] }
       ]
     }).sort('-createdAt').limit(50).lean();
 
-    // Generate dynamic birthday notifications
+    // Generate dynamic birthday notifications for the closest upcoming birthday
     const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize today to midnight for accurate day diff
     const users = await User.find({}, 'fullName dob').lean();
-    const birthdayNotifs = [];
+    let minDiff = Infinity;
+    let closestUsers = [];
+
     users.forEach(u => {
       if (!u.dob) return;
       const [d, m, y] = u.dob.split('/');
       if (d && m) {
-        const bday = new Date(today.getFullYear(), parseInt(m) - 1, parseInt(d));
-        const diffTime = bday - today;
-        const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        if (diffDays >= 0 && diffDays <= 7) {
-          birthdayNotifs.push({
-            _id: 'bday-' + u._id,
-            message: diffDays === 0 ? `🎉 Hôm nay là sinh nhật của ${u.fullName}! Chúc mừng sinh nhật!` : `🎂 Còn ${diffDays} ngày nữa là sinh nhật của ${u.fullName}`,
-            type: 'success',
-            createdAt: new Date(),
-            targetUser: null
-          });
+        let bday = new Date(today.getFullYear(), parseInt(m) - 1, parseInt(d));
+        let diffTime = bday - today;
+        let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        if (diffDays < 0) { // Passed this year, check next year
+          bday = new Date(today.getFullYear() + 1, parseInt(m) - 1, parseInt(d));
+          diffTime = bday - today;
+          diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        }
+
+        if (diffDays < minDiff) {
+          minDiff = diffDays;
+          closestUsers = [{ user: u, diffDays }];
+        } else if (diffDays === minDiff) {
+          closestUsers.push({ user: u, diffDays });
         }
       }
+    });
+
+    const birthdayNotifs = [];
+    closestUsers.forEach(({ user, diffDays }) => {
+      birthdayNotifs.push({
+        _id: 'bday-' + user._id,
+        message: diffDays === 0 ? `Hôm nay là sinh nhật của ${user.fullName}! Chúc mừng sinh nhật!` : `Còn ${diffDays} ngày nữa là đến sinh nhật của ${user.fullName}.`,
+        type: 'success',
+        createdAt: new Date(),
+        targetUser: null
+      });
     });
 
     res.json([...birthdayNotifs, ...notifs].sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)));
