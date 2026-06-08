@@ -24,14 +24,30 @@ const JWT_SECRET = process.env.JWT_SECRET || 'qlnhom_super_secret_2025_!@#';
 const JWT_EXPIRES = '30d'; // Token kéo dài 30 ngày
 
 // ─── Web Push Configuration ───────────────────────────────────────
-const VAPID_PUBLIC = process.env.VAPID_PUBLIC || 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuB24l6P5pB8m5F1oIItu5gqX8';
-const VAPID_PRIVATE = process.env.VAPID_PRIVATE || 'YI8zOqK_c21N-t1Z7QzVl8tI_c0T_-G1Z8bL2wA2JvE';
+let VAPID_PUBLIC = process.env.VAPID_PUBLIC;
+let VAPID_PRIVATE = process.env.VAPID_PRIVATE;
 
-webpush.setVapidDetails(
-  'mailto:admin@quanlylop.com',
-  VAPID_PUBLIC,
-  VAPID_PRIVATE
-);
+async function initVapidKeys() {
+  if (VAPID_PUBLIC && VAPID_PRIVATE) {
+    webpush.setVapidDetails('mailto:admin@quanlylop.com', VAPID_PUBLIC, VAPID_PRIVATE);
+    return;
+  }
+  
+  const Setting = mongoose.model('Setting');
+  let vapidSetting = await Setting.findOne({ key: 'vapid' });
+  
+  if (!vapidSetting) {
+    const keys = webpush.generateVAPIDKeys();
+    vapidSetting = await Setting.create({ key: 'vapid', value: keys });
+    console.log('✅ Generated new VAPID Keys and saved to DB.');
+  } else {
+    console.log('✅ Loaded VAPID Keys from DB.');
+  }
+
+  VAPID_PUBLIC = vapidSetting.value.publicKey;
+  VAPID_PRIVATE = vapidSetting.value.privateKey;
+  webpush.setVapidDetails('mailto:admin@quanlylop.com', VAPID_PUBLIC, VAPID_PRIVATE);
+}
 
 // ─── Middleware ───────────────────────────────────────────────────
 app.use(cors());
@@ -44,6 +60,11 @@ const storage = multer.memoryStorage();
 const upload = multer({ storage, limits: { fileSize: 2 * 1024 * 1024 } });
 
 // ─── MongoDB Schemas ──────────────────────────────────────────────
+const settingSchema = new mongoose.Schema({
+  key: { type: String, unique: true },
+  value: mongoose.Schema.Types.Mixed
+});
+const Setting = mongoose.model('Setting', settingSchema);
 const userSchema = new mongoose.Schema({
   stt: Number,
   fullName: String,
@@ -786,6 +807,7 @@ cron.schedule('0 7 * * *', async () => {
 // ─── Khởi động Server ─────────────────────────────────────────────
 mongoose.connect(MONGODB_URI).then(async () => {
   console.log('✅ Connected to MongoDB');
+  await initVapidKeys();
   await seedDatabase();
   
   // Migration: update existing squad 2 members if they exist and are not set
