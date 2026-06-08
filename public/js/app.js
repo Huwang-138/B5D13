@@ -332,13 +332,20 @@ function renderGroupsGrid(session, myGroupId, isFixed, mode) {
 }
 
 // ─── Join / Leave Group ───────────────────────────────────────────────
+let isJoiningGroup = false;
 async function joinGroup(groupId) {
+  if (isJoiningGroup) return;
+  isJoiningGroup = true;
   try {
     const data = await API.post('/api/session/join', { groupId });
     state.myGroup = data.myGroup;
     toast(`Đã tham gia Nhóm ${groupId}! 🎉`, 'success');
     // Socket.io sẽ tự cập nhật giao diện qua sự kiện 'sessionUpdated'
-  } catch (err) { toast(err.message, 'error'); }
+  } catch (err) { 
+    toast(err.message, 'error'); 
+  } finally {
+    isJoiningGroup = false;
+  }
 }
 
 // ─── Admin Stats ──────────────────────────────────────────────────────
@@ -889,24 +896,101 @@ init();
 
 // ─── Anti-Inspect Troll ───────────────────────────────────────────────
 let warned = false;
+
+function playSiren() {
+  try {
+    const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+    if (!AudioContextClass) return;
+    const audioCtx = new AudioContextClass();
+    
+    // Tạo oscillator chính phát tiếng còi
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+    
+    // Tần số dao động wailing (tiếng còi cảnh sát hú lên hú xuống)
+    const modulator = audioCtx.createOscillator();
+    const modGain = audioCtx.createGain();
+    modulator.frequency.value = 2.5; // Tần số hú 2.5 lần/giây
+    modGain.gain.value = 200; // Dao động +/- 200Hz xung quanh 300Hz (100Hz - 500Hz)
+    
+    modulator.connect(modGain);
+    modGain.connect(osc.frequency);
+    
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    
+    osc.start();
+    modulator.start();
+  } catch (err) {
+    console.error("Audio failed to play", err);
+  }
+}
+
 function antiInspectAlert(e) {
   if (e) e.preventDefault();
   if (warned) return;
   warned = true;
+
+  const title = "Anh Hoàng yêu quý của em cho biết:";
   const msg = "Đm Hải Long ơi anh biết em đang định làm gì đấy, đừng có mà táy máy!!";
-  let alertMsg = "";
-  for(let i=0; i<10; i++) alertMsg += msg + "\\n";
-  alert(alertMsg);
-  for(let i=0; i<100; i++) {
-    console.log("%c" + msg, "color: red; font-size: 24px; font-weight: bold; background: black; padding: 10px; border-radius: 5px;");
-  }
-  toast('Cảnh báo: Hành vi bất thường đã bị ghi nhận!', 'error');
-  document.body.innerHTML = `<div style="display:flex;height:100vh;background:black;color:red;align-items:center;justify-content:center;flex-direction:column;font-size:30px;font-weight:bold;text-align:center;padding:20px;">
-    ${msg}<br><br>${msg}<br><br>${msg}<br><br>${msg}<br><br>${msg}
-  </div>`;
+
+  // Phát tiếng còi hú báo động
+  playSiren();
+
+  // Đổi giao diện màn hình nhấp nháy liên tục đỏ/đen cực căng
+  document.body.innerHTML = `
+    <style>
+      @keyframes blink {
+        0% { background-color: #ff0000; color: #ffffff; }
+        50% { background-color: #000000; color: #ff0000; }
+        100% { background-color: #ff0000; color: #ffffff; }
+      }
+      .troll-screen {
+        display: flex;
+        height: 100vh;
+        width: 100vw;
+        align-items: center;
+        justify-content: center;
+        flex-direction: column;
+        font-size: 32px;
+        font-weight: bold;
+        text-align: center;
+        padding: 20px;
+        box-sizing: border-box;
+        animation: blink 0.4s infinite;
+        font-family: system-ui, -apple-system, sans-serif;
+      }
+      .troll-title {
+        font-size: 46px;
+        margin-bottom: 24px;
+        text-transform: uppercase;
+        border: 6px solid currentColor;
+        padding: 15px 30px;
+        border-radius: 10px;
+      }
+    </style>
+    <div class="troll-screen">
+      <div style="font-size: 120px; margin-bottom: 20px;">🚨</div>
+      <div class="troll-title">${title}</div>
+      <div style="font-size: 28px; max-width: 800px; line-height: 1.5;">${msg}</div>
+    </div>
+  `;
+
+  // Spam log console làm đơ trình duyệt nếu cố tình mở DevTools
+  setInterval(() => {
+    console.log("%c" + msg, "color: red; font-size: 30px; font-weight: bold; background: black; padding: 10px; border-radius: 5px;");
+  }, 100);
+
+  // Hiển thị hộp thoại cảnh báo (trì hoãn 100ms để DOM kịp đổi)
+  setTimeout(() => {
+    alert(`${title}\n\n${msg}`);
+  }, 100);
 }
 
-// Detetct DevTools via debugger execution time
+// Chặn DevTools bằng debugger
 setInterval(() => {
   const before = new Date().getTime();
   debugger;
@@ -916,13 +1000,20 @@ setInterval(() => {
   }
 }, 1000);
 
+// Chặn phím tắt xem nguồn trang và mở DevTools
 document.addEventListener('keydown', e => {
+  const key = e.key.toLowerCase();
   if (
     e.key === 'F12' ||
-    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
-    (e.ctrlKey && (e.key === 'U' || e.key === 'u'))
+    (e.ctrlKey && e.shiftKey && ['i', 'j', 'c', 'k'].includes(key)) ||
+    (e.ctrlKey && ['u', 's', 'p'].includes(key))
   ) {
     antiInspectAlert(e);
   }
+});
+
+// Chặn click chuột phải để không thể "Xem nguồn trang"
+document.addEventListener('contextmenu', e => {
+  antiInspectAlert(e);
 });
 
