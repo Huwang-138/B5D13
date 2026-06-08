@@ -2,7 +2,7 @@
 <html lang="vi">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0" />
   <title>Quản lý Nhóm Lớp Học</title>
   <meta name="description" content="Ứng dụng chia và chọn nhóm học tập trực tuyến cho lớp học" />
   <link rel="stylesheet" href="/css/style.css" />
@@ -18,10 +18,7 @@
   <nav id="navbar" class="hidden">
     <div class="nav-logo">
       <div class="nav-logo-icon">👥</div>
-      <div>
-        <div class="nav-logo-text">Quản lý Nhóm</div>
-        <div class="nav-logo-sub">Class Group Manager</div>
-      </div>
+      <div class="nav-logo-text">Quản lý Nhóm</div>
     </div>
     <div class="nav-right">
       <div id="nav-user-info" class="nav-user" onclick="openProfileModal()">
@@ -43,7 +40,7 @@
       <div class="card login-card animate-in">
         <div class="login-logo">👥</div>
         <h1 class="login-title">Quản lý Nhóm</h1>
-        <p class="login-sub">Đăng nhập bằng tài khoản lớp học của bạn</p>
+        <p class="login-sub">Đăng nhập bằng tài khoản lớp học</p>
         <form class="login-form" onsubmit="handleLogin(event)">
           <div class="input-group">
             <label class="input-label" for="login-username">Tài khoản</label>
@@ -59,7 +56,7 @@
           </button>
         </form>
         <div class="login-hint">
-          💡 Tài khoản: tên không dấu viết liền. Mật khẩu: ngày sinh + @ (vd: 13082004@)
+          💡 Tài khoản: tên không dấu viết liền | Mật khẩu: ngày sinh + @ (vd: 13082004@)
         </div>
       </div>
     </div>
@@ -80,7 +77,6 @@
             <span id="sb-groups-badge" class="badge badge-cyan">—</span>
           </div>
         </div>
-        <div class="session-actions" id="session-user-actions"></div>
       </div>
 
       <!-- My Group Card -->
@@ -88,14 +84,14 @@
         <div class="my-group-title">Nhóm của bạn</div>
         <div id="my-group-name" class="my-group-name">—</div>
         <div id="my-group-fixed-msg" class="my-group-fixed hidden">🔒 Được Admin xếp cố định</div>
-        <button id="btn-leave-group" class="btn btn-ghost btn-sm" style="margin-top:12px" onclick="leaveGroup()">Rời nhóm</button>
+        <button id="btn-leave-group" class="btn btn-ghost btn-sm" style="margin-top:10px" onclick="leaveGroup()">Rời nhóm</button>
       </div>
 
       <!-- No Session Placeholder -->
       <div id="no-session-placeholder" class="no-session-placeholder">
         <div class="no-session-icon">📋</div>
         <div class="no-session-title">Chưa có phiên chia nhóm</div>
-        <div class="no-session-sub">Admin sẽ tạo phiên khi cần chia nhóm. Trong lúc đó, bạn có thể xem danh sách lớp bên dưới.</div>
+        <div class="no-session-sub">Admin sẽ tạo phiên khi cần chia nhóm.</div>
       </div>
 
       <!-- Groups Grid -->
@@ -106,34 +102,15 @@
         <div id="groups-grid" class="groups-grid"></div>
       </div>
 
-      <!-- Wheel Trigger for Random mode -->
-      <div id="wheel-trigger-section" class="hidden animate-in" style="text-align:center; padding: 32px 0;">
-        <p style="color:var(--text-2); margin-bottom:16px; font-size:15px;">Chế độ <strong>Ngẫu nhiên</strong> — Bấm nút để quay vòng quay may mắn!</p>
-        <button class="btn btn-primary btn-lg" onclick="openWheel()">🎡 Mở Vòng Quay Ngẫu Nhiên</button>
+      <!-- Random Slider for Random mode -->
+      <div id="slider-trigger-section" class="hidden animate-in">
+        <div class="slider-trigger-box">
+          <div class="slider-trigger-icon">🎰</div>
+          <p class="slider-trigger-text">Chế độ <strong>Ngẫu nhiên</strong> — Bấm nút để quay xổ số nhóm!</p>
+          <button class="btn btn-primary btn-lg" id="btn-open-slider" onclick="openSlider()">🎰 Bốc thăm ngẫu nhiên</button>
+        </div>
       </div>
 
-      <div class="divider"></div>
-
-      <!-- Class List -->
-      <div class="section-header">
-        <div class="section-title">👥 Danh sách lớp</div>
-        <span class="badge badge-purple">25 thành viên</span>
-      </div>
-      <div class="table-wrapper card">
-        <table id="class-table">
-          <thead>
-            <tr>
-              <th>STT</th>
-              <th>Học sinh</th>
-              <th>Ngày sinh</th>
-              <th>Giới tính</th>
-              <th>Quê quán</th>
-              <th>Vai trò</th>
-            </tr>
-          </thead>
-          <tbody id="class-tbody"></tbody>
-        </table>
-      </div>
     </div>
   </div>
 
@@ -142,12 +119,9 @@
   ═══════════════════════════════════════════════════════════════ -->
   <div id="view-admin" class="view">
     <div class="main-content">
-      <div class="flex items-center justify-between" style="margin-bottom:28px;">
-        <div>
-          <h1 class="page-title">🛠️ Bảng Quản Trị Admin</h1>
-          <p class="page-sub">Quản lý phiên chia nhóm và thành viên lớp</p>
-        </div>
-        <button class="btn btn-secondary" onclick="showUserView()">👁 Xem trang học sinh</button>
+      <div class="admin-header">
+        <h1 class="page-title">🛠️ Bảng Quản Trị</h1>
+        <p class="page-sub">Quản lý phiên chia nhóm lớp học</p>
       </div>
 
       <!-- Stats -->
@@ -155,97 +129,78 @@
         <div class="card stat-card">
           <div class="stat-icon">👥</div>
           <div class="stat-value" style="color:var(--purple)">25</div>
-          <div class="stat-label">Thành viên lớp</div>
+          <div class="stat-label">Thành viên</div>
         </div>
         <div class="card stat-card">
           <div class="stat-icon">📊</div>
           <div class="stat-value" id="stat-groups" style="color:var(--cyan)">0</div>
-          <div class="stat-label">Nhóm hiện tại</div>
+          <div class="stat-label">Nhóm</div>
         </div>
         <div class="card stat-card">
           <div class="stat-icon">✅</div>
           <div class="stat-value" id="stat-assigned" style="color:var(--green)">0</div>
-          <div class="stat-label">Đã có nhóm</div>
+          <div class="stat-label">Có nhóm</div>
         </div>
         <div class="card stat-card">
           <div class="stat-icon">⏳</div>
           <div class="stat-value" id="stat-unassigned" style="color:var(--amber)">25</div>
-          <div class="stat-label">Chưa có nhóm</div>
+          <div class="stat-label">Chưa có</div>
         </div>
       </div>
 
       <!-- Tabs -->
       <div class="admin-tabs">
         <button class="admin-tab active" data-tab="tab-session" onclick="switchTab('tab-session', this)">🎯 Tạo phiên</button>
-        <button class="admin-tab" data-tab="tab-manage" onclick="switchTab('tab-manage', this)">📋 Quản lý nhóm</button>
-        <button class="admin-tab" data-tab="tab-fixed" onclick="switchTab('tab-fixed', this)">🔒 Xếp cố định</button>
-        <button class="admin-tab" data-tab="tab-class" onclick="switchTab('tab-class', this)">👥 Danh sách lớp</button>
+        <button class="admin-tab" data-tab="tab-manage" onclick="switchTab('tab-manage', this)">📋 Quản lý</button>
+        <button class="admin-tab" data-tab="tab-fixed" onclick="switchTab('tab-fixed', this)">🔒 Cố định</button>
         <button class="admin-tab" data-tab="tab-history" onclick="switchTab('tab-history', this)">📜 Lịch sử</button>
       </div>
 
       <!-- Tab: Tạo phiên -->
       <div id="tab-session" class="admin-tab-content active animate-in">
-        <!-- Active session banner -->
-        <div id="active-session-alert" class="hidden" style="padding:16px 20px; background:rgba(245,158,11,0.1); border:1px solid rgba(245,158,11,0.3); border-radius:12px; margin-bottom:20px; display:flex; align-items:center; justify-content:space-between; gap:12px;">
+        <!-- Active session alert -->
+        <div id="active-session-alert" class="hidden active-alert">
           <div>
-            <span style="color:var(--amber);font-weight:700;">⚠️ Đang có phiên hoạt động:</span>
-            <span id="active-session-name" style="margin-left:8px;"></span>
+            <span class="alert-label">⚠️ Đang có phiên:</span>
+            <span id="active-session-name"></span>
           </div>
-          <div style="display:flex;gap:8px;">
-            <button class="btn btn-rose btn-sm" onclick="stopSession()">⏹ Kết thúc phiên</button>
-          </div>
+          <button class="btn btn-rose btn-sm" onclick="stopSession()">⏹ Kết thúc</button>
         </div>
 
         <div class="session-creator">
           <div class="card creator-card">
             <div class="creator-section-title">📝 Thông tin phiên</div>
-            <div style="display:flex;flex-direction:column;gap:16px;">
+            <div style="display:flex;flex-direction:column;gap:14px;">
               <div class="input-group">
                 <label class="input-label">Tên môn học</label>
                 <input id="f-subject" class="input" type="text" placeholder="vd: Lập trình Web" />
               </div>
               <div class="input-group">
-                <label class="input-label">Phương thức chia nhóm</label>
+                <label class="input-label">Phương thức</label>
                 <div class="radio-group">
                   <label class="radio-option">
-                    <input type="radio" name="f-mode" value="manual" checked onchange="updatePreview()" />
+                    <input type="radio" name="f-mode" value="manual" checked />
                     <div>
                       <div class="radio-label">🖱️ Tự chọn nhóm</div>
                       <div class="radio-sub">Học sinh tự bấm vào nhóm muốn tham gia</div>
                     </div>
                   </label>
                   <label class="radio-option">
-                    <input type="radio" name="f-mode" value="random" onchange="updatePreview()" />
+                    <input type="radio" name="f-mode" value="random" />
                     <div>
-                      <div class="radio-label">🎡 Vòng quay ngẫu nhiên</div>
-                      <div class="radio-sub">Học sinh quay vòng quay để vào nhóm ngẫu nhiên</div>
+                      <div class="radio-label">🎰 Bốc thăm ngẫu nhiên</div>
+                      <div class="radio-sub">Học sinh bốc thăm để vào nhóm ngẫu nhiên</div>
                     </div>
                   </label>
                 </div>
               </div>
+              <div class="input-group">
+                <label class="input-label">Số lượng nhóm</label>
+                <input id="f-group-count" class="input" type="number" min="1" max="25" placeholder="vd: 3" />
+              </div>
+              <button id="btn-create-session" class="btn btn-primary" onclick="createSession()">🚀 Tạo phiên chia nhóm</button>
             </div>
           </div>
-
-          <div class="card creator-card">
-            <div class="creator-section-title">📐 Cấu hình số nhóm</div>
-            <div style="display:flex;flex-direction:column;gap:16px;">
-              <div class="input-group">
-                <label class="input-label">Chia theo số nhóm</label>
-                <input id="f-group-count" class="input" type="number" min="1" max="25" placeholder="vd: 3" oninput="updatePreview()" />
-              </div>
-              <div style="text-align:center;color:var(--text-3);font-size:13px;">— HOẶC —</div>
-              <div class="input-group">
-                <label class="input-label">Số thành viên tối đa mỗi nhóm</label>
-                <input id="f-member-count" class="input" type="number" min="1" max="25" placeholder="vd: 8" oninput="updatePreview()" />
-              </div>
-              <div id="group-preview" class="preview-box hidden"></div>
-            </div>
-          </div>
-        </div>
-
-        <div style="margin-top:20px;display:flex;gap:12px;">
-          <button id="btn-create-session" class="btn btn-primary btn-lg" onclick="createSession()">🚀 Tạo phiên chia nhóm</button>
-          <button class="btn btn-secondary" onclick="updatePreview()">🔄 Xem trước</button>
         </div>
       </div>
 
@@ -254,25 +209,24 @@
         <div id="no-active-session-msg" class="no-session-placeholder">
           <div class="no-session-icon">📋</div>
           <div class="no-session-title">Chưa có phiên hoạt động</div>
-          <div class="no-session-sub">Tạo phiên chia nhóm ở tab "Tạo phiên" để bắt đầu quản lý.</div>
+          <div class="no-session-sub">Tạo phiên ở tab "Tạo phiên" để bắt đầu.</div>
         </div>
         <div id="manage-content" class="hidden">
-          <div class="section-header">
+          <div class="section-header" style="flex-wrap:wrap;gap:8px;">
             <div class="section-title" id="manage-session-title">—</div>
-            <div class="section-actions">
-              <button class="btn btn-secondary btn-sm" onclick="autoAssignRemaining()">🎲 Chia ngẫu nhiên người còn lại</button>
-              <button class="btn btn-ghost btn-sm" onclick="resetSession()">🔄 Reset nhóm</button>
-              <button class="btn btn-green btn-sm" onclick="exportCSV()">📥 Xuất CSV</button>
+            <div class="manage-actions">
+              <button class="btn btn-secondary btn-sm" onclick="autoAssignRemaining()">🎲 Chia ngẫu nhiên còn lại</button>
+              <button class="btn btn-ghost btn-sm" onclick="resetSession()">🔄 Reset</button>
               <button class="btn btn-rose btn-sm" onclick="stopSession()">⏹ Kết thúc</button>
             </div>
           </div>
           <div id="admin-groups-grid" class="admin-groups-grid"></div>
           <!-- Unassigned -->
-          <div style="margin-top:24px;">
+          <div style="margin-top:20px;">
             <div class="section-header">
               <div class="section-title">⏳ Chưa có nhóm (<span id="unassigned-count">0</span>)</div>
             </div>
-            <div id="unassigned-list" style="display:flex;flex-wrap:wrap;gap:8px;"></div>
+            <div id="unassigned-list" class="unassigned-list"></div>
           </div>
         </div>
       </div>
@@ -282,39 +236,18 @@
         <div id="no-active-session-fixed-msg" class="no-session-placeholder">
           <div class="no-session-icon">🔒</div>
           <div class="no-session-title">Cần có phiên hoạt động</div>
-          <div class="no-session-sub">Tạo phiên trước, sau đó bạn có thể xếp cố định thành viên vào nhóm nào đó.</div>
+          <div class="no-session-sub">Tạo phiên trước, sau đó bạn có thể xếp cố định thành viên.</div>
         </div>
         <div id="fixed-content" class="hidden">
-          <p style="color:var(--text-2);font-size:14px;margin-bottom:20px;">Xếp cố định học sinh vào nhóm ngay từ đầu. Học sinh bị xếp cố định sẽ không thể tự chọn hoặc đổi nhóm.</p>
-          <div id="fixed-assign-list" class="assign-list" style="max-height:500px;"></div>
-        </div>
-      </div>
-
-      <!-- Tab: Danh sách lớp -->
-      <div id="tab-class" class="admin-tab-content animate-in">
-        <div class="table-wrapper card">
-          <table id="admin-class-table">
-            <thead>
-              <tr>
-                <th>STT</th>
-                <th>Học sinh</th>
-                <th>Ngày sinh</th>
-                <th>Giới tính</th>
-                <th>Quê quán</th>
-                <th>SĐT</th>
-                <th>Tài khoản</th>
-                <th>Vai trò</th>
-              </tr>
-            </thead>
-            <tbody id="admin-class-tbody"></tbody>
-          </table>
+          <p style="color:var(--text-2);font-size:13px;margin-bottom:16px;">Học sinh bị xếp cố định sẽ không thể tự chọn hoặc đổi nhóm.</p>
+          <div id="fixed-assign-list" class="assign-list" style="max-height:600px;"></div>
         </div>
       </div>
 
       <!-- Tab: Lịch sử -->
       <div id="tab-history" class="admin-tab-content animate-in">
-        <div class="section-header" style="margin-bottom:20px;">
-          <div class="section-title">📜 Lịch sử các phiên chia nhóm</div>
+        <div class="section-header" style="margin-bottom:16px;">
+          <div class="section-title">📜 Lịch sử các phiên</div>
           <button class="btn btn-secondary btn-sm" onclick="loadHistory()">🔄 Làm mới</button>
         </div>
         <div id="history-list"></div>
@@ -324,23 +257,33 @@
   </div>
 
   <!-- ════════════════════════════════════════════════════════════
-       WHEEL OVERLAY
+       RANDOM SLIDER OVERLAY
   ═══════════════════════════════════════════════════════════════ -->
-  <div id="wheel-overlay" class="hidden">
-    <div class="wheel-container animate-in">
-      <div class="wheel-title">🎡 Vòng Quay Ngẫu Nhiên</div>
-      <div class="wheel-sub" id="wheel-sub-text">Nhấn "Quay ngẫu nhiên" để hệ thống tự chọn nhóm cho bạn!</div>
-      <div class="wheel-wrapper">
-        <canvas id="wheel-canvas" width="340" height="340"></canvas>
-        <div class="wheel-pointer"></div>
+  <div id="slider-overlay" class="hidden">
+    <div class="slider-modal animate-in">
+      <div class="slider-modal-header">
+        <div class="slider-modal-title">🎰 Bốc thăm ngẫu nhiên</div>
+        <div class="slider-modal-sub" id="slider-sub-text">Nhấn nút để hệ thống chọn nhóm cho bạn!</div>
       </div>
-      <div id="wheel-result" class="wheel-result">
-        <div class="wheel-result-label">🎉 Chúc mừng! Bạn vào</div>
-        <div id="wheel-result-name" class="wheel-result-name">—</div>
+
+      <!-- Slot machine display -->
+      <div class="slot-machine">
+        <div class="slot-arrow-left">◀</div>
+        <div class="slot-window">
+          <div id="slot-track" class="slot-track"></div>
+        </div>
+        <div class="slot-arrow-right">▶</div>
       </div>
-      <div style="display:flex;gap:12px;">
-        <button id="wheel-spin-btn" class="btn btn-primary wheel-spin-btn" onclick="spinWheel()">🎡 Quay ngẫu nhiên</button>
-        <button class="btn btn-secondary" onclick="closeWheel()">Đóng</button>
+
+      <!-- Result -->
+      <div id="slider-result" class="slider-result hidden">
+        <div class="slider-result-label">🎉 Chúc mừng! Bạn vào</div>
+        <div id="slider-result-name" class="slider-result-name">—</div>
+      </div>
+
+      <div class="slider-modal-actions">
+        <button id="slider-spin-btn" class="btn btn-primary btn-lg slider-spin-btn" onclick="spinSlider()">🎰 Bốc thăm!</button>
+        <button class="btn btn-ghost" onclick="closeSlider()">Đóng</button>
       </div>
     </div>
   </div>
@@ -354,41 +297,32 @@
       <div class="modal-title">👤 Thông tin cá nhân</div>
 
       <!-- User info display -->
-      <div style="display:flex;align-items:center;gap:16px;margin-bottom:24px;padding:16px;background:rgba(139,92,246,0.06);border:1px solid rgba(139,92,246,0.2);border-radius:12px;">
-        <div id="profile-big-avatar" style="width:64px;height:64px;border-radius:50%;background:linear-gradient(135deg,var(--purple),var(--cyan));display:flex;align-items:center;justify-content:center;font-size:32px;overflow:hidden;flex-shrink:0;border:3px solid rgba(139,92,246,0.4);">👤</div>
+      <div class="profile-info-box">
+        <div id="profile-big-avatar" class="profile-big-avatar">👤</div>
         <div>
-          <div id="profile-fullname" style="font-size:18px;font-weight:700;"></div>
-          <div id="profile-dob" style="font-size:13px;color:var(--text-2);"></div>
-          <div id="profile-hometown" style="font-size:13px;color:var(--text-2);"></div>
+          <div id="profile-fullname" class="profile-fullname"></div>
+          <div id="profile-dob" class="profile-meta"></div>
+          <div id="profile-hometown" class="profile-meta"></div>
         </div>
       </div>
 
       <!-- Avatar selection -->
-      <div style="margin-bottom:24px;">
-        <div class="creator-section-title" style="margin-bottom:12px;">Chọn Avatar</div>
+      <div style="margin-bottom:20px;">
+        <div class="creator-section-title" style="margin-bottom:10px;">Chọn Avatar</div>
         <div class="avatar-grid" id="avatar-grid"></div>
         <div style="margin-top:10px;display:flex;align-items:center;gap:10px;">
           <label class="btn btn-secondary btn-sm" for="avatar-file-input" style="cursor:pointer;">📤 Tải ảnh lên</label>
           <input id="avatar-file-input" type="file" accept="image/*" style="display:none;" onchange="handleAvatarFile(event)" />
-          <span style="font-size:12px;color:var(--text-3);">Tối đa 2MB</span>
+          <span style="font-size:11px;color:var(--text-3);">Tối đa 2MB</span>
         </div>
       </div>
 
       <div class="divider"></div>
 
-      <!-- Change username -->
+      <!-- Change password only -->
       <div style="margin-bottom:20px;">
-        <div class="creator-section-title" style="margin-bottom:12px;">Đổi tài khoản</div>
-        <div class="input-group">
-          <label class="input-label">Tài khoản mới</label>
-          <input id="new-username" class="input" type="text" placeholder="Nhập tài khoản mới..." />
-        </div>
-      </div>
-
-      <!-- Change password -->
-      <div style="margin-bottom:24px;">
-        <div class="creator-section-title" style="margin-bottom:12px;">Đổi mật khẩu</div>
-        <div style="display:flex;flex-direction:column;gap:12px;">
+        <div class="creator-section-title" style="margin-bottom:10px;">Đổi mật khẩu</div>
+        <div style="display:flex;flex-direction:column;gap:10px;">
           <div class="input-group">
             <label class="input-label">Mật khẩu cũ</label>
             <input id="old-password" class="input" type="password" placeholder="Nhập mật khẩu cũ..." />

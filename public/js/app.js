@@ -43,7 +43,7 @@ function toast(message, type = 'info') {
   setTimeout(() => {
     el.style.animation = 'fadeOut 0.3s ease forwards';
     setTimeout(() => el.remove(), 300);
-  }, 3500);
+  }, 3200);
 }
 
 // ─── Views ────────────────────────────────────────────────────────────
@@ -62,7 +62,8 @@ function showUserView() {
   document.getElementById('navbar').classList.remove('hidden');
   updateNavbar();
   showView('view-user');
-  loadClassMembers();
+  // Load members in background for fixed assign rendering
+  loadClassMembersBackground();
   startPolling();
 }
 
@@ -70,7 +71,7 @@ function showAdminView() {
   document.getElementById('navbar').classList.remove('hidden');
   updateNavbar();
   showView('view-admin');
-  loadClassMembers(true);
+  loadClassMembersBackground(true);
   loadAdminSession();
   startPolling();
 }
@@ -84,7 +85,7 @@ function updateNavbar() {
   const roleEl = document.getElementById('nav-role-el');
   roleEl.innerHTML = state.user.role === 'admin'
     ? '<span class="badge badge-amber">👑 Admin</span>'
-    : '<span class="badge badge-cyan">🎓 Học sinh</span>';
+    : '<span class="badge badge-cyan">🎓 HS</span>';
 }
 
 function setAvatarEl(el, avatar, fullName) {
@@ -93,7 +94,7 @@ function setAvatarEl(el, avatar, fullName) {
   } else if (avatar) {
     el.textContent = avatar;
     el.style.background = 'none';
-    el.style.fontSize = '22px';
+    el.style.fontSize = '16px';
   } else {
     el.textContent = (fullName || '?').charAt(0).toUpperCase();
     el.style.background = '';
@@ -139,47 +140,19 @@ async function logout() {
   toast('Đã đăng xuất', 'info');
 }
 
-// ─── Class Members ────────────────────────────────────────────────────
-async function loadClassMembers(isAdmin = false) {
+// ─── Class Members (background, no render for users) ─────────────────
+async function loadClassMembersBackground(isAdmin = false) {
   try {
     const members = await API.get('/api/class/members');
     state.members = members;
-    renderClassTable(members, isAdmin);
-  } catch (err) { toast(err.message, 'error'); }
-}
-
-function renderClassTable(members, isAdmin = false) {
-  const tbodyId = isAdmin ? 'admin-class-tbody' : 'class-tbody';
-  const tbody = document.getElementById(tbodyId);
-  if (!tbody) return;
-  tbody.innerHTML = members.map(m => {
-    const avatarHtml = m.avatar && m.avatar.startsWith('data:')
-      ? `<img src="${m.avatar}" alt="" />`
-      : (m.avatar || m.fullName.charAt(0));
-    const roleBadge = m.role === 'admin'
-      ? '<span class="badge badge-amber">👑 Admin</span>'
-      : '<span class="badge badge-cyan">🎓 HS</span>';
-    const adminExtra = isAdmin
-      ? `<td>${m.phone || '—'}</td><td style="font-family:monospace;font-size:12px">${m.username}</td><td>${roleBadge}</td>`
-      : `<td>${roleBadge}</td>`;
-    return `<tr>
-      <td style="color:var(--text-2);font-weight:700;">${m.stt}</td>
-      <td><div class="td-avatar">
-        <div class="td-avatar-img">${avatarHtml}</div>
-        <span style="font-weight:600;">${m.fullName}</span>
-      </div></td>
-      <td>${m.dob}</td>
-      <td><span class="badge ${m.gender==='Nữ'?'badge-rose':'badge-cyan'}">${m.gender}</span></td>
-      <td>${m.hometown}</td>
-      ${adminExtra}
-    </tr>`;
-  }).join('');
+    // Only render admin table (no user class table anymore)
+  } catch {}
 }
 
 // ─── Polling ──────────────────────────────────────────────────────────
 function startPolling() {
   stopPolling();
-  state.pollingTimer = setInterval(pollSessionStatus, 2000);
+  state.pollingTimer = setInterval(pollSessionStatus, 2500);
   pollSessionStatus();
 }
 
@@ -195,17 +168,16 @@ async function pollSessionStatus() {
     }
     if (document.getElementById('view-admin').classList.contains('active')) {
       renderAdminStats(data);
-      // Refresh manage tab if active
       const manageTab = document.getElementById('tab-manage');
       if (manageTab && manageTab.classList.contains('active') && data.active) {
         renderAdminGroups(data.session);
       }
-      // Update active session alert
       const alert = document.getElementById('active-session-alert');
       if (data.active) {
         alert.classList.remove('hidden');
         alert.style.display = 'flex';
-        document.getElementById('active-session-name').textContent = `"${data.session.subject}" — ${data.session.mode === 'manual' ? 'Tự chọn' : 'Random'} — ${data.session.groups.length} nhóm`;
+        document.getElementById('active-session-name').textContent =
+          ` "${data.session.subject}" — ${data.session.mode === 'manual' ? 'Tự chọn' : 'Random'} — ${data.session.groups.length} nhóm`;
       } else {
         alert.classList.add('hidden');
       }
@@ -218,32 +190,29 @@ async function pollSessionStatus() {
 
 // ─── User Session Rendering ───────────────────────────────────────────
 function renderUserSession(data) {
-  const banner = document.getElementById('session-banner');
-  const noSession = document.getElementById('no-session-placeholder');
+  const banner        = document.getElementById('session-banner');
+  const noSession     = document.getElementById('no-session-placeholder');
   const groupsSection = document.getElementById('groups-section');
-  const myGroupCard = document.getElementById('my-group-card');
-  const wheelTrigger = document.getElementById('wheel-trigger-section');
+  const myGroupCard   = document.getElementById('my-group-card');
+  const sliderTrigger = document.getElementById('slider-trigger-section');
 
   if (!data.active) {
     banner.classList.add('hidden');
     noSession.classList.remove('hidden');
     groupsSection.classList.add('hidden');
     myGroupCard.classList.add('hidden');
-    wheelTrigger.classList.add('hidden');
+    sliderTrigger.classList.add('hidden');
     return;
   }
 
   const session = data.session;
   noSession.classList.add('hidden');
-
-  // Update banner
   banner.classList.remove('hidden');
   document.getElementById('sb-subject').textContent = session.subject;
   document.getElementById('sb-mode-badge').innerHTML =
-    session.mode === 'manual' ? '🖱️ Tự chọn' : '🎡 Ngẫu nhiên';
+    session.mode === 'manual' ? '🖱️ Tự chọn' : '🎰 Ngẫu nhiên';
   document.getElementById('sb-groups-badge').innerHTML = `${session.groups.length} nhóm`;
 
-  // My group card
   if (data.myGroup) {
     myGroupCard.classList.remove('hidden');
     const grp = session.groups.find(g => g.groupId === data.myGroup);
@@ -252,20 +221,18 @@ function renderUserSession(data) {
     if (data.isFixed) fixedMsg.classList.remove('hidden'); else fixedMsg.classList.add('hidden');
     const leaveBtn = document.getElementById('btn-leave-group');
     leaveBtn.style.display = data.isFixed ? 'none' : '';
-    wheelTrigger.classList.add('hidden');
+    sliderTrigger.classList.add('hidden');
     groupsSection.classList.remove('hidden');
   } else {
     myGroupCard.classList.add('hidden');
+    groupsSection.classList.remove('hidden');
     if (session.mode === 'random') {
-      wheelTrigger.classList.remove('hidden');
-      groupsSection.classList.remove('hidden');
+      sliderTrigger.classList.remove('hidden');
     } else {
-      wheelTrigger.classList.add('hidden');
-      groupsSection.classList.remove('hidden');
+      sliderTrigger.classList.add('hidden');
     }
   }
 
-  // Render groups grid
   renderGroupsGrid(session, data.myGroup, data.isFixed, session.mode);
 }
 
@@ -306,8 +273,8 @@ function renderGroupsGrid(session, myGroupId, isFixed, mode) {
       </div>
       <div class="group-members">${membersHtml}</div>
       ${emptySlots > 0 ? `<div class="group-empty-slots">+${emptySlots} chỗ trống</div>` : ''}
-      ${canJoin ? `<button class="btn btn-primary btn-sm group-join-btn" onclick="joinGroup(${g.groupId});event.stopPropagation()">Tham gia nhóm này</button>` : ''}
-      ${isMyGroup ? `<div style="margin-top:10px;font-size:12px;color:var(--green);font-weight:700;">✓ Nhóm của bạn</div>` : ''}
+      ${canJoin ? `<button class="btn btn-primary btn-sm group-join-btn" onclick="joinGroup(${g.groupId});event.stopPropagation()">Tham gia</button>` : ''}
+      ${isMyGroup ? `<div style="margin-top:8px;font-size:11px;color:var(--green);font-weight:700;">✓ Nhóm của bạn</div>` : ''}
     </div>`;
   }).join('');
 }
@@ -374,7 +341,15 @@ function updateFixedTab(data) {
   const content = document.getElementById('fixed-content');
   if (!data.active) { noMsg.classList.remove('hidden'); content.classList.add('hidden'); return; }
   noMsg.classList.add('hidden'); content.classList.remove('hidden');
-  renderFixedAssignList(data.session);
+  if (state.members.length > 0) {
+    renderFixedAssignList(data.session);
+  } else {
+    // Load members then render
+    API.get('/api/class/members').then(members => {
+      state.members = members;
+      renderFixedAssignList(data.session);
+    }).catch(() => {});
+  }
 }
 
 function renderAdminGroups(session) {
@@ -391,7 +366,7 @@ function renderAdminGroups(session) {
         <div class="member-avatar-sm">${avatarHtml}</div>
         <span class="admin-member-name">${m.fullName} ${isFixedMember ? '🔒' : ''}</span>
         <div class="admin-member-actions">
-          <select class="input" style="padding:4px 8px;font-size:11px;height:28px;" onchange="moveMember('${m._id}', ${g.groupId}, this.value, this)">
+          <select class="input" style="padding:3px 6px;font-size:11px;height:26px;" onchange="moveMember('${m._id}', ${g.groupId}, this.value, this)">
             <option value="">Chuyển...</option>
             ${session.groups.filter(gg => gg.groupId !== g.groupId).map(gg =>
               `<option value="${gg.groupId}">${gg.name}</option>`
@@ -414,7 +389,7 @@ function renderAdminGroups(session) {
         <div class="group-progress-fill" style="width:${g.capacity>0?(g.members.length/g.capacity*100):0}%;background:${color};"></div>
       </div>
       <div>${membersHtml}</div>
-      ${g.members.length === 0 ? '<div style="font-size:13px;color:var(--text-3);padding:8px 0;text-align:center">Chưa có thành viên</div>' : ''}
+      ${g.members.length === 0 ? '<div style="font-size:12px;color:var(--text-3);padding:6px 0;text-align:center">Chưa có thành viên</div>' : ''}
     </div>`;
   }).join('');
 
@@ -424,9 +399,7 @@ function renderAdminGroups(session) {
   const unassigned = state.members.filter(m => !allMemberIds.has(m._id.toString()));
   document.getElementById('unassigned-count').textContent = unassigned.length;
   document.getElementById('unassigned-list').innerHTML = unassigned.map(m =>
-    `<span style="display:inline-flex;align-items:center;gap:6px;padding:5px 12px;background:var(--bg-card);border:1px solid var(--border);border-radius:20px;font-size:13px;">
-      ${m.fullName}
-    </span>`
+    `<span class="unassigned-chip">${m.fullName}</span>`
   ).join('');
 }
 
@@ -439,19 +412,18 @@ function renderFixedAssignList(session) {
     let isFixed = false;
     for (const g of session.groups) {
       const fixedIds = g.fixedMembers.map(f => (f._id||f).toString());
-      const memberIds = g.members.map(mem => (mem._id||mem).toString());
       if (fixedIds.includes(m._id.toString())) { currentGroupId = g.groupId; isFixed = true; break; }
     }
     const options = session.groups.map(g => `<option value="${g.groupId}" ${currentGroupId===g.groupId?'selected':''}>${g.name}</option>`).join('');
     return `<div class="assign-item">
       <div class="member-avatar-sm">${m.avatar && m.avatar.startsWith('data:') ? `<img src="${m.avatar}" alt="" />` : (m.avatar || m.fullName.charAt(0))}</div>
       <span class="assign-item-name">${m.fullName} ${isFixed ? '🔒' : ''}</span>
-      <div class="assign-item-group" style="display:flex;gap:6px;align-items:center;">
-        <select class="input" style="padding:6px 10px;font-size:12px;" id="fixed-select-${m._id}">
+      <div class="assign-item-group" style="display:flex;gap:5px;align-items:center;">
+        <select class="input" style="padding:5px 8px;font-size:12px;" id="fixed-select-${m._id}">
           <option value="">Không cố định</option>
           ${options}
         </select>
-        <button class="btn btn-primary btn-sm" onclick="applyFixed('${m._id}')">Xác nhận</button>
+        <button class="btn btn-primary btn-sm" onclick="applyFixed('${m._id}')">OK</button>
       </div>
     </div>`;
   }).join('');
@@ -495,32 +467,15 @@ async function changeCapacity(groupId, delta) {
 }
 
 // ─── Admin Actions ────────────────────────────────────────────────────
-function updatePreview() {
-  const groupCount = parseInt(document.getElementById('f-group-count').value) || 0;
-  const memberCount = parseInt(document.getElementById('f-member-count').value) || 0;
-  const preview = document.getElementById('group-preview');
-  let numGroups = groupCount;
-  if (!numGroups && memberCount) numGroups = Math.ceil(25 / memberCount);
-  if (numGroups < 1) { preview.classList.add('hidden'); return; }
-  const base = Math.floor(25 / numGroups);
-  const extra = 25 % numGroups;
-  let desc = `<strong>${numGroups} nhóm</strong> với phân bổ:<br>`;
-  if (extra > 0) desc += `• ${extra} nhóm có <strong>${base + 1} người</strong><br>`;
-  desc += `• ${numGroups - extra} nhóm có <strong>${base} người</strong>`;
-  preview.innerHTML = desc;
-  preview.classList.remove('hidden');
-}
-
 async function createSession() {
   const subject    = document.getElementById('f-subject').value.trim() || 'Môn học';
   const mode       = document.querySelector('input[name="f-mode"]:checked')?.value || 'manual';
   const groupCount = parseInt(document.getElementById('f-group-count').value) || 0;
-  const memberPerGroup = parseInt(document.getElementById('f-member-count').value) || 0;
-  if (!groupCount && !memberPerGroup) { toast('Vui lòng nhập số nhóm hoặc số thành viên mỗi nhóm', 'warning'); return; }
+  if (!groupCount) { toast('Vui lòng nhập số lượng nhóm', 'warning'); return; }
   try {
     const btn = document.getElementById('btn-create-session');
     btn.disabled = true; btn.textContent = 'Đang tạo...';
-    await API.post('/api/admin/session/create', { subject, mode, groupCount, memberPerGroup });
+    await API.post('/api/admin/session/create', { subject, mode, groupCount });
     toast(`✅ Đã tạo phiên "${subject}" thành công!`, 'success');
     await loadAdminSession();
     switchTab('tab-manage', document.querySelector('[data-tab="tab-manage"]'));
@@ -532,7 +487,7 @@ async function createSession() {
 }
 
 async function stopSession() {
-  if (!confirm('Bạn có chắc muốn kết thúc phiên này? Dữ liệu nhóm sẽ được lưu lại.')) return;
+  if (!confirm('Bạn có chắc muốn kết thúc phiên này?')) return;
   try {
     await API.post('/api/admin/session/stop');
     state.session = null;
@@ -560,10 +515,6 @@ async function autoAssignRemaining() {
   } catch (err) { toast(err.message, 'error'); }
 }
 
-async function exportCSV() {
-  window.location.href = '/api/admin/export';
-}
-
 async function loadHistory() {
   try {
     const sessions = await API.get('/api/admin/sessions');
@@ -572,28 +523,31 @@ async function loadHistory() {
       list.innerHTML = '<div class="no-session-placeholder"><div class="no-session-icon">📜</div><div class="no-session-title">Chưa có lịch sử</div></div>';
       return;
     }
+    const colors = ['var(--purple)', 'var(--cyan)', 'var(--rose)', 'var(--green)', 'var(--amber)', '#ec4899', '#f97316', '#84cc16'];
     list.innerHTML = sessions.map(s => {
       const date = new Date(s.createdAt).toLocaleString('vi-VN');
       const status = s.active
         ? '<span class="badge badge-green pulse">🟢 Đang hoạt động</span>'
         : '<span class="badge badge-amber">⏹ Đã kết thúc</span>';
-      const groupsHtml = s.groups.map(g => `<span class="history-group-pill">${g.name}: ${g.members.length} người</span>`).join('');
+      const groupsHtml = s.groups.map((g, idx) => {
+        const color = colors[idx % colors.length];
+        const memberChips = (g.members || []).map(m =>
+          `<span class="history-member-chip">${m.fullName || m.username || '?'}</span>`
+        ).join('');
+        return `<div class="history-group-section">
+          <div class="history-group-name" style="color:${color}">${g.name} <span style="font-size:11px;color:var(--text-2);font-weight:400;">(${g.members.length} người)</span></div>
+          <div class="history-member-list">${memberChips || '<span style="font-size:11px;color:var(--text-3);">Chưa có thành viên</span>'}</div>
+        </div>`;
+      }).join('');
       return `<div class="card history-card">
         <div class="history-header">
-          <div>
-            <div class="history-subject">${s.subject} ${status}</div>
-            <div class="history-date">🕐 ${date} | ${s.mode === 'manual' ? '🖱️ Tự chọn' : '🎡 Random'}</div>
-          </div>
-          <button class="btn btn-secondary btn-sm" onclick="exportCSVById('${s._id}')">📥 Xuất CSV</button>
+          <div class="history-subject">${s.subject} ${status}</div>
+          <div class="history-date">🕐 ${date} | ${s.mode === 'manual' ? '🖱️ Tự chọn' : '🎰 Random'}</div>
         </div>
         <div class="history-groups">${groupsHtml}</div>
       </div>`;
     }).join('');
   } catch (err) { toast(err.message, 'error'); }
-}
-
-async function exportCSVById(sessionId) {
-  window.location.href = `/api/admin/export?sessionId=${sessionId}`;
 }
 
 // ─── Tab Switching ────────────────────────────────────────────────────
@@ -602,200 +556,163 @@ function switchTab(tabId, btn) {
   document.querySelectorAll('.admin-tab').forEach(b => b.classList.remove('active'));
   document.getElementById(tabId).classList.add('active');
   if (btn) btn.classList.add('active');
-  // Lazy-load
   if (tabId === 'tab-history') loadHistory();
   if (tabId === 'tab-manage' || tabId === 'tab-fixed') loadAdminSession();
 }
 
-// ─── Wheel / Canvas ───────────────────────────────────────────────────
-let wheelState = {
+// ─── Random Slider (Slot Machine) ─────────────────────────────────────
+let sliderState = {
   spinning: false,
-  currentAngle: 0,
-  segments: [],
-  audioCtx: null,
+  groups: [],
 };
 
-function openWheel() {
-  if (!state.session) return;
-  const available = state.session.groups.filter(g => g.members.length < g.capacity);
-  if (available.length === 0) { toast('Tất cả các nhóm đã đầy!', 'warning'); return; }
-  wheelState.segments = available;
-  document.getElementById('wheel-overlay').classList.remove('hidden');
-  document.getElementById('wheel-result').style.display = 'none';
-  document.getElementById('wheel-spin-btn').disabled = false;
-  document.getElementById('wheel-spin-btn').textContent = '🎡 Quay ngẫu nhiên';
-  drawWheel(wheelState.currentAngle);
-}
-
-function closeWheel() {
-  document.getElementById('wheel-overlay').classList.add('hidden');
-}
-
-const WHEEL_COLORS = [
+const SLOT_COLORS = [
   '#8b5cf6','#06b6d4','#f43f5e','#10b981','#f59e0b',
   '#ec4899','#f97316','#84cc16','#6366f1','#14b8a6',
 ];
 
-function drawWheel(rotation) {
-  const canvas = document.getElementById('wheel-canvas');
-  const ctx = canvas.getContext('2d');
-  const w = canvas.width, h = canvas.height;
-  const cx = w / 2, cy = h / 2, r = Math.min(w, h) / 2 - 8;
-  const segs = wheelState.segments;
-  const arc = (2 * Math.PI) / segs.length;
-  ctx.clearRect(0, 0, w, h);
+function openSlider() {
+  if (!state.session) return;
+  const available = state.session.groups.filter(g => g.members.length < g.capacity);
+  if (available.length === 0) { toast('Tất cả các nhóm đã đầy!', 'warning'); return; }
+  sliderState.groups = state.session.groups; // all groups for visual
+  sliderState.spinning = false;
 
-  segs.forEach((seg, i) => {
-    const start = rotation + i * arc;
-    const end   = start + arc;
-    // Slice
-    ctx.beginPath();
-    ctx.moveTo(cx, cy);
-    ctx.arc(cx, cy, r, start, end);
-    ctx.closePath();
-    ctx.fillStyle = WHEEL_COLORS[i % WHEEL_COLORS.length];
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(0,0,0,0.3)';
-    ctx.lineWidth = 2;
-    ctx.stroke();
+  document.getElementById('slider-result').classList.add('hidden');
+  document.getElementById('slider-spin-btn').disabled = false;
+  document.getElementById('slider-spin-btn').textContent = '🎰 Bốc thăm!';
+  document.getElementById('slider-sub-text').textContent = 'Nhấn nút để hệ thống chọn nhóm cho bạn!';
 
-    // Text
-    ctx.save();
-    ctx.translate(cx, cy);
-    ctx.rotate(start + arc / 2);
-    ctx.textAlign = 'right';
-    ctx.fillStyle = '#fff';
-    ctx.font = `bold ${segs.length > 6 ? 12 : 14}px Outfit, sans-serif`;
-    ctx.shadowColor = 'rgba(0,0,0,0.5)';
-    ctx.shadowBlur = 4;
-    ctx.fillText(seg.name, r - 12, 5);
-    ctx.restore();
-  });
+  // Build initial slot track (replicate groups multiple times for effect)
+  buildSlotTrack(sliderState.groups, -1);
 
-  // Center circle
-  ctx.beginPath();
-  ctx.arc(cx, cy, 28, 0, 2 * Math.PI);
-  ctx.fillStyle = '#0d1220';
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(139,92,246,0.5)';
-  ctx.lineWidth = 3;
-  ctx.stroke();
-  ctx.fillStyle = '#fff';
-  ctx.font = 'bold 18px Outfit, sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('GO', cx, cy);
+  document.getElementById('slider-overlay').classList.remove('hidden');
 }
 
-function spinWheel() {
-  if (wheelState.spinning) return;
-  const segs = wheelState.segments;
-  if (!segs.length) return;
+function closeSlider() {
+  document.getElementById('slider-overlay').classList.add('hidden');
+  sliderState.spinning = false;
+}
 
-  wheelState.spinning = true;
-  document.getElementById('wheel-spin-btn').disabled = true;
-  document.getElementById('wheel-spin-btn').textContent = '⏳ Đang quay...';
+function buildSlotTrack(groups, winnerGroupId) {
+  const track = document.getElementById('slot-track');
+  const colors = SLOT_COLORS;
 
-  // Pick a winner
-  const winnerIdx = Math.floor(Math.random() * segs.length);
-  const arc = (2 * Math.PI) / segs.length;
-
-  // Target angle: land on winnerIdx segment's center
-  const targetOffset = -(winnerIdx * arc + arc / 2); // center of winner segment points to top
-  const extraSpins = (5 + Math.floor(Math.random() * 4)) * 2 * Math.PI;
-  const targetAngle = -Math.PI / 2 + targetOffset + extraSpins; // top = -PI/2
-
-  const startAngle = wheelState.currentAngle;
-  const totalDelta = targetAngle - startAngle;
-  const duration = 4000 + Math.random() * 1000;
-  const startTime = performance.now();
-
-  // Click sound via Web Audio
-  try {
-    if (!wheelState.audioCtx) wheelState.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
-  } catch {}
-
-  let lastClickAngle = startAngle;
-
-  function animate(now) {
-    const elapsed = now - startTime;
-    const t = Math.min(elapsed / duration, 1);
-    // Ease out cubic
-    const eased = 1 - Math.pow(1 - t, 3);
-    const currentAngle = startAngle + totalDelta * eased;
-    wheelState.currentAngle = currentAngle;
-    drawWheel(currentAngle);
-
-    // Click sound every segment
-    const currentSeg = Math.floor(((currentAngle % (2*Math.PI)) / arc + segs.length) % segs.length);
-    const lastSeg    = Math.floor(((lastClickAngle % (2*Math.PI)) / arc + segs.length) % segs.length);
-    if (currentSeg !== lastSeg && wheelState.audioCtx) {
-      playClick(wheelState.audioCtx);
-    }
-    lastClickAngle = currentAngle;
-
-    if (t < 1) { requestAnimationFrame(animate); }
-    else {
-      wheelState.spinning = false;
-      onWheelStopped(winnerIdx);
-    }
+  // Repeat items many times for scroll effect
+  const REPEATS = 8;
+  const items = [];
+  for (let r = 0; r < REPEATS; r++) {
+    groups.forEach((g, i) => {
+      items.push({ group: g, color: colors[i % colors.length] });
+    });
   }
-  requestAnimationFrame(animate);
+
+  track.innerHTML = items.map(({ group, color }, idx) => {
+    const isWinner = winnerGroupId > 0 && group.groupId === winnerGroupId;
+    return `<div class="slot-item ${isWinner && idx >= items.length - groups.length ? 'winner' : ''}"
+      style="background:${color}22;border-color:${color}44;">
+      <span style="font-size:20px;">📋</span>
+      <span style="color:${color}">${group.name}</span>
+    </div>`;
+  }).join('');
+
+  // Reset position
+  track.style.transition = 'none';
+  track.style.transform = 'translateX(0)';
 }
 
-function playClick(ctx) {
-  try {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.connect(gain); gain.connect(ctx.destination);
-    osc.frequency.setValueAtTime(600, ctx.currentTime);
-    gain.gain.setValueAtTime(0.08, ctx.currentTime);
-    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.06);
-    osc.start(ctx.currentTime);
-    osc.stop(ctx.currentTime + 0.06);
-  } catch {}
-}
+async function spinSlider() {
+  if (sliderState.spinning) return;
+  sliderState.spinning = true;
 
-async function onWheelStopped(winnerIdx) {
-  const winner = wheelState.segments[winnerIdx];
-  document.getElementById('wheel-spin-btn').textContent = '🎡 Quay ngẫu nhiên';
+  const btn = document.getElementById('slider-spin-btn');
+  btn.disabled = true;
+  btn.textContent = '⏳ Đang quay...';
+  document.getElementById('slider-result').classList.add('hidden');
+
   try {
-    // Submit to server
+    // Call API FIRST to get the real winner group
     const data = await API.post('/api/session/spin', {});
-    const actualGroupId = data.groupId;
-    const actualGroupName = data.groupName;
+    const winnerGroupId = data.groupId;
+    const winnerGroupName = data.groupName;
+    const groups = sliderState.groups;
+
+    // Rebuild track with winner highlighted at the end
+    buildSlotTrack(groups, winnerGroupId);
+
+    const track = document.getElementById('slot-track');
+    const itemWidth = 110; // slot-item width + gap
+    const totalGroups = groups.length;
+    const REPEATS = 8;
+
+    // Find winner index in last repeat
+    const lastRepeatStart = (REPEATS - 1) * totalGroups;
+    let winnerIdxInLastRepeat = 0;
+    groups.forEach((g, i) => {
+      if (g.groupId === winnerGroupId) winnerIdxInLastRepeat = i;
+    });
+    const winnerAbsoluteIdx = lastRepeatStart + winnerIdxInLastRepeat;
+
+    // Window center (slot window is about 240px wide center item at ~120)
+    const windowCenterOffset = 120;
+    const finalTranslate = -(winnerAbsoluteIdx * itemWidth - windowCenterOffset);
+
+    // Animate: fast scroll then ease-out to winner
+    track.style.transition = 'none';
+    track.style.transform = 'translateX(0)';
+
+    // Wait a tiny frame before starting
+    await new Promise(r => setTimeout(r, 50));
+
+    track.style.transition = 'transform 3.5s cubic-bezier(0.12, 0.8, 0.3, 1)';
+    track.style.transform = `translateX(${finalTranslate}px)`;
+
+    // Wait for animation to finish
+    await new Promise(r => setTimeout(r, 3700));
+
+    // Highlight winner item
+    const allItems = track.querySelectorAll('.slot-item');
+    allItems.forEach(el => el.classList.remove('winner'));
+    if (allItems[winnerAbsoluteIdx]) allItems[winnerAbsoluteIdx].classList.add('winner');
+
     // Show result
-    const resultEl = document.getElementById('wheel-result');
-    resultEl.style.display = 'block';
-    document.getElementById('wheel-result-name').textContent = actualGroupName;
-    // Confetti!
+    const resultEl = document.getElementById('slider-result');
+    document.getElementById('slider-result-name').textContent = winnerGroupName;
+    resultEl.classList.remove('hidden');
+    document.getElementById('slider-sub-text').textContent = '🎉 Bốc thăm hoàn tất!';
+
+    // Confetti
     launchConfetti();
-    toast(`🎉 Chúc mừng! Bạn vào ${actualGroupName}!`, 'success');
-    state.myGroup = actualGroupId;
+    toast(`🎉 Chúc mừng! Bạn vào ${winnerGroupName}!`, 'success');
+    state.myGroup = winnerGroupId;
     await pollSessionStatus();
-    // Auto-close after 3s
-    setTimeout(() => { closeWheel(); }, 4000);
+
+    // Auto close after 4s
+    setTimeout(() => closeSlider(), 4000);
+
   } catch (err) {
     toast(err.message, 'error');
-    document.getElementById('wheel-spin-btn').disabled = false;
+    btn.disabled = false;
+    btn.textContent = '🎰 Bốc thăm!';
+    sliderState.spinning = false;
   }
 }
 
 // ─── Confetti ─────────────────────────────────────────────────────────
 function launchConfetti() {
   const colors = ['#8b5cf6','#06b6d4','#f43f5e','#10b981','#f59e0b','#ec4899'];
-  for (let i = 0; i < 80; i++) {
+  for (let i = 0; i < 60; i++) {
     const el = document.createElement('div');
     el.className = 'confetti-piece';
     el.style.cssText = `
       left:${Math.random() * 100}vw;
       top:${-10 + Math.random() * -20}px;
       background:${colors[Math.floor(Math.random() * colors.length)]};
-      width:${6+Math.random()*8}px;
-      height:${6+Math.random()*8}px;
+      width:${6+Math.random()*7}px;
+      height:${6+Math.random()*7}px;
       border-radius:${Math.random()>0.5?'50%':'2px'};
       animation-duration:${2 + Math.random() * 2}s;
-      animation-delay:${Math.random() * 0.5}s;
+      animation-delay:${Math.random() * 0.4}s;
     `;
     document.body.appendChild(el);
     setTimeout(() => el.remove(), 4000);
@@ -807,15 +724,12 @@ const AVATARS = ['😀','😎','🤩','🦸','🧑‍💻','👨‍🎓','👩�
 
 function openProfileModal() {
   if (!state.user) return;
-  // Fill info
   document.getElementById('profile-fullname').textContent = state.user.fullName;
-  // Fetch full profile
   API.get('/api/user/me').then(user => {
     document.getElementById('profile-dob').textContent = `📅 ${user.dob}`;
     document.getElementById('profile-hometown').textContent = `📍 ${user.hometown}`;
     const bigAvatar = document.getElementById('profile-big-avatar');
     setAvatarEl(bigAvatar, user.avatar, user.fullName);
-    document.getElementById('new-username').value = user.username;
     document.getElementById('old-password').value = '';
     document.getElementById('new-password').value = '';
     document.getElementById('confirm-password').value = '';
@@ -826,8 +740,8 @@ function openProfileModal() {
   grid.innerHTML = AVATARS.map(a =>
     `<div class="avatar-option ${current === a ? 'selected' : ''}" onclick="selectAvatar('${a}', this)">${a}</div>`
   ).join('');
+  state.selectedAvatarEmoji = null;
   document.getElementById('profile-modal').classList.remove('hidden');
-  wheelState.selectedAvatarEmoji = null;
 }
 
 function closeProfileModal() {
@@ -841,7 +755,7 @@ function selectAvatar(emoji, el) {
   const bigAvatar = document.getElementById('profile-big-avatar');
   bigAvatar.textContent = emoji;
   bigAvatar.style.background = 'none';
-  bigAvatar.style.fontSize = '36px';
+  bigAvatar.style.fontSize = '26px';
 }
 
 function handleAvatarFile(event) {
@@ -860,7 +774,6 @@ function handleAvatarFile(event) {
 }
 
 async function saveProfile() {
-  const newUsername = document.getElementById('new-username').value.trim();
   const oldPassword = document.getElementById('old-password').value;
   const newPassword = document.getElementById('new-password').value;
   const confirmPassword = document.getElementById('confirm-password').value;
@@ -873,7 +786,7 @@ async function saveProfile() {
   }
 
   const body = {};
-  if (newUsername && newUsername !== state.user.username) body.username = newUsername;
+  // No username change — password and avatar only
   if (newPassword) { body.oldPassword = oldPassword; body.newPassword = newPassword; }
   if (state.selectedAvatarEmoji !== null) body.avatar = state.selectedAvatarEmoji;
 
@@ -902,6 +815,9 @@ function init() {
 // Close modals on backdrop click
 document.getElementById('profile-modal').addEventListener('click', function(e) {
   if (e.target === this) closeProfileModal();
+});
+document.getElementById('slider-overlay').addEventListener('click', function(e) {
+  if (e.target === this && !sliderState.spinning) closeSlider();
 });
 
 init();
