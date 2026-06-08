@@ -211,11 +211,12 @@ select.input option { background: var(--bg-2); }
 /* ─── App Layout (3-Column Dashboard) ────────────────────────── */
 .layout-container {
   display: flex;
-  height: 100vh;
+  height: 100dvh;
   width: 100vw;
   overflow: hidden;
   z-index: 10;
   position: relative;
+  min-height: 0;
 }
 
 /* Sidebar */
@@ -280,6 +281,7 @@ select.input option { background: var(--bg-2); }
   flex-direction: column;
   overflow: hidden;
   background: rgba(0,0,0,0.2);
+  min-height: 0;
 }
 
 /* Top Header */
@@ -428,6 +430,7 @@ select.input option { background: var(--bg-2); }
   overflow-y: auto;
   padding: 24px 30px;
   position: relative;
+  min-height: 0;
 }
 
 /* Table Styles */
