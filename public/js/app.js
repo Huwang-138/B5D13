@@ -187,7 +187,7 @@ function handleSwipeGesture() {
       overlay.classList.add('show');
     }
   }
-  
+
   // Vuốt từ PHẢI sang TRÁI (Đóng sidebar)
   if (touchstartX - touchendX > SWIPE_THRESHOLD) {
     if (sidebar.classList.contains('show')) {
@@ -1267,7 +1267,7 @@ async function showLeaderboard() {
   const overlay = document.getElementById('leaderboard-overlay');
   const body = document.getElementById('leaderboard-body');
   if (!overlay || !body) return;
-  
+
   switchLbTabStyles('all');
   overlay.classList.remove('hidden');
   body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-2);font-size:13px;">Đang tải...</div>';
@@ -1302,19 +1302,19 @@ function switchLbTab(tabId) {
 function renderLeaderboard(tabId) {
   const body = document.getElementById('leaderboard-body');
   if (!body) return;
-  
+
   let list = currentLeaderboardData;
   if (tabId === 'sq2') {
     list = list.filter(u => u.squad === 2);
   } else if (tabId === 'sq1') {
     list = list.filter(u => u.squad === 1);
   }
-  
-  if (!list.length) { 
-    body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:13px;">Không có dữ liệu</div>'; 
-    return; 
+
+  if (!list.length) {
+    body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:13px;">Không có dữ liệu</div>';
+    return;
   }
-  
+
   body.innerHTML = list.map((u, i) => {
     const medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : `<span style="font-size:13px;color:var(--text-3);min-width:20px;display:inline-block;text-align:center;">${i + 1}</span>`;
     const pts = u.totalDeducted;
@@ -1770,7 +1770,7 @@ async function subscribeToPush() {
     }
 
     const reg = await navigator.serviceWorker.ready;
-    
+
     // Get VAPID public key from backend
     const vapidRes = await fetch('/api/notifications/vapid-key');
     const vapidData = await vapidRes.json();
