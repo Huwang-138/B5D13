@@ -14,7 +14,9 @@
     "jsonwebtoken": "^9.0.3",
     "mongoose": "^7.6.3",
     "multer": "^2.1.1",
-    "socket.io": "^4.8.3"
+    "node-cron": "^4.2.1",
+    "socket.io": "^4.8.3",
+    "web-push": "^3.6.7"
   },
   "devDependencies": {
     "nodemon": "^3.0.2"

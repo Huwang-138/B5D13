@@ -1692,3 +1692,92 @@ document.addEventListener('contextmenu', e => {
   antiInspectAlert(e);
 });
 
+
+
+// ════════════════════════════════════════════════════════════════
+// WEB PUSH NOTIFICATIONS (PWA)
+// ════════════════════════════════════════════════════════════════
+
+// Register Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('/sw.js')
+      .then(reg => console.log('Service Worker registered', reg))
+      .catch(err => console.error('Service Worker registration failed', err));
+  });
+}
+
+function urlBase64ToUint8Array(base64String) {
+  const padding = '='.repeat((4 - base64String.length % 4) % 4);
+  const base64 = (base64String + padding)
+    .replace(/\-/g, '+')
+    .replace(/_/g, '/');
+
+  const rawData = window.atob(base64);
+  const outputArray = new Uint8Array(rawData.length);
+
+  for (let i = 0; i < rawData.length; ++i) {
+    outputArray[i] = rawData.charCodeAt(i);
+  }
+  return outputArray;
+}
+
+async function subscribeToPush() {
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    alert('Trình duyệt của bạn không hỗ trợ nhận thông báo (Push Notifications). Vui lòng thử trên Safari (từ iOS 16.4+) hoặc Chrome/Edge trên máy tính.');
+    return;
+  }
+
+  try {
+    const btn = document.getElementById('btn-subscribe-push');
+    if (btn) btn.innerHTML = '⏳ Đang thiết lập...';
+
+    const permission = await Notification.requestPermission();
+    if (permission !== 'granted') {
+      alert('Bạn đã từ chối cấp quyền thông báo. Vui lòng mở Cài đặt trình duyệt để cho phép.');
+      if (btn) btn.innerHTML = '🔔 Bật thông báo (Miễn phí)';
+      return;
+    }
+
+    const reg = await navigator.serviceWorker.ready;
+    
+    // Get VAPID public key from backend
+    const vapidRes = await fetch('/api/notifications/vapid-key');
+    const vapidData = await vapidRes.json();
+    const publicVapidKey = vapidData.publicKey;
+
+    // Subscribe
+    const subscription = await reg.pushManager.subscribe({
+      userVisibleOnly: true,
+      applicationServerKey: urlBase64ToUint8Array(publicVapidKey)
+    });
+
+    // Send to backend
+    const res = await fetch('/api/notifications/subscribe', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${localStorage.getItem('token')}`
+      },
+      body: JSON.stringify(subscription)
+    });
+
+    if (res.ok) {
+      alert('🎉 Đăng ký nhận thông báo thành công! Bạn sẽ nhận được thông báo ngay cả khi đã tắt app.');
+      if (btn) {
+        btn.innerHTML = '✅ Đã bật thông báo';
+        btn.disabled = true;
+      }
+    } else {
+      const errData = await res.json();
+      alert('Lỗi đăng ký: ' + (errData.error || 'Unknown error'));
+      if (btn) btn.innerHTML = '🔔 Bật thông báo (Miễn phí)';
+    }
+
+  } catch (error) {
+    console.error('Lỗi khi đăng ký push:', error);
+    alert('Có lỗi xảy ra: ' + error.message);
+    const btn = document.getElementById('btn-subscribe-push');
+    if (btn) btn.innerHTML = '🔔 Bật thông báo (Miễn phí)';
+  }
+}

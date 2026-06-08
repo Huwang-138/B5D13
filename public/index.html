@@ -8,6 +8,7 @@
   <meta name="description"
     content="Trang web dành riêng cho học viên của trung đội B5D13, Học viện Kỹ thuật và Công nghệ an ninh" />
   <link rel="stylesheet" href="/css/style.css" />
+  <link rel="manifest" href="/manifest.json" />
   <script src="/socket.io/socket.io.js"></script>
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👥</text></svg>" />
@@ -496,6 +497,29 @@
                           onclick="togglePasswordVisibility('confirm-password', this)">👁️</button>
                       </div>
                     </div>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Notifications Settings -->
+              <div class="card settings-card">
+                <div class="settings-card-header"
+                  onclick="toggleSettingsCard('notif-settings-body', 'arrow-notif')"
+                  style="cursor: pointer; justify-content: space-between;">
+                  <div style="display: flex; align-items: center; gap: 16px;">
+                    <div class="settings-icon-box" style="background: rgba(16, 185, 129, 0.1); color: var(--green);">🔔
+                    </div>
+                    <div class="settings-card-title">Thông báo hệ thống</div>
+                  </div>
+                  <div class="settings-arrow" id="arrow-notif"
+                    style="transition: transform 0.3s; color: var(--text-2);">▼</div>
+                </div>
+                <div class="settings-card-body hidden" id="notif-settings-body">
+                  <div style="display:flex; flex-direction:column; gap:12px;">
+                    <p style="font-size: 13px; color: var(--text-2); line-height: 1.5;">
+                      Bật thông báo hệ thống để nhận tin nhắn ngay cả khi bạn không mở ứng dụng. Hỗ trợ thông báo ghi lỗi và chúc mừng sinh nhật.
+                    </p>
+                    <button class="btn btn-secondary" onclick="subscribeToPush()" id="btn-subscribe-push" style="justify-content: center; padding: 12px; background: rgba(16, 185, 129, 0.1); color: var(--green); border-color: rgba(16, 185, 129, 0.2);">🔔 Bật thông báo (Miễn phí)</button>
                   </div>
                 </div>
               </div>

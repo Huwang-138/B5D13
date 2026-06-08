@@ -8,6 +8,8 @@ const http = require('http');
 const { Server } = require('socket.io');
 const jwt = require('jsonwebtoken');
 const fs = require('fs');
+const webpush = require('web-push');
+const cron = require('node-cron');
 
 const app = express();
 const server = http.createServer(app);
@@ -20,6 +22,16 @@ const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://huwang1308:O75Pt08SbjdRVfOD@cluster0.3v1tne8.mongodb.net/quanly_lop?appName=Cluster0';
 const JWT_SECRET = process.env.JWT_SECRET || 'qlnhom_super_secret_2025_!@#';
 const JWT_EXPIRES = '30d'; // Token kéo dài 30 ngày
+
+// ─── Web Push Configuration ───────────────────────────────────────
+const VAPID_PUBLIC = process.env.VAPID_PUBLIC || 'BEl62iUYgUivxIkv69yViEuiBIa-Ib9-SkvMeAtA3LFgDzkrxZJjSgSnfckjBJuB24l6P5pB8m5F1oIItu5gqX8';
+const VAPID_PRIVATE = process.env.VAPID_PRIVATE || 'YI8zOqK_c21N-t1Z7QzVl8tI_c0T_-G1Z8bL2wA2JvE';
+
+webpush.setVapidDetails(
+  'mailto:admin@quanlylop.com',
+  VAPID_PUBLIC,
+  VAPID_PRIVATE
+);
 
 // ─── Middleware ───────────────────────────────────────────────────
 app.use(cors());
@@ -43,7 +55,8 @@ const userSchema = new mongoose.Schema({
   phone: String,
   role: { type: String, enum: ['admin', 'user'], default: 'user' },
   avatar: { type: String, default: '' }, // emoji or base64 data URL
-  squad: { type: Number, default: 1 }
+  squad: { type: Number, default: 1 },
+  pushSubscriptions: { type: Array, default: [] }
 }, { timestamps: true });
 
 const sessionSchema = new mongoose.Schema({
@@ -263,15 +276,51 @@ app.post('/api/violations', authMiddleware, adminOnly, async (req, res) => {
     
     // Create notification
     const noteText = note?.trim() ? ` (${note.trim()})` : '';
+    const messageText = `Bạn vừa bị ghi lỗi: ${type}${noteText} (-${points} điểm)`;
     const notif = await Notification.create({
-      message: `Bạn vừa bị ghi lỗi: ${type}${noteText} (-${points} điểm)`,
+      message: messageText,
       type: 'warning',
       targetUser: userId
     });
     io.emit('newNotification', notif);
 
+    // Send Web Push Notification
+    const targetUserObj = await User.findById(userId);
+    if (targetUserObj && targetUserObj.pushSubscriptions && targetUserObj.pushSubscriptions.length > 0) {
+      const pushPayload = JSON.stringify({
+        title: 'Cảnh báo vi phạm ⚠️',
+        body: messageText,
+        url: '/'
+      });
+      targetUserObj.pushSubscriptions.forEach(sub => {
+        webpush.sendNotification(sub, pushPayload).catch(err => console.error('Push error:', err));
+      });
+    }
+
     res.json(populated);
   } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ─── Web Push Subscribe Route ─────────────────────────────────────
+app.get('/api/notifications/vapid-key', (req, res) => {
+  res.json({ publicKey: VAPID_PUBLIC });
+});
+
+app.post('/api/notifications/subscribe', authMiddleware, async (req, res) => {
+  try {
+    const subscription = req.body;
+    const user = await User.findById(req.user._id);
+    
+    // Lưu ý: Chỉ thêm nếu chưa có (dựa vào endpoint)
+    const exists = user.pushSubscriptions.some(sub => sub.endpoint === subscription.endpoint);
+    if (!exists) {
+      user.pushSubscriptions.push(subscription);
+      await user.save();
+    }
+    res.status(201).json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
 });
 
 app.get('/api/violations/my-points', authMiddleware, async (req, res) => {
@@ -698,7 +747,43 @@ app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
-// ─── Connect & Start ──────────────────────────────────────────────
+// ─── Cron Job: Chúc mừng sinh nhật lúc 07:00 sáng mỗi ngày ──────────
+cron.schedule('0 7 * * *', async () => {
+  try {
+    const today = new Date();
+    // Format ngày sinh theo định dạng trong DB (dd/mm/yyyy), ví dụ "08/06"
+    const day = String(today.getDate()).padStart(2, '0');
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const searchString = `${day}/${month}`; // Chứa dd/mm
+
+    const allUsers = await User.find({}).lean();
+    const birthdayUsers = allUsers.filter(u => u.dob && u.dob.startsWith(searchString));
+
+    if (birthdayUsers.length > 0) {
+      const names = birthdayUsers.map(u => u.fullName).join(', ');
+      const messageText = `🎉 Chúc mừng sinh nhật: ${names}! Hãy gửi những lời chúc tốt đẹp nhất đến ${birthdayUsers.length > 1 ? 'các bạn ấy' : 'bạn ấy'} nhé! 🎂`;
+      
+      const pushPayload = JSON.stringify({
+        title: 'Thông báo sinh nhật 🥳',
+        body: messageText,
+        url: '/'
+      });
+
+      // Gửi cho tất cả mọi người trong lớp
+      for (const u of allUsers) {
+        if (u.pushSubscriptions && u.pushSubscriptions.length > 0) {
+          for (const sub of u.pushSubscriptions) {
+            webpush.sendNotification(sub, pushPayload).catch(e => {});
+          }
+        }
+      }
+    }
+  } catch (err) {
+    console.error('Lỗi khi chạy cron sinh nhật:', err);
+  }
+});
+
+// ─── Khởi động Server ─────────────────────────────────────────────
 mongoose.connect(MONGODB_URI).then(async () => {
   console.log('✅ Connected to MongoDB');
   await seedDatabase();
