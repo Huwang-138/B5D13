@@ -44,20 +44,7 @@ body {
   font-size: 14px;
 }
 
-.body-bg {
-  position: fixed;
-  inset: 0;
-  width: 100%;
-  height: 100%;
-  background-image: url('/background.jpg');
-  background-size: cover;
-  background-position: center;
-  background-repeat: no-repeat;
-  z-index: -2;
-  filter: blur(15px) brightness(0.4); /* Làm mờ ảnh để không bị vỡ hình và tối ưu độ tương phản chữ */
-  transform: scale(1.1); /* Zoom nhẹ tránh lộ viền trắng khi làm mờ */
-  pointer-events: none;
-}
+
 
 /* ─── Background Orbs ────────────────────────────────────────── */
 body::before, body::after {

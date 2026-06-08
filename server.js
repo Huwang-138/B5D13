@@ -15,19 +15,6 @@ const io = new Server(server, {
   cors: { origin: '*', methods: ['GET', 'POST'] },
 });
 
-// Tự động copy hình nền từ thư mục Downloads của người dùng
-const downloadPath = 'C:\\Users\\MY PC\\Downloads\\575123615_122198137130055590_5274563177042386692_n.jpg';
-const destPath = path.join(__dirname, 'public', 'background.jpg');
-if (fs.existsSync(downloadPath)) {
-  try {
-    fs.copyFileSync(downloadPath, destPath);
-    console.log('✅ Background image copied to public/background.jpg');
-  } catch (err) {
-    console.error('❌ Failed to copy background image:', err.message);
-  }
-} else {
-  console.log('ℹ️ Background image not found in Downloads, using default style/cache');
-}
 
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://huwang1308:O75Pt08SbjdRVfOD@cluster0.3v1tne8.mongodb.net/quanly_lop?appName=Cluster0';

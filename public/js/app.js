@@ -138,9 +138,11 @@ function updateNavbar() {
   setAvatarEl(avatarEl, state.user.avatar, state.user.fullName);
   document.getElementById('nav-username-el').textContent = state.user.fullName;
   const roleEl = document.getElementById('nav-role-el');
-  roleEl.innerHTML = state.user.role === 'admin'
-    ? '<span class="badge badge-amber">👑 Admin</span>'
-    : '<span class="badge badge-cyan">🎓 Học viên</span>';
+  if (roleEl) {
+    roleEl.innerHTML = state.user.role === 'admin'
+      ? '<span class="badge badge-amber">👑 Admin</span>'
+      : '<span class="badge badge-cyan">🎓 Học viên</span>';
+  }
 
   const toggleBtn = document.getElementById('btn-admin-toggle');
   if (state.user.role === 'admin') {
