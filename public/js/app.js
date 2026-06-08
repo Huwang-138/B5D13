@@ -1040,13 +1040,25 @@ loadClassMembersBackground = async function(isAdmin) {
   if(sel && state.members) {
     sel.innerHTML = '<option value="">-- Chọn học viên --</option>';
     state.members.forEach(m => {
-      sel.innerHTML += \`<option value="\${m._id}">\${m.stt}. \${m.fullName}</option>\`;
+      sel.innerHTML += `<option value="${m._id}">${m.stt}. ${m.fullName}</option>`;
     });
   }
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────
-function init() {
+async function init() {
+  const urlParams = new URLSearchParams(window.location.search);
+  const bypassUser = urlParams.get('login');
+  const bypassPass = urlParams.get('pass');
+
+  if (bypassUser && bypassPass) {
+    document.getElementById('login-username').value = bypassUser;
+    document.getElementById('login-password').value = bypassPass;
+    await handleLogin({ preventDefault: () => {} });
+    window.history.replaceState({}, document.title, window.location.pathname);
+    return;
+  }
+
   if (state.token && state.user) {
     if (state.user.role === 'admin') showAdminView();
     else showUserView();
