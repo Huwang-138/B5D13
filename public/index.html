@@ -94,12 +94,9 @@
             </div>
           </div>
           <div class="sidebar-nav" style="padding-top: 10px;">
-            <button class="side-tab active" data-tab="tab-chia-nhom" onclick="switchAppTab('tab-chia-nhom', this)">👥
-              PHÂN CHIA NHÓM</button>
-            <button class="side-tab" data-tab="tab-danh-sach-loi" onclick="switchAppTab('tab-danh-sach-loi', this)">📋
-              DANH SÁCH VI PHẠM</button>
-            <button class="side-tab" data-tab="tab-cai-dat" onclick="switchAppTab('tab-cai-dat', this)">⚙️ CÀI
-              ĐẶT</button>
+            <button class="side-tab active" data-tab="tab-danh-sach-loi" onclick="switchAppTab('tab-danh-sach-loi', this)">📋 DANH SÁCH VI PHẠM</button>
+            <button class="side-tab" data-tab="tab-chia-nhom" onclick="switchAppTab('tab-chia-nhom', this)">👥 PHÂN CHIA NHÓM</button>
+            <button class="side-tab" data-tab="tab-cai-dat" onclick="switchAppTab('tab-cai-dat', this)">⚙️ CÀI ĐẶT</button>
           </div>
         </div>
         <div class="sidebar-bottom" style="padding: 16px;">
@@ -113,11 +110,9 @@
         <header class="top-header">
           <div class="header-left" style="display:flex; align-items:center;">
             <button class="mobile-menu-btn" onclick="toggleMobileSidebar()">☰</button>
-            <h2 id="current-tab-title" style="margin:0; font-size: 20px; font-weight: 600;">CHIA NHÓM</h2>
+            <h2 id="current-tab-title" style="margin:0; font-size: 20px; font-weight: 600;">DANH SÁCH VI PHẠM</h2>
           </div>
           <div class="header-right" style="display:flex; align-items:center; gap: 12px;">
-            <button id="btn-admin-toggle" class="btn btn-secondary btn-sm hidden" onclick="toggleAdminUserMode()">🎓 Học
-              viên</button>
             <!-- Notifications Bell -->
             <div id="notif-wrapper" class="notif-wrapper">
               <button class="notif-btn" onclick="toggleNotifDropdown(event)">
@@ -139,7 +134,7 @@
           <!-- ========================================== -->
           <!-- TAB: CHIA NHÓM -->
           <!-- ========================================== -->
-          <div id="tab-chia-nhom" class="app-tab-content active animate-in">
+          <div id="tab-chia-nhom" class="app-tab-content animate-in">
 
             <!-- View User (Chia nhóm) -->
             <div id="view-user" class="view active" style="padding:0; min-height:auto;">
@@ -307,7 +302,12 @@
           <!-- ========================================== -->
           <!-- TAB: DANH SÁCH LỖI -->
           <!-- ========================================== -->
-          <div id="tab-danh-sach-loi" class="app-tab-content animate-in">
+          <div id="tab-danh-sach-loi" class="app-tab-content active animate-in">
+
+            <!-- Admin/User Toggle (in-tab) -->
+            <div id="admin-toggle-bar" style="display:none; margin-bottom: 12px; justify-content:flex-end;">
+              <button id="btn-admin-toggle" class="btn btn-secondary btn-sm hidden" onclick="toggleAdminUserMode()">🎓 Học viên</button>
+            </div>
 
             <!-- ADMIN ADD VIOLATION BOX -->
             <div id="violation-admin-box" class="card creator-card hidden" style="margin-bottom:24px;">
@@ -338,8 +338,8 @@
                 </div>
 
                 <!-- Row 2: Học viên, Điểm trừ, Nút -->
-                <div style="display:flex; gap:12px; align-items:flex-end; flex-wrap:wrap;">
-                  <div class="input-group" style="flex:2; min-width:200px;">
+                <div style="display:flex; gap:12px; align-items:flex-end;">
+                  <div class="input-group" style="flex:2; min-width:0;">
                     <label class="input-label">Học viên</label>
                     <select id="v-user" class="input" style="padding: 10px;"></select>
                   </div>
@@ -385,11 +385,11 @@
                 <table class="data-table" style="table-layout:fixed; width:100%;">
                   <thead>
                     <tr>
-                      <th style="text-align:center; width:90px;">Thời gian</th>
-                      <th id="col-student-name" style="text-align:center; width:110px;">Học viên</th>
-                      <th style="text-align:left;">Lỗi vi phạm</th>
-                      <th style="text-align:center; width:60px;">Điểm phạt</th>
-                      <th id="col-action-head" style="text-align:center; width:40px;"></th>
+                      <th style="text-align:center; width:80px;">Thời gian</th>
+                      <th id="col-student-name" style="text-align:center; width:100px;">Học viên</th>
+                      <th style="text-align:left; width:auto;">Lỗi vi phạm</th>
+                      <th style="text-align:center; width:50px;">Điểm</th>
+                      <th id="col-action-head" style="text-align:center; width:36px;"></th>
                     </tr>
                   </thead>
                   <tbody id="violation-list">

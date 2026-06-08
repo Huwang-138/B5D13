@@ -242,6 +242,9 @@ async function handleLogin(e) {
     toast(`Chào mừng, ${data.user.fullName}! 👋`, 'success');
     if (data.user.role === 'admin') showAdminView();
     else showUserView();
+    // Default to violations tab after login
+    const violationTab = document.querySelector('[data-tab="tab-danh-sach-loi"]');
+    if (violationTab) switchAppTab('tab-danh-sach-loi', violationTab);
   } catch (err) {
     toast(err.message, 'error');
   } finally {
@@ -1341,11 +1344,25 @@ function init() {
 }
 
 // Close modals on backdrop click
-document.getElementById('profile-modal').addEventListener('click', function (e) {
+document.getElementById('profile-modal')?.addEventListener('click', function (e) {
   if (e.target === this) closeProfileModal();
 });
-document.getElementById('slider-overlay').addEventListener('click', function (e) {
+document.getElementById('slider-overlay')?.addEventListener('click', function (e) {
   if (e.target === this && !sliderState.spinning) closeSlider();
+});
+document.getElementById('user-profile-overlay')?.addEventListener('click', function (e) {
+  if (e.target === this) this.classList.add('hidden');
+});
+
+// Close notification dropdown when clicking outside
+document.addEventListener('click', function (e) {
+  const notifDropdown = document.getElementById('notif-dropdown');
+  const notifBtn = document.querySelector('.notif-btn');
+  if (notifDropdown && !notifDropdown.classList.contains('hidden')) {
+    if (!notifDropdown.contains(e.target) && (!notifBtn || !notifBtn.contains(e.target))) {
+      notifDropdown.classList.add('hidden');
+    }
+  }
 });
 
 init();

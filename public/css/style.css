@@ -449,7 +449,11 @@ select.input option { background: var(--bg-2); }
   font-size: 12px;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  background: rgba(0,0,0,0.15);
+  background: rgba(13, 18, 32, 0.95);
+  backdrop-filter: blur(8px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
 }
 .data-table tbody tr {
   transition: background 0.2s;
