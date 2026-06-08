@@ -79,9 +79,9 @@ const API = {
     if (!res.ok) throw new Error(data.error || 'Lỗi không xác định');
     return data;
   },
-  get:    (path)        => API.req('GET',   path),
-  post:   (path, body)  => API.req('POST',  path, body),
-  patch:  (path, body)  => API.req('PATCH', path, body),
+  get: (path) => API.req('GET', path),
+  post: (path, body) => API.req('POST', path, body),
+  patch: (path, body) => API.req('PATCH', path, body),
 };
 
 // ─── Toast ────────────────────────────────────────────────────────────
@@ -197,7 +197,7 @@ async function handleLogin(e) {
   try {
     const data = await API.post('/api/auth/login', { username, password });
     state.token = data.token;
-    state.user  = data.user;
+    state.user = data.user;
     localStorage.setItem('token', data.token);
     localStorage.setItem('user', JSON.stringify(data.user));
     toast(`Chào mừng, ${data.user.fullName}! 👋`, 'success');
@@ -213,9 +213,9 @@ async function handleLogin(e) {
 }
 
 async function logout() {
-  try { await API.post('/api/auth/logout'); } catch {}
+  try { await API.post('/api/auth/logout'); } catch { }
   state.token = null;
-  state.user  = null;
+  state.user = null;
   state.isAdminInUserMode = false;
   localStorage.removeItem('token');
   localStorage.removeItem('user');
@@ -231,7 +231,7 @@ async function fetchSessionStatus() {
     state.myGroup = data.myGroup || null;
     state.isFixed = data.isFixed || false;
     renderUserSession(data);
-  } catch {}
+  } catch { }
 }
 
 // ─── Class Members (background load) ─────────────────────────────────
@@ -239,15 +239,15 @@ async function loadClassMembersBackground(isAdmin = false) {
   try {
     const members = await API.get('/api/class/members');
     state.members = members;
-  } catch {}
+  } catch { }
 }
 
 // ─── User Session Rendering ───────────────────────────────────────────
 function renderUserSession(data) {
-  const banner        = document.getElementById('session-banner');
-  const noSession     = document.getElementById('no-session-placeholder');
+  const banner = document.getElementById('session-banner');
+  const noSession = document.getElementById('no-session-placeholder');
   const groupsSection = document.getElementById('groups-section');
-  const myGroupCard   = document.getElementById('my-group-card');
+  const myGroupCard = document.getElementById('my-group-card');
   const sliderTrigger = document.getElementById('slider-trigger-section');
 
   if (!data.active || !data.session) {
@@ -341,8 +341,8 @@ async function joinGroup(groupId) {
     state.myGroup = data.myGroup;
     toast(`Đã tham gia Nhóm ${groupId}! 🎉`, 'success');
     // Socket.io sẽ tự cập nhật giao diện qua sự kiện 'sessionUpdated'
-  } catch (err) { 
-    toast(err.message, 'error'); 
+  } catch (err) {
+    toast(err.message, 'error');
   } finally {
     isJoiningGroup = false;
   }
@@ -404,7 +404,7 @@ function updateManageTab(data) {
     API.get('/api/class/members').then(members => {
       state.members = members;
       renderFixedAssignList(data.session);
-    }).catch(() => {});
+    }).catch(() => { });
   }
 }
 
@@ -416,7 +416,7 @@ function renderAdminGroups(session) {
   grid.innerHTML = session.groups.map((g, idx) => {
     const color = colors[idx % colors.length];
     const membersHtml = g.members.map(m => {
-      const isFixedMember = g.fixedMembers && g.fixedMembers.some(f => (f._id||f).toString() === (m._id||m).toString());
+      const isFixedMember = g.fixedMembers && g.fixedMembers.some(f => (f._id || f).toString() === (m._id || m).toString());
       const avatarHtml = m.avatar && m.avatar.startsWith('data:') ? `<img src="${m.avatar}" alt="" />` : (m.avatar || m.fullName.charAt(0));
       return `<div class="admin-member-item">
         <div class="member-avatar-sm">${avatarHtml}</div>
@@ -425,8 +425,8 @@ function renderAdminGroups(session) {
           <select class="input" style="padding:3px 6px;font-size:11px;height:26px;" onchange="moveMember('${m._id}', ${g.groupId}, this.value, this)">
             <option value="">Chuyển...</option>
             ${session.groups.filter(gg => gg.groupId !== g.groupId).map(gg =>
-              `<option value="${gg.groupId}">${gg.name}</option>`
-            ).join('')}
+        `<option value="${gg.groupId}">${gg.name}</option>`
+      ).join('')}
             <option value="remove">❌ Bỏ khỏi nhóm</option>
           </select>
         </div>
@@ -442,7 +442,7 @@ function renderAdminGroups(session) {
         </div>
       </div>
       <div class="group-progress-bar">
-        <div class="group-progress-fill" style="width:${g.capacity>0?(g.members.length/g.capacity*100):0}%;background:${color};"></div>
+        <div class="group-progress-fill" style="width:${g.capacity > 0 ? (g.members.length / g.capacity * 100) : 0}%;background:${color};"></div>
       </div>
       <div>${membersHtml}</div>
       ${g.members.length === 0 ? '<div style="font-size:12px;color:var(--text-3);padding:6px 0;text-align:center">Chưa có thành viên</div>' : ''}
@@ -451,7 +451,7 @@ function renderAdminGroups(session) {
 
   // Unassigned
   const allMemberIds = new Set();
-  session.groups.forEach(g => g.members.forEach(m => allMemberIds.add((m._id||m).toString())));
+  session.groups.forEach(g => g.members.forEach(m => allMemberIds.add((m._id || m).toString())));
   const unassigned = state.members.filter(m => !allMemberIds.has(m._id.toString()));
   document.getElementById('unassigned-count').textContent = unassigned.length;
   document.getElementById('unassigned-list').innerHTML = unassigned.map(m =>
@@ -467,10 +467,10 @@ function renderFixedAssignList(session) {
     let currentGroupId = null;
     let isFixed = false;
     for (const g of session.groups) {
-      const fixedIds = g.fixedMembers.map(f => (f._id||f).toString());
+      const fixedIds = g.fixedMembers.map(f => (f._id || f).toString());
       if (fixedIds.includes(m._id.toString())) { currentGroupId = g.groupId; isFixed = true; break; }
     }
-    const options = session.groups.map(g => `<option value="${g.groupId}" ${currentGroupId===g.groupId?'selected':''}>${g.name}</option>`).join('');
+    const options = session.groups.map(g => `<option value="${g.groupId}" ${currentGroupId === g.groupId ? 'selected' : ''}>${g.name}</option>`).join('');
     return `<div class="assign-item">
       <div class="member-avatar-sm">${m.avatar && m.avatar.startsWith('data:') ? `<img src="${m.avatar}" alt="" />` : (m.avatar || m.fullName.charAt(0))}</div>
       <span class="assign-item-name">${m.fullName} ${isFixed ? '🔒' : ''}</span>
@@ -531,12 +531,12 @@ function updateGroupHint() {
   const base = Math.floor(25 / count);
   const rem = 25 % count;
   if (rem === 0) hint.textContent = `Khoảng ${base} người/nhóm`;
-  else hint.textContent = `Khoảng ${base} - ${base+1} người/nhóm`;
+  else hint.textContent = `Khoảng ${base} - ${base + 1} người/nhóm`;
 }
 
 async function createSession() {
-  const subject    = document.getElementById('f-subject').value.trim() || 'Môn học';
-  const mode       = document.querySelector('input[name="f-mode"]:checked')?.value || 'manual';
+  const subject = document.getElementById('f-subject').value.trim() || 'Môn học';
+  const mode = document.querySelector('input[name="f-mode"]:checked')?.value || 'manual';
   const groupCount = parseInt(document.getElementById('f-group-count').value) || 0;
   if (!groupCount) { toast('Vui lòng nhập số lượng nhóm', 'warning'); return; }
   try {
@@ -634,8 +634,8 @@ let sliderState = {
 };
 
 const SLOT_COLORS = [
-  '#8b5cf6','#06b6d4','#f43f5e','#10b981','#f59e0b',
-  '#ec4899','#f97316','#84cc16','#6366f1','#14b8a6',
+  '#8b5cf6', '#06b6d4', '#f43f5e', '#10b981', '#f59e0b',
+  '#ec4899', '#f97316', '#84cc16', '#6366f1', '#14b8a6',
 ];
 
 function openSlider() {
@@ -752,7 +752,7 @@ async function spinSlider() {
 
 // ─── Confetti ─────────────────────────────────────────────────────────
 function launchConfetti() {
-  const colors = ['#8b5cf6','#06b6d4','#f43f5e','#10b981','#f59e0b','#ec4899'];
+  const colors = ['#8b5cf6', '#06b6d4', '#f43f5e', '#10b981', '#f59e0b', '#ec4899'];
   for (let i = 0; i < 60; i++) {
     const el = document.createElement('div');
     el.className = 'confetti-piece';
@@ -760,9 +760,9 @@ function launchConfetti() {
       left:${Math.random() * 100}vw;
       top:${-10 + Math.random() * -20}px;
       background:${colors[Math.floor(Math.random() * colors.length)]};
-      width:${6+Math.random()*7}px;
-      height:${6+Math.random()*7}px;
-      border-radius:${Math.random()>0.5?'50%':'2px'};
+      width:${6 + Math.random() * 7}px;
+      height:${6 + Math.random() * 7}px;
+      border-radius:${Math.random() > 0.5 ? '50%' : '2px'};
       animation-duration:${2 + Math.random() * 2}s;
       animation-delay:${Math.random() * 0.4}s;
     `;
@@ -772,7 +772,7 @@ function launchConfetti() {
 }
 
 // ─── Profile Modal ────────────────────────────────────────────────────
-const AVATARS = ['😀','😎','🤩','🦸','🧑‍💻','👨‍🎓','👩‍🎓','🦊','🐱','🐶','🐸','🐼','🦁','🐯','🐻','🦋','🌈','⭐','🔥','💎','🚀','🎮','🏆','🎯','🎨','🎸','⚽','🏀'];
+const AVATARS = ['😀', '😎', '🤩', '🦸', '🧑‍💻', '👨‍🎓', '👩‍🎓', '🦊', '🐱', '🐶', '🐸', '🐼', '🦁', '🐯', '🐻', '🦋', '🌈', '⭐', '🔥', '💎', '🚀', '🎮', '🏆', '🎯', '🎨', '🎸', '⚽', '🏀'];
 
 function openProfileModal() {
   if (!state.user) return;
@@ -786,7 +786,7 @@ function openProfileModal() {
     document.getElementById('old-password').value = '';
     document.getElementById('new-password').value = '';
     document.getElementById('confirm-password').value = '';
-  }).catch(() => {});
+  }).catch(() => { });
   const grid = document.getElementById('avatar-grid');
   const current = state.user.avatar;
   grid.innerHTML = AVATARS.map(a =>
@@ -831,7 +831,7 @@ function checkProfileChanges() {
   const oldP = document.getElementById('old-password').value;
   const newP = document.getElementById('new-password').value;
   const cfmP = document.getElementById('confirm-password').value;
-  
+
   const hasChanges = (oldP || newP || cfmP) || (state.selectedAvatarEmoji !== null);
   document.getElementById('btn-save-profile').disabled = !hasChanges;
 }
@@ -865,7 +865,7 @@ async function saveProfile() {
     updateNavbar();
     toast('✅ Đã lưu thay đổi thành công!', 'success');
     closeProfileModal();
-  } catch (err) { 
+  } catch (err) {
     toast(err.message, 'error');
   } finally {
     btn.textContent = '💾 Lưu thay đổi';
@@ -884,10 +884,10 @@ function init() {
 }
 
 // Close modals on backdrop click
-document.getElementById('profile-modal').addEventListener('click', function(e) {
+document.getElementById('profile-modal').addEventListener('click', function (e) {
   if (e.target === this) closeProfileModal();
 });
-document.getElementById('slider-overlay').addEventListener('click', function(e) {
+document.getElementById('slider-overlay').addEventListener('click', function (e) {
   if (e.target === this && !sliderState.spinning) closeSlider();
 });
 
@@ -902,26 +902,26 @@ function playSiren() {
     const AudioContextClass = window.AudioContext || window.webkitAudioContext;
     if (!AudioContextClass) return;
     const audioCtx = new AudioContextClass();
-    
+
     // Tạo oscillator chính phát tiếng còi
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
-    
+
     osc.type = 'sawtooth';
     osc.frequency.setValueAtTime(300, audioCtx.currentTime);
-    
+
     // Tần số dao động wailing (tiếng còi cảnh sát hú lên hú xuống)
     const modulator = audioCtx.createOscillator();
     const modGain = audioCtx.createGain();
     modulator.frequency.value = 2.5; // Tần số hú 2.5 lần/giây
     modGain.gain.value = 200; // Dao động +/- 200Hz xung quanh 300Hz (100Hz - 500Hz)
-    
+
     modulator.connect(modGain);
     modGain.connect(osc.frequency);
-    
+
     osc.connect(gain);
     gain.connect(audioCtx.destination);
-    
+
     osc.start();
     modulator.start();
   } catch (err) {
@@ -934,19 +934,53 @@ function antiInspectAlert(e) {
   if (warned) return;
   warned = true;
 
-  const msg = "Đm Hải Long ơi anh biết em đang định làm gì đấy, đừng có mà táy máy!!";
+  const msg = "Hải Long ơi anh biết em định làm gì đấy, đừng có mà táy máy!!";
 
   // Phát tiếng còi hú báo động
   playSiren();
 
-  // Đổi giao diện màn hình nhấp nháy liên tục đỏ/đen cực căng và hiển thị hộp thoại Custom Alert
+  // Đổi giao diện màn hình khóa với hiệu ứng cực kỳ chuyên nghiệp và sống động (di chuyển, chớp nháy, glitch)
   document.body.innerHTML = `
     <style>
       @keyframes blink {
-        0% { background-color: #ff0000; color: #ffffff; }
-        50% { background-color: #000000; color: #ff0000; }
-        100% { background-color: #ff0000; color: #ffffff; }
+        0% { background-color: #150000; }
+        50% { background-color: #000000; }
+        100% { background-color: #150000; }
       }
+      @keyframes scanline {
+        0% { transform: translateY(-100%); }
+        100% { transform: translateY(100%); }
+      }
+      @keyframes glitch {
+        0% { transform: translate(0); text-shadow: 2px 2px #ff0000, -2px -2px #00ffff; }
+        20% { transform: translate(-3px, 3px); text-shadow: -3px 1px #ff0000, 2px -2px #00ffff; }
+        40% { transform: translate(-3px, -3px); text-shadow: 2px -3px #ff0000, -1px 3px #00ffff; }
+        60% { transform: translate(3px, 3px); text-shadow: -2px 2px #ff0000, 3px -1px #00ffff; }
+        80% { transform: translate(3px, -3px); text-shadow: 3px -2px #ff0000, -3px 2px #00ffff; }
+        100% { transform: translate(0); text-shadow: 2px 2px #ff0000, -2px -2px #00ffff; }
+      }
+      @keyframes slideTrackLeft {
+        0% { transform: translateX(0); }
+        100% { transform: translateX(-50%); }
+      }
+      @keyframes slideTrackRight {
+        0% { transform: translateX(-50%); }
+        100% { transform: translateX(0); }
+      }
+      @keyframes modalShake {
+        0%, 100% { transform: translate(0, 0) rotate(0deg); }
+        15% { transform: translate(-3px, -3px) rotate(-0.5deg); }
+        30% { transform: translate(3px, 3px) rotate(0.5deg); }
+        45% { transform: translate(-3px, 3px) rotate(-0.5deg); }
+        60% { transform: translate(3px, -3px) rotate(0.5deg); }
+        75% { transform: translate(-1px, 2px) rotate(-0.5deg); }
+        90% { transform: translate(2px, -1px) rotate(0.5deg); }
+      }
+      @keyframes scaleUp {
+        from { transform: scale(0.95); opacity: 0; }
+        to { transform: scale(1); opacity: 1; }
+      }
+
       .troll-screen {
         display: flex;
         height: 100vh;
@@ -954,23 +988,97 @@ function antiInspectAlert(e) {
         align-items: center;
         justify-content: center;
         flex-direction: column;
-        font-size: 32px;
-        font-weight: bold;
-        text-align: center;
-        padding: 20px;
         box-sizing: border-box;
-        animation: blink 0.3s infinite;
-        font-family: 'Arial Black', Impact, sans-serif;
+        animation: blink 0.5s infinite;
+        font-family: 'Courier New', Courier, monospace;
         position: relative;
-      }
-      .troll-title {
-        font-size: 64px;
-        margin-bottom: 24px;
-        text-transform: uppercase;
-        letter-spacing: 5px;
+        overflow: hidden;
+        color: #ff3333;
+        background-color: #000;
       }
 
-      /* Hộp thoại Custom Alert giả lập */
+      /* CRT Scanline & Laser scanner */
+      .scanline-overlay {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 100%;
+        background: linear-gradient(
+          rgba(18, 16, 16, 0) 50%, 
+          rgba(0, 0, 0, 0.4) 50%
+        );
+        background-size: 100% 4px;
+        z-index: 10;
+        pointer-events: none;
+      }
+      .laser-scanner {
+        position: absolute;
+        top: 0; left: 0; width: 100%; height: 8px;
+        background: #ff0000;
+        box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000;
+        animation: scanline 4s linear infinite;
+        z-index: 11;
+        pointer-events: none;
+      }
+
+      /* Băng chữ chạy (Marquee) */
+      .ticker-strip {
+        position: absolute;
+        width: 200%;
+        overflow: hidden;
+        display: flex;
+        font-size: 22px;
+        background: rgba(255, 0, 0, 0.2);
+        border-top: 3px solid #ff3333;
+        border-bottom: 3px solid #ff3333;
+        padding: 8px 0;
+        font-weight: 900;
+        z-index: 5;
+        text-transform: uppercase;
+        letter-spacing: 3px;
+      }
+      .ticker-top {
+        top: 12%;
+        transform: rotate(-3deg);
+      }
+      .ticker-bottom {
+        bottom: 12%;
+        transform: rotate(3deg);
+      }
+      .ticker-track-left {
+        display: flex;
+        width: 100%;
+        animation: slideTrackLeft 20s linear infinite;
+      }
+      .ticker-track-right {
+        display: flex;
+        width: 100%;
+        animation: slideTrackRight 20s linear infinite;
+      }
+      .ticker-item {
+        padding: 0 30px;
+        flex-shrink: 0;
+      }
+
+      /* Tiêu đề Glitch */
+      .glitch-title {
+        font-size: 80px;
+        font-weight: 900;
+        text-transform: uppercase;
+        animation: glitch 1.2s linear infinite;
+        z-index: 20;
+        margin-bottom: 15px;
+        letter-spacing: 5px;
+        color: #ff3333;
+      }
+      .glitch-subtitle {
+        font-size: 36px;
+        font-weight: 700;
+        letter-spacing: 8px;
+        animation: glitch 1.8s linear infinite;
+        z-index: 20;
+        color: #ffffff;
+      }
+
+      /* Hộp thoại Custom Alert giả lập rung lắc */
       .custom-alert-overlay {
         position: fixed;
         top: 0; left: 0; width: 100vw; height: 100vh;
@@ -979,67 +1087,88 @@ function antiInspectAlert(e) {
         z-index: 999999;
       }
       .custom-alert-box {
-        background: #202124;
-        color: #e8eaed;
+        background: #111111;
+        color: #ff3333;
         border-radius: 8px;
-        width: 480px;
+        width: 500px;
         max-width: 90%;
-        box-shadow: 0 4px 24px rgba(0,0,0,0.8);
-        font-family: system-ui, -apple-system, sans-serif;
+        box-shadow: 0 0 40px rgba(255, 0, 0, 0.6);
+        font-family: 'Courier New', Courier, monospace;
         overflow: hidden;
-        border: 1px solid #3c4043;
+        border: 2px solid #ff3333;
         text-align: left;
-        animation: scaleUp 0.15s ease-out;
-      }
-      @keyframes scaleUp {
-        from { transform: scale(0.95); opacity: 0; }
-        to { transform: scale(1); opacity: 1; }
+        animation: scaleUp 0.15s ease-out, modalShake 0.5s infinite alternate;
       }
       .custom-alert-header {
-        padding: 16px 24px;
+        padding: 18px 24px;
         font-size: 16px;
-        font-weight: 600;
-        border-bottom: 1px solid #3c4043;
+        font-weight: 900;
+        border-bottom: 2px solid #ff3333;
         color: #ffffff;
+        background: #220000;
+        letter-spacing: 1px;
       }
       .custom-alert-body {
         padding: 24px;
-        font-size: 14px;
+        font-size: 15px;
         line-height: 1.6;
-        color: #bdc1c6;
-        font-weight: normal;
+        color: #ff9999;
+        font-weight: bold;
       }
       .custom-alert-footer {
-        padding: 12px 24px;
+        padding: 14px 24px;
         display: flex;
         justify-content: flex-end;
-        border-top: 1px solid #3c4043;
-        background: #303134;
+        border-top: 2px solid #ff3333;
+        background: #1a0505;
       }
       .custom-alert-btn {
-        background: #8ab4f8;
-        color: #202124;
+        background: #ff3333;
+        color: #ffffff;
         border: none;
-        padding: 8px 24px;
+        padding: 8px 30px;
         border-radius: 4px;
         font-size: 14px;
-        font-weight: 600;
+        font-weight: 900;
         cursor: pointer;
         outline: none;
-        transition: background 0.2s;
+        transition: all 0.2s;
+        box-shadow: 0 0 10px #ff3333;
+        font-family: inherit;
       }
       .custom-alert-btn:hover {
-        background: #aecbfa;
+        background: #ffffff;
+        color: #ff3333;
+        box-shadow: 0 0 15px #ffffff;
       }
     </style>
     
     <div class="troll-screen">
-      <div class="troll-title">🚨 WARNING 🚨</div>
-      <div style="font-size: 36px; letter-spacing: 2px;">ACCESS DENIED</div>
+      <div class="scanline-overlay"></div>
+      <div class="laser-scanner"></div>
+
+      <!-- Băng rôn chạy phía trên -->
+      <div class="ticker-strip ticker-top">
+        <div class="ticker-track-left">
+          ${Array(8).fill('<span class="ticker-item">⚠️ WARNING: DEVTOOLS DETECTED ⚠️</span>').join('')}
+          ${Array(8).fill('<span class="ticker-item">⚠️ WARNING: DEVTOOLS DETECTED ⚠️</span>').join('')}
+        </div>
+      </div>
+
+      <div class="glitch-title">🚨 WARNING 🚨</div>
+      <div class="glitch-subtitle">ACCESS DENIED</div>
+
+      <!-- Băng rôn chạy phía dưới -->
+      <div class="ticker-strip ticker-bottom">
+        <div class="ticker-track-right">
+          ${Array(8).fill('<span class="ticker-item">🚨 SYSTEM LOCKED 🚨 UNAUTHORIZED ACCESS</span>').join('')}
+          ${Array(8).fill('<span class="ticker-item">🚨 SYSTEM LOCKED 🚨 UNAUTHORIZED ACCESS</span>').join('')}
+        </div>
+      </div>
 
       <div class="custom-alert-overlay" id="custom-alert">
         <div class="custom-alert-box">
-          <div class="custom-alert-header">Anh Hoàng yêu quý của em cho biết</div>
+          <div class="custom-alert-header">Anh Hoàng yêu quý của em cho biết:</div>
           <div class="custom-alert-body">${msg}</div>
           <div class="custom-alert-footer">
             <button class="custom-alert-btn" onclick="document.getElementById('custom-alert').style.display='none'">OK</button>
