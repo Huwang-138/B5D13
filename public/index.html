@@ -58,15 +58,20 @@
     ═══════════════════════════════════════════════════════════════ -->
     <div id="app-layout" class="hidden layout-container">
       <!-- Mobile Overlay -->
-      <div id="mobile-overlay" class="mobile-overlay hidden" onclick="toggleMobileSidebar()"></div>
+      <div id="mobile-overlay" class="mobile-overlay" onclick="toggleMobileSidebar()"></div>
       <!-- Sidebar -->
       <aside id="sidebar" class="sidebar" style="display: flex; flex-direction: column; justify-content: space-between;">
         <div>
-          <div class="sidebar-user-info" style="padding: 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.02);">
-            <div class="nav-avatar" id="sidebar-avatar" style="width: 48px; height: 48px; font-size: 24px;">👤</div>
-            <div class="user-details" style="display: flex; flex-direction: column; overflow: hidden;">
-              <span id="sidebar-username" style="font-weight: 600; color: var(--text-1); font-size: 16px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">—</span>
-              <span id="sidebar-role" style="font-size: 12px; color: var(--cyan); text-transform: uppercase;">—</span>
+          <div class="sidebar-user-info" style="padding: 24px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02);">
+            <div class="profile-info-box" style="margin-bottom: 0; display: flex; align-items: center; gap: 14px; padding: 14px; background: rgba(139,92,246,0.06); border: 1px solid rgba(139,92,246,0.2); border-radius: var(--radius-md);">
+              <div class="nav-avatar profile-big-avatar" id="sidebar-avatar" style="width: 52px; height: 52px; font-size: 26px; flex-shrink: 0;">👤</div>
+              <div style="display: flex; flex-direction: column; overflow: hidden;">
+                <div id="sidebar-username" style="font-size: 16px; font-weight: 700; margin-bottom: 4px; color: var(--text-1); white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">—</div>
+                <div id="sidebar-dob" style="font-size: 12px; color: var(--text-2); margin-bottom: 3px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">🎂 Sinh nhật: —</div>
+                <div id="sidebar-gender" style="font-size: 12px; color: var(--text-2); margin-bottom: 3px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">⚧ Giới tính: —</div>
+                <div id="sidebar-hometown" style="font-size: 12px; color: var(--text-2); margin-bottom: 3px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">📍 Quê quán: —</div>
+                <div id="sidebar-phone" style="font-size: 12px; color: var(--text-2); margin-bottom: 3px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">📞 SĐT: —</div>
+              </div>
             </div>
           </div>
           <div class="sidebar-nav" style="padding-top: 10px;">
@@ -76,7 +81,7 @@
           </div>
         </div>
         <div class="sidebar-bottom" style="padding: 24px;">
-          <button class="btn btn-rose w-full" onclick="logout()" style="justify-content: center; padding: 12px;">🚪 Đăng xuất</button>
+          <button class="btn btn-rose w-full" onclick="logout()" style="justify-content: center;">🚪 Đăng xuất</button>
         </div>
       </aside>
 
@@ -269,7 +274,7 @@
                   <label class="input-label">Điểm trừ</label>
                   <input id="v-points" class="input" type="number" min="0" value="5" />
                 </div>
-                <button class="btn btn-rose" onclick="addViolation()" style="padding: 10px 20px; height: 42px;">Ghi lỗi</button>
+                <button class="btn btn-rose" onclick="addViolation()">📝 Ghi lỗi</button>
               </div>
             </div>
             
@@ -358,7 +363,7 @@
               </div>
               
               <div style="margin-top: 10px;">
-                <button id="btn-save-settings" class="btn btn-primary w-full btn-lg" onclick="saveSettings()" disabled>💾 Lưu thay đổi</button>
+                <button id="btn-save-settings" class="btn btn-primary w-full" onclick="saveSettings()" disabled>💾 Lưu thay đổi</button>
               </div>
             </div>
           </div>

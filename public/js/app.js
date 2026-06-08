@@ -110,10 +110,21 @@ function showLoginView() {
   showView('view-login');
 }
 
+async function loadFullProfile() {
+  if (!state.user) return;
+  try {
+    const data = await API.get('/api/user/me');
+    state.user = { ...state.user, ...data };
+    localStorage.setItem('user', JSON.stringify(state.user));
+    updateNavbar();
+  } catch (err) {}
+}
+
 function showUserView() {
   document.getElementById('app-layout').classList.remove('hidden');
   document.getElementById('app-layout').classList.add('layout-container');
   updateNavbar();
+  loadFullProfile();
   showView('view-user');
   loadClassMembersBackground();
   fetchSessionStatus();
@@ -125,13 +136,28 @@ function showAdminView() {
   document.getElementById('app-layout').classList.add('layout-container');
   state.isAdminInUserMode = false;
   updateNavbar();
+  loadFullProfile();
   showView('view-admin');
   loadClassMembersBackground(true);
   loadAdminSession();
   fetchNotifications();
 }
 
-// ─── Navbar ───────────────────────────────────────────────────────────
+// ─── Navbar & Sidebar ───────────────────────────────────────────────────
+function toggleMobileSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  const overlay = document.getElementById('mobile-overlay');
+  if (sidebar && overlay) {
+    if (sidebar.classList.contains('show')) {
+      sidebar.classList.remove('show');
+      overlay.classList.remove('show');
+    } else {
+      sidebar.classList.add('show');
+      overlay.classList.add('show');
+    }
+  }
+}
+
 function updateNavbar() {
   if (!state.user) return;
   const avatarEl = document.getElementById('sidebar-avatar');
@@ -142,6 +168,18 @@ function updateNavbar() {
   
   const roleEl = document.getElementById('sidebar-role');
   if (roleEl) roleEl.textContent = state.user.role === 'admin' ? 'Quản trị viên' : 'Học viên';
+
+  const dobEl = document.getElementById('sidebar-dob');
+  if (dobEl) dobEl.textContent = `🎂 Sinh nhật: ${state.user.dob || 'Chưa cập nhật'}`;
+  
+  const genderEl = document.getElementById('sidebar-gender');
+  if (genderEl) genderEl.textContent = `⚧ Giới tính: ${state.user.gender || 'Chưa cập nhật'}`;
+  
+  const hometownEl = document.getElementById('sidebar-hometown');
+  if (hometownEl) hometownEl.textContent = `📍 Quê quán: ${state.user.hometown || 'Chưa cập nhật'}`;
+  
+  const phoneEl = document.getElementById('sidebar-phone');
+  if (phoneEl) phoneEl.textContent = `📞 SĐT: ${state.user.phone || 'Chưa cập nhật'}`;
 
   const toggleBtn = document.getElementById('btn-admin-toggle');
   if (state.user.role === 'admin') {

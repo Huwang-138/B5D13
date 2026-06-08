@@ -252,10 +252,10 @@ select.input option { background: var(--bg-2); }
   background: transparent;
   border: none;
   color: var(--text-2);
-  padding: 14px 20px;
+  padding: 8px 16px;
   border-radius: var(--radius-md);
   text-align: left;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 600;
   cursor: pointer;
   transition: var(--transition);
@@ -292,8 +292,10 @@ select.input option { background: var(--bg-2); }
   justify-content: space-between;
   padding: 0 24px;
   backdrop-filter: blur(20px);
-  position: relative;
+  position: sticky;
+  top: 0;
   z-index: 500;
+  flex-shrink: 0;
 }
 .header-right {
   display: flex;
@@ -318,7 +320,7 @@ select.input option { background: var(--bg-2); }
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px; height: 40px;
+  width: 36px; height: 36px;
 }
 .notif-btn:hover {
   background: rgba(255,255,255,0.1);
@@ -728,10 +730,11 @@ select.input option { background: var(--bg-2); }
   -webkit-overflow-scrolling: touch;
 }
 .admin-tab {
+  flex: 1;
   padding: 7px 14px; border-radius: var(--radius-sm);
   font-size: 12px; font-weight: 600; cursor: pointer;
   transition: var(--transition); color: var(--text-2); border: none; background: none;
-  font-family: inherit; white-space: nowrap;
+  font-family: inherit; white-space: nowrap; text-align: center;
 }
 .admin-tab.active { background: var(--purple); color: #fff; box-shadow: 0 2px 10px rgba(139,92,246,0.4); }
 .admin-tab-content { display: none; }
@@ -859,8 +862,8 @@ select.input option { background: var(--bg-2); }
   .sidebar.show { transform: translateX(0); }
   
   .notif-wrapper { z-index: 9999; }
-  .notif-btn { width: 56px; height: 56px; border-radius: 50%; background: rgba(20,25,40,0.95); box-shadow: 0 8px 24px rgba(0,0,0,0.4); border: 1px solid var(--border); }
-  .notif-dropdown { position: fixed; top: auto; bottom: 90px; right: 16px; left: 16px; width: auto; max-width: none; max-height: 400px; border-radius: 12px; }
+  .notif-btn { width: 36px; height: 36px; border-radius: 50%; background: rgba(20,25,40,0.95); box-shadow: 0 4px 12px rgba(0,0,0,0.4); border: 1px solid var(--border); }
+  .notif-dropdown { position: absolute; top: calc(100% + 12px); right: 0; left: auto; bottom: auto; width: 300px; max-width: calc(100vw - 32px); max-height: 400px; border-radius: 12px; }
   
   .top-header { padding: 0 16px; }
   .content-scroll { padding: 16px; }
