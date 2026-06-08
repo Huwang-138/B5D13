@@ -885,3 +885,24 @@ document.getElementById('slider-overlay').addEventListener('click', function(e) 
 });
 
 init();
+
+
+// ─── Anti-Inspect Troll ───────────────────────────────────────────────
+function antiInspectAlert(e) {
+  e.preventDefault();
+  alert('Đm Hải Long ơi anh biết em đang làm gì đấy, đừng có mà táy máy!! 🤬🚨');
+  toast('Cảnh báo: Hành vi bất thường đã bị ghi nhận!', 'error');
+}
+
+document.addEventListener('contextmenu', antiInspectAlert);
+
+document.addEventListener('keydown', e => {
+  if (
+    e.key === 'F12' ||
+    (e.ctrlKey && e.shiftKey && (e.key === 'I' || e.key === 'i' || e.key === 'J' || e.key === 'j' || e.key === 'C' || e.key === 'c')) ||
+    (e.ctrlKey && (e.key === 'U' || e.key === 'u'))
+  ) {
+    antiInspectAlert(e);
+  }
+});
+
