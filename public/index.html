@@ -60,14 +60,23 @@
       <!-- Mobile Overlay -->
       <div id="mobile-overlay" class="mobile-overlay hidden" onclick="toggleMobileSidebar()"></div>
       <!-- Sidebar -->
-      <aside id="sidebar" class="sidebar">
-        <div class="sidebar-logo">B5D13</div>
-        <div class="sidebar-nav">
-          <button class="side-tab active" data-tab="tab-chia-nhom" onclick="switchAppTab('tab-chia-nhom', this)">👥 Chia nhóm</button>
-          <button class="side-tab" data-tab="tab-danh-sach-loi" onclick="switchAppTab('tab-danh-sach-loi', this)">📋 Danh sách lỗi</button>
+      <aside id="sidebar" class="sidebar" style="display: flex; flex-direction: column; justify-content: space-between;">
+        <div>
+          <div class="sidebar-user-info" style="padding: 24px; border-bottom: 1px solid var(--border); display: flex; align-items: center; gap: 12px; background: rgba(255,255,255,0.02);">
+            <div class="nav-avatar" id="sidebar-avatar" style="width: 48px; height: 48px; font-size: 24px;">👤</div>
+            <div class="user-details" style="display: flex; flex-direction: column; overflow: hidden;">
+              <span id="sidebar-username" style="font-weight: 600; color: var(--text-1); font-size: 16px; white-space: nowrap; text-overflow: ellipsis; overflow: hidden;">—</span>
+              <span id="sidebar-role" style="font-size: 12px; color: var(--cyan); text-transform: uppercase;">—</span>
+            </div>
+          </div>
+          <div class="sidebar-nav" style="padding-top: 10px;">
+            <button class="side-tab active" data-tab="tab-chia-nhom" onclick="switchAppTab('tab-chia-nhom', this)">👥 Chia nhóm</button>
+            <button class="side-tab" data-tab="tab-danh-sach-loi" onclick="switchAppTab('tab-danh-sach-loi', this)">📋 Danh sách lỗi</button>
+            <button class="side-tab" data-tab="tab-cai-dat" onclick="switchAppTab('tab-cai-dat', this)">⚙️ Cài đặt</button>
+          </div>
         </div>
-        <div class="sidebar-bottom">
-          <button class="side-tab" data-tab="tab-cai-dat" onclick="switchAppTab('tab-cai-dat', this)">⚙️ Cài đặt</button>
+        <div class="sidebar-bottom" style="padding: 24px;">
+          <button class="btn btn-rose w-full" onclick="logout()" style="justify-content: center; padding: 12px;">🚪 Đăng xuất</button>
         </div>
       </aside>
 
@@ -90,14 +99,6 @@
                 <div id="notif-list" class="notif-list">
                   <!-- Notifications go here -->
                 </div>
-              </div>
-            </div>
-            
-            <!-- User Info -->
-            <div class="user-dropdown-wrapper">
-              <div id="nav-user-info" class="nav-user" onclick="openProfileModal()" style="cursor:pointer;">
-                <div class="nav-avatar" id="nav-avatar-el">👤</div>
-                <div class="nav-username hidden" id="nav-username-el">—</div>
               </div>
             </div>
           </div>
@@ -296,17 +297,17 @@
           <!-- TAB: CÀI ĐẶT -->
           <!-- ========================================== -->
           <div id="tab-cai-dat" class="app-tab-content animate-in">
-            <div class="section-header" style="margin-bottom: 30px;">
-              <div class="section-title" style="font-size: 24px; font-weight: 700; background: linear-gradient(135deg, var(--cyan), var(--purple-light)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">⚙️ Cài đặt tài khoản</div>
-            </div>
-            <div class="settings-grid">
+            <div class="settings-grid" style="display:flex; flex-direction:column; gap:20px; max-width: 600px; margin: 0 auto;">
               <!-- Avatar Settings -->
               <div class="card settings-card">
-                <div class="settings-card-header">
-                  <div class="settings-icon-box" style="background: rgba(6, 182, 212, 0.1); color: var(--cyan);">👤</div>
-                  <div class="settings-card-title">Ảnh đại diện</div>
+                <div class="settings-card-header" onclick="toggleSettingsCard('avatar-settings-body', 'arrow-avatar')" style="cursor: pointer; justify-content: space-between;">
+                  <div style="display: flex; align-items: center; gap: 16px;">
+                    <div class="settings-icon-box" style="background: rgba(6, 182, 212, 0.1); color: var(--cyan);">👤</div>
+                    <div class="settings-card-title">Avatar</div>
+                  </div>
+                  <div class="settings-arrow" id="arrow-avatar" style="transition: transform 0.3s; color: var(--text-2);">▼</div>
                 </div>
-                <div class="settings-card-body">
+                <div class="settings-card-body hidden" id="avatar-settings-body">
                   <p class="settings-desc">Chọn một avatar dễ thương hoặc tải ảnh của riêng bạn lên nhé.</p>
                   <div class="avatar-grid" id="avatar-grid"></div>
                   <div class="upload-box">
@@ -321,30 +322,43 @@
               
               <!-- Password Settings -->
               <div class="card settings-card">
-                <div class="settings-card-header">
-                  <div class="settings-icon-box" style="background: rgba(244, 63, 94, 0.1); color: var(--rose);">🔒</div>
-                  <div class="settings-card-title">Bảo mật & Mật khẩu</div>
+                <div class="settings-card-header" onclick="toggleSettingsCard('password-settings-body', 'arrow-password')" style="cursor: pointer; justify-content: space-between;">
+                  <div style="display: flex; align-items: center; gap: 16px;">
+                    <div class="settings-icon-box" style="background: rgba(244, 63, 94, 0.1); color: var(--rose);">🔒</div>
+                    <div class="settings-card-title">Mật khẩu</div>
+                  </div>
+                  <div class="settings-arrow" id="arrow-password" style="transition: transform 0.3s; color: var(--text-2);">▼</div>
                 </div>
-                <div class="settings-card-body">
+                <div class="settings-card-body hidden" id="password-settings-body">
                   <p class="settings-desc">Cập nhật mật khẩu thường xuyên để bảo vệ tài khoản của bạn.</p>
                   <div class="settings-form" style="display:flex; flex-direction:column; gap:16px;">
                     <div class="input-group">
                       <label class="input-label">Mật khẩu hiện tại</label>
-                      <input id="old-password" class="input settings-input" type="password" placeholder="Nhập mật khẩu cũ..." oninput="checkSettingsChanges()" />
+                      <div class="password-input-wrapper">
+                        <input id="old-password" class="input settings-input" type="password" placeholder="Nhập mật khẩu cũ..." oninput="checkSettingsChanges()" />
+                        <button class="password-toggle" type="button" onclick="togglePasswordVisibility('old-password', this)">👁️</button>
+                      </div>
                     </div>
                     <div class="input-group">
                       <label class="input-label">Mật khẩu mới</label>
-                      <input id="new-password" class="input settings-input" type="password" placeholder="Nhập mật khẩu mới..." oninput="checkSettingsChanges()" />
+                      <div class="password-input-wrapper">
+                        <input id="new-password" class="input settings-input" type="password" placeholder="Nhập mật khẩu mới..." oninput="checkSettingsChanges()" />
+                        <button class="password-toggle" type="button" onclick="togglePasswordVisibility('new-password', this)">👁️</button>
+                      </div>
                     </div>
                     <div class="input-group">
                       <label class="input-label">Xác nhận mật khẩu mới</label>
-                      <input id="confirm-password" class="input settings-input" type="password" placeholder="Nhập lại mật khẩu mới..." oninput="checkSettingsChanges()" />
+                      <div class="password-input-wrapper">
+                        <input id="confirm-password" class="input settings-input" type="password" placeholder="Nhập lại mật khẩu mới..." oninput="checkSettingsChanges()" />
+                        <button class="password-toggle" type="button" onclick="togglePasswordVisibility('confirm-password', this)">👁️</button>
+                      </div>
                     </div>
                   </div>
                 </div>
-                <div class="settings-card-footer">
-                  <button id="btn-save-settings" class="btn btn-primary w-full btn-lg" onclick="saveSettings()" disabled>💾 Lưu thay đổi</button>
-                </div>
+              </div>
+              
+              <div style="margin-top: 10px;">
+                <button id="btn-save-settings" class="btn btn-primary w-full btn-lg" onclick="saveSettings()" disabled>💾 Lưu thay đổi</button>
               </div>
             </div>
           </div>
@@ -383,24 +397,6 @@
       </div>
     </div>
 
-    <!-- PROFILE MODAL (Only shows info & Logout now) -->
-    <div id="profile-modal" class="hidden">
-      <div class="card modal-card animate-in">
-        <button class="modal-close" onclick="closeProfileModal()">✕</button>
-        <div class="modal-title">👤 Thông tin cá nhân</div>
-        <div class="profile-info-box">
-          <div id="profile-big-avatar" class="profile-big-avatar">👤</div>
-          <div>
-            <div id="profile-fullname" class="profile-fullname"></div>
-            <div id="profile-dob" class="profile-meta"></div>
-            <div id="profile-gender" class="profile-meta"></div>
-            <div id="profile-hometown" class="profile-meta"></div>
-          </div>
-        </div>
-        <div class="divider" style="margin:20px 0;"></div>
-        <button class="btn btn-rose w-full" onclick="logout()">Đăng xuất</button>
-      </div>
-    </div>
 
   </div>
   <script src="/js/app.js"></script>

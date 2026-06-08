@@ -134,15 +134,14 @@ function showAdminView() {
 // ─── Navbar ───────────────────────────────────────────────────────────
 function updateNavbar() {
   if (!state.user) return;
-  const avatarEl = document.getElementById('nav-avatar-el');
-  setAvatarEl(avatarEl, state.user.avatar, state.user.fullName);
-  document.getElementById('nav-username-el').textContent = state.user.fullName;
-  const roleEl = document.getElementById('nav-role-el');
-  if (roleEl) {
-    roleEl.innerHTML = state.user.role === 'admin'
-      ? '<span class="badge badge-amber">👑 Admin</span>'
-      : '<span class="badge badge-cyan">🎓 Học viên</span>';
-  }
+  const avatarEl = document.getElementById('sidebar-avatar');
+  if (avatarEl) setAvatarEl(avatarEl, state.user.avatar, state.user.fullName);
+  
+  const nameEl = document.getElementById('sidebar-username');
+  if (nameEl) nameEl.textContent = state.user.fullName;
+  
+  const roleEl = document.getElementById('sidebar-role');
+  if (roleEl) roleEl.textContent = state.user.role === 'admin' ? 'Quản trị viên' : 'Học viên';
 
   const toggleBtn = document.getElementById('btn-admin-toggle');
   if (state.user.role === 'admin') {
@@ -228,9 +227,8 @@ async function logout() {
   localStorage.removeItem('token');
   localStorage.removeItem('user');
   
-  closeProfileModal();
-  document.getElementById('nav-username-el').textContent = '—';
-  const avatarEl = document.getElementById('nav-avatar-el');
+  document.getElementById('sidebar-username').textContent = '—';
+  const avatarEl = document.getElementById('sidebar-avatar');
   avatarEl.innerHTML = '👤';
   avatarEl.style.background = '';
   
@@ -799,39 +797,25 @@ function launchConfetti() {
 
 
 // ─── Profile Modal ──────────────────────────────────────────────────
-async function openProfileModal() {
-  document.getElementById('profile-modal').classList.remove('hidden');
-  document.getElementById('profile-fullname').textContent = state.user.fullName + '...';
-  
-  try {
-    const data = await API.get('/api/user/me');
-    state.user = { ...state.user, ...data };
-    localStorage.setItem('user', JSON.stringify(state.user));
-  } catch (err) { }
-
-  document.getElementById('profile-fullname').textContent = state.user.fullName;
-  document.getElementById('profile-dob').textContent = `🎂 Sinh nhật: ${state.user.dob || 'Chưa cập nhật'}`;
-  const genderEl = document.getElementById('profile-gender');
-  if (genderEl) genderEl.textContent = `⚧ Giới tính: ${state.user.gender || 'Chưa cập nhật'}`;
-  document.getElementById('profile-hometown').textContent = `📍 Quê quán: ${state.user.hometown || 'Chưa cập nhật'}`;
-  const phoneEl = document.getElementById('profile-phone');
-  if (phoneEl) phoneEl.textContent = `📞 SĐT: ${state.user.phone || 'Chưa cập nhật'}`;
-  
-  const bigAvatar = document.getElementById('profile-big-avatar');
-  setAvatarEl(bigAvatar, state.user.avatar, state.user.fullName);
-  bigAvatar.style.fontSize = '30px';
-}
-
-function closeProfileModal() {
-  document.getElementById('profile-modal').classList.add('hidden');
-}
-
 // ─── Settings (Cài đặt Tab) ───────────────────────────────────────────
+function toggleSettingsCard(bodyId, arrowId) {
+  const body = document.getElementById(bodyId);
+  const arrow = document.getElementById(arrowId);
+  if (body && arrow) {
+    if (body.classList.contains('hidden')) {
+      body.classList.remove('hidden');
+      arrow.style.transform = 'rotate(-180deg)';
+    } else {
+      body.classList.add('hidden');
+      arrow.style.transform = 'rotate(0deg)';
+    }
+  }
+}
 function initSettingsTab() {
   const grid = document.getElementById('avatar-grid');
   if(grid && grid.children.length === 0) {
     grid.innerHTML = '';
-    const emojis = ['👤', '👨', '👩', '🧑', '👦', '👧', '👨‍🎓', '👩‍🎓', '🕵️', '👮', '👽', '👻', '🤖', '👾', '🦊', '🐱'];
+    const emojis = ['👤', '👨', '👩', '🧑', '👦', '👧', '👨‍🎓', '👩‍🎓', '🕵️', '👮', '👽', '👻', '🤖', '👾', '🦊', '🐱', '🐻', '🐼', '🐨', '🐯', '🦁', '🐮', '🐷', '🐸', '🐵'];
     emojis.forEach(e => {
       const el = document.createElement('div');
       el.className = 'avatar-option';
