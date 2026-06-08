@@ -888,13 +888,33 @@ init();
 
 
 // ─── Anti-Inspect Troll ───────────────────────────────────────────────
+let warned = false;
 function antiInspectAlert(e) {
-  e.preventDefault();
-  alert('Đm Hải Long ơi anh biết em đang làm gì đấy, đừng có mà táy máy!! 🤬🚨');
+  if (e) e.preventDefault();
+  if (warned) return;
+  warned = true;
+  const msg = "Đm Hải Long ơi anh biết em đang định làm gì đấy, đừng có mà táy máy!!";
+  let alertMsg = "";
+  for(let i=0; i<10; i++) alertMsg += msg + "\\n";
+  alert(alertMsg);
+  for(let i=0; i<100; i++) {
+    console.log("%c" + msg, "color: red; font-size: 24px; font-weight: bold; background: black; padding: 10px; border-radius: 5px;");
+  }
   toast('Cảnh báo: Hành vi bất thường đã bị ghi nhận!', 'error');
+  document.body.innerHTML = `<div style="display:flex;height:100vh;background:black;color:red;align-items:center;justify-content:center;flex-direction:column;font-size:30px;font-weight:bold;text-align:center;padding:20px;">
+    ${msg}<br><br>${msg}<br><br>${msg}<br><br>${msg}<br><br>${msg}
+  </div>`;
 }
 
-document.addEventListener('contextmenu', antiInspectAlert);
+// Detetct DevTools via debugger execution time
+setInterval(() => {
+  const before = new Date().getTime();
+  debugger;
+  const after = new Date().getTime();
+  if (after - before > 100) {
+    antiInspectAlert();
+  }
+}, 1000);
 
 document.addEventListener('keydown', e => {
   if (
