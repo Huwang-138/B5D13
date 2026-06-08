@@ -345,18 +345,18 @@
                 </div>
 
                 <!-- Row 2: Học viên, Điểm trừ, Nút -->
-                <div style="display:flex; gap:12px; align-items:flex-end;">
+                <div style="display:flex; gap:8px; align-items:flex-end;">
                   <div class="input-group" style="flex:1; min-width:0;">
                     <label class="input-label">Học viên</label>
-                    <select id="v-user" class="input" style="padding: 0 12px; height: 42px;"></select>
+                    <select id="v-user" class="input" style="padding: 0 10px; height: 42px;"></select>
                   </div>
-                  <div class="input-group" style="width:70px; flex-shrink:0;">
-                    <label class="input-label">Điểm trừ</label>
+                  <div class="input-group" style="width:50px; flex-shrink:0;">
+                    <label class="input-label" style="font-size:12px;text-align:center;">Điểm</label>
                     <input id="v-points" class="input" type="number" min="0" value="1"
-                      style="padding: 0 12px; height: 42px; text-align: center;" />
+                      style="padding: 0 4px; height: 42px; text-align: center;" />
                   </div>
                   <button class="btn btn-rose" onclick="addViolation()"
-                    style="white-space:nowrap; padding:0 24px; height:42px; flex-shrink:0;">📝 Ghi lỗi</button>
+                    style="white-space:nowrap; padding:0 14px; height:42px; flex-shrink:0; font-weight:700;">📝 Ghi</button>
                 </div>
               </div>
               <div id="v-note-group" class="hidden" style="margin-top:12px;">
@@ -366,26 +366,31 @@
               </div>
             </div>
 
-            <!-- USER POINTS BAR + REFRESH BUTTON (same row) -->
+            <!-- HEADER BAR FOR VIOLATIONS -->
             <div id="user-points-bar"
-              style="display:none; margin-bottom: 12px; align-items:center; justify-content:space-between; gap:8px;">
-              <div
+              style="display:none; margin-bottom: 16px; align-items:flex-end; justify-content:space-between; gap:12px;">
+              
+              <!-- Points Box (Left) -->
+              <div id="points-box"
                 style="background: rgba(244,63,94,0.1); border: 1px solid rgba(244,63,94,0.25); border-radius:12px; padding: 10px 18px; display:flex; align-items:center; gap:10px;">
                 <span style="font-size:18px;">📊</span>
                 <div>
-                  <div style="font-size:11px; color:var(--text-2); text-transform:uppercase; letter-spacing:0.5px;">Tổng
+                  <div style="font-size:11px; font-weight:700; color:var(--text-2); text-transform:uppercase; letter-spacing:0.5px;">Tổng
                     điểm bị trừ</div>
                   <div id="user-total-points" style="font-size:20px; font-weight:700; color:var(--rose);">0</div>
                 </div>
               </div>
-              <button class="btn btn-ghost btn-sm" onclick="loadViolations()"
-                style="gap:6px; font-size:13px; align-self:flex-end;">🔄 Làm mới</button>
-            </div>
+              
+              <!-- Action Buttons (Right) -->
+              <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end; margin-left:auto;">
+                <button class="btn btn-ghost btn-sm" onclick="loadViolations()"
+                  style="gap:6px; font-size:13px;">🔄 Làm mới</button>
+                <div id="admin-leaderboard-bar" style="display:flex;">
+                  <button class="btn btn-secondary btn-sm" onclick="showLeaderboard()" style="gap:6px;">🏆 Top
+                    điểm trừ</button>
+                </div>
+              </div>
 
-            <!-- ADMIN LEADERBOARD BUTTON -->
-            <div id="admin-leaderboard-bar" style="display:none; margin-bottom: 12px; justify-content:flex-end;">
-              <button class="btn btn-secondary btn-sm" onclick="showLeaderboard()" style="gap:6px;">🏆 Top
-                điểm trừ</button>
             </div>
 
 

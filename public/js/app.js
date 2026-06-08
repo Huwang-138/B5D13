@@ -1187,7 +1187,11 @@ async function loadViolations() {
 
     // Show/hide role-specific UI
     const userPointsBar = document.getElementById('user-points-bar');
-    if (userPointsBar) userPointsBar.style.display = isAdmin ? 'none' : 'flex';
+    if (userPointsBar) userPointsBar.style.display = 'flex';
+    
+    const pointsBox = document.getElementById('points-box');
+    if (pointsBox) pointsBox.style.display = isAdmin ? 'none' : 'flex';
+
     const adminLbBar = document.getElementById('admin-leaderboard-bar');
     if (adminLbBar) adminLbBar.style.display = 'flex';
     const colStudent = document.getElementById('col-student-name');
