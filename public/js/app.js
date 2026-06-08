@@ -220,14 +220,33 @@ async function handleLogin(e) {
 }
 
 async function logout() {
+  if (!confirm('Bạn có chắc chắn muốn đăng xuất?')) return;
   try { await API.post('/api/auth/logout'); } catch { }
   state.token = null;
   state.user = null;
   state.isAdminInUserMode = false;
   localStorage.removeItem('token');
   localStorage.removeItem('user');
+  
+  closeProfileModal();
+  document.getElementById('nav-username-el').textContent = '—';
+  const avatarEl = document.getElementById('nav-avatar-el');
+  avatarEl.innerHTML = '👤';
+  avatarEl.style.background = '';
+  
   showLoginView();
   toast('Đã đăng xuất', 'info');
+}
+
+function togglePasswordVisibility(inputId, btn) {
+  const input = document.getElementById(inputId);
+  if (input.type === 'password') {
+    input.type = 'text';
+    btn.textContent = '🙈';
+  } else {
+    input.type = 'password';
+    btn.textContent = '👁️';
+  }
 }
 
 // ─── Fetch session on load (initial state) ────────────────────────────
@@ -780,14 +799,27 @@ function launchConfetti() {
 
 
 // ─── Profile Modal ──────────────────────────────────────────────────
-function openProfileModal() {
+async function openProfileModal() {
+  document.getElementById('profile-modal').classList.remove('hidden');
+  document.getElementById('profile-fullname').textContent = state.user.fullName + '...';
+  
+  try {
+    const data = await API.get('/api/user/me');
+    state.user = { ...state.user, ...data };
+    localStorage.setItem('user', JSON.stringify(state.user));
+  } catch (err) { }
+
   document.getElementById('profile-fullname').textContent = state.user.fullName;
-  document.getElementById('profile-dob').textContent = `🎂 ${state.user.dob || 'Chưa cập nhật'}`;
-  document.getElementById('profile-hometown').textContent = `📍 ${state.user.hometown || 'Chưa cập nhật'}`;
+  document.getElementById('profile-dob').textContent = `🎂 Sinh nhật: ${state.user.dob || 'Chưa cập nhật'}`;
+  const genderEl = document.getElementById('profile-gender');
+  if (genderEl) genderEl.textContent = `⚧ Giới tính: ${state.user.gender || 'Chưa cập nhật'}`;
+  document.getElementById('profile-hometown').textContent = `📍 Quê quán: ${state.user.hometown || 'Chưa cập nhật'}`;
+  const phoneEl = document.getElementById('profile-phone');
+  if (phoneEl) phoneEl.textContent = `📞 SĐT: ${state.user.phone || 'Chưa cập nhật'}`;
+  
   const bigAvatar = document.getElementById('profile-big-avatar');
   setAvatarEl(bigAvatar, state.user.avatar, state.user.fullName);
   bigAvatar.style.fontSize = '30px';
-  document.getElementById('profile-modal').classList.remove('hidden');
 }
 
 function closeProfileModal() {

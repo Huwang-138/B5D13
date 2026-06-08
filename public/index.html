@@ -30,13 +30,16 @@
           <form class="login-form" onsubmit="handleLogin(event)">
             <div class="input-group">
               <label class="input-label" for="login-username">Tài khoản</label>
-              <input id="login-username" class="input" type="text" placeholder="VD: nguyenvana" autocomplete="username"
+              <input id="login-username" class="input" type="text" placeholder="Tên đăng nhập/SĐT" autocomplete="username"
                 required />
             </div>
             <div class="input-group">
               <label class="input-label" for="login-password">Mật khẩu</label>
-              <input id="login-password" class="input" type="password" placeholder="VD: 01012000@"
-                autocomplete="current-password" required />
+              <div style="position: relative;">
+                <input id="login-password" class="input" type="password" placeholder="VD: 01012000@"
+                  autocomplete="current-password" required style="padding-right: 40px;" />
+                <button type="button" class="pwd-toggle-btn" onclick="togglePasswordVisibility('login-password', this)">👁️</button>
+              </div>
             </div>
             <button id="login-btn" type="submit" class="btn btn-primary login-btn">
               <span id="login-btn-text">Đăng nhập</span>
@@ -94,7 +97,7 @@
             <div class="user-dropdown-wrapper">
               <div id="nav-user-info" class="nav-user" onclick="openProfileModal()" style="cursor:pointer;">
                 <div class="nav-avatar" id="nav-avatar-el">👤</div>
-                <div class="nav-username" id="nav-username-el">—</div>
+                <div class="nav-username hidden" id="nav-username-el">—</div>
               </div>
             </div>
           </div>
@@ -237,7 +240,7 @@
           <!-- ========================================== -->
           <!-- TAB: DANH SÁCH LỖI -->
           <!-- ========================================== -->
-          <div id="tab-danh-sach-loi" class="app-tab-content hidden animate-in">
+          <div id="tab-danh-sach-loi" class="app-tab-content animate-in">
             <div class="section-header">
               <div class="section-title">📋 Quản lý Lỗi Vi Phạm</div>
             </div>
@@ -292,7 +295,7 @@
           <!-- ========================================== -->
           <!-- TAB: CÀI ĐẶT -->
           <!-- ========================================== -->
-          <div id="tab-cai-dat" class="app-tab-content hidden animate-in">
+          <div id="tab-cai-dat" class="app-tab-content animate-in">
             <div class="section-header">
               <div class="section-title">⚙️ Cài đặt tài khoản</div>
             </div>
@@ -376,6 +379,7 @@
           <div>
             <div id="profile-fullname" class="profile-fullname"></div>
             <div id="profile-dob" class="profile-meta"></div>
+            <div id="profile-gender" class="profile-meta"></div>
             <div id="profile-hometown" class="profile-meta"></div>
           </div>
         </div>

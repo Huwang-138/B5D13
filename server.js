@@ -166,8 +166,14 @@ app.post('/api/auth/login', async (req, res) => {
   try {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Thiếu thông tin' });
-    const user = await User.findOne({ username: username.toLowerCase().trim() }).lean();
-    if (!user) return res.status(401).json({ error: 'Tài khoản không tồn tại' });
+    const searchStr = username.toLowerCase().trim();
+    const user = await User.findOne({ 
+      $or: [
+        { username: searchStr },
+        { phone: searchStr }
+      ]
+    }).lean();
+    if (!user) return res.status(401).json({ error: 'Tài khoản hoặc số điện thoại không tồn tại' });
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(401).json({ error: 'Mật khẩu không đúng' });
     const token = makeToken(user._id);
