@@ -1,5 +1,8 @@
 /* ════════════════════════════════════════════════════════════════════
    app.js — Ứng dụng Quản lý Nhóm Lớp Học
+   - JWT auth (bền vững qua restart Render)
+   - Socket.io realtime (không cần polling)
+   - Admin có thể chuyển sang chế độ học sinh để chọn nhóm/quay random
    ════════════════════════════════════════════════════════════════════ */
 
 // ─── State ───────────────────────────────────────────────────────────
@@ -10,9 +13,55 @@ let state = {
   myGroup: null,
   isFixed: false,
   members: [],
-  pollingTimer: null,
+  isAdminInUserMode: false,  // Admin đang xem giao diện học sinh
   selectedAvatarEmoji: null,
 };
+
+// ─── Socket.io ────────────────────────────────────────────────────────
+const socket = io();
+
+socket.on('connect', () => {
+  console.log('🔌 Socket.io connected:', socket.id);
+});
+
+socket.on('sessionUpdated', (session) => {
+  state.session = session;
+  const inUserView = document.getElementById('view-user').classList.contains('active');
+  const inAdminView = document.getElementById('view-admin').classList.contains('active');
+
+  if (inUserView || (inAdminView && state.isAdminInUserMode)) {
+    const myId = state.user?.id?.toString();
+    let myGroup = null, isFixed = false;
+    if (session && myId) {
+      for (const g of session.groups) {
+        const inGroup = g.members.some(m => (m._id || m).toString() === myId);
+        const inFixed = g.fixedMembers.some(m => (m._id || m).toString() === myId);
+        if (inGroup) { myGroup = g.groupId; if (inFixed) isFixed = true; break; }
+      }
+    }
+    state.myGroup = myGroup;
+    state.isFixed = isFixed;
+    renderUserSession({ active: !!session, session, myGroup, isFixed });
+  }
+
+  if (inAdminView && !state.isAdminInUserMode) {
+    const data = { active: !!session, session };
+    renderAdminStats(data);
+    const manageTab = document.getElementById('tab-manage');
+    if (manageTab && manageTab.classList.contains('active') && session) {
+      renderAdminGroups(session);
+    }
+    const alert = document.getElementById('active-session-alert');
+    if (session) {
+      alert.classList.remove('hidden');
+      alert.style.display = 'flex';
+      document.getElementById('active-session-name').textContent =
+        ` "${session.subject}" — ${session.mode === 'manual' ? 'Tự chọn' : 'Random'} — ${session.groups.length} nhóm`;
+    } else {
+      alert.classList.add('hidden');
+    }
+  }
+});
 
 // ─── API Base ─────────────────────────────────────────────────────────
 const API = {
@@ -55,25 +104,23 @@ function showView(id) {
 function showLoginView() {
   document.getElementById('navbar').classList.add('hidden');
   showView('view-login');
-  stopPolling();
 }
 
 function showUserView() {
   document.getElementById('navbar').classList.remove('hidden');
   updateNavbar();
   showView('view-user');
-  // Load members in background for fixed assign rendering
   loadClassMembersBackground();
-  startPolling();
+  fetchSessionStatus();
 }
 
 function showAdminView() {
   document.getElementById('navbar').classList.remove('hidden');
+  state.isAdminInUserMode = false;
   updateNavbar();
   showView('view-admin');
   loadClassMembersBackground(true);
   loadAdminSession();
-  startPolling();
 }
 
 // ─── Navbar ───────────────────────────────────────────────────────────
@@ -86,6 +133,20 @@ function updateNavbar() {
   roleEl.innerHTML = state.user.role === 'admin'
     ? '<span class="badge badge-amber">👑 Admin</span>'
     : '<span class="badge badge-cyan">🎓 HS</span>';
+
+  const toggleBtn = document.getElementById('btn-admin-toggle');
+  if (state.user.role === 'admin') {
+    toggleBtn.classList.remove('hidden');
+    if (state.isAdminInUserMode) {
+      toggleBtn.textContent = '🛠️ Trang Quản trị';
+      toggleBtn.style.background = 'var(--amber)';
+    } else {
+      toggleBtn.textContent = '🎓 Chế độ HS';
+      toggleBtn.style.background = '';
+    }
+  } else {
+    toggleBtn.classList.add('hidden');
+  }
 }
 
 function setAvatarEl(el, avatar, fullName) {
@@ -99,6 +160,24 @@ function setAvatarEl(el, avatar, fullName) {
     el.textContent = (fullName || '?').charAt(0).toUpperCase();
     el.style.background = '';
     el.style.fontSize = '';
+  }
+}
+
+// ─── Admin ↔ User mode toggle ─────────────────────────────────────────
+function toggleAdminUserMode() {
+  if (!state.user || state.user.role !== 'admin') return;
+  if (state.isAdminInUserMode) {
+    // Quay về trang quản trị
+    state.isAdminInUserMode = false;
+    showAdminView();
+    toast('🛠️ Quay lại trang Quản trị', 'info');
+  } else {
+    // Chuyển sang chế độ học sinh
+    state.isAdminInUserMode = true;
+    updateNavbar();
+    showView('view-user');
+    fetchSessionStatus();
+    toast('🎓 Đã chuyển sang chế độ Học sinh', 'info');
   }
 }
 
@@ -134,57 +213,29 @@ async function logout() {
   try { await API.post('/api/auth/logout'); } catch {}
   state.token = null;
   state.user  = null;
+  state.isAdminInUserMode = false;
   localStorage.removeItem('token');
   localStorage.removeItem('user');
   showLoginView();
   toast('Đã đăng xuất', 'info');
 }
 
-// ─── Class Members (background, no render for users) ─────────────────
+// ─── Fetch session on load (initial state) ────────────────────────────
+async function fetchSessionStatus() {
+  try {
+    const data = await API.get('/api/session/status');
+    state.session = data.active ? data.session : null;
+    state.myGroup = data.myGroup || null;
+    state.isFixed = data.isFixed || false;
+    renderUserSession(data);
+  } catch {}
+}
+
+// ─── Class Members (background load) ─────────────────────────────────
 async function loadClassMembersBackground(isAdmin = false) {
   try {
     const members = await API.get('/api/class/members');
     state.members = members;
-    // Only render admin table (no user class table anymore)
-  } catch {}
-}
-
-// ─── Polling ──────────────────────────────────────────────────────────
-function startPolling() {
-  stopPolling();
-  state.pollingTimer = setInterval(pollSessionStatus, 2500);
-  pollSessionStatus();
-}
-
-function stopPolling() {
-  if (state.pollingTimer) { clearInterval(state.pollingTimer); state.pollingTimer = null; }
-}
-
-async function pollSessionStatus() {
-  try {
-    const data = await API.get('/api/session/status');
-    if (document.getElementById('view-user').classList.contains('active')) {
-      renderUserSession(data);
-    }
-    if (document.getElementById('view-admin').classList.contains('active')) {
-      renderAdminStats(data);
-      const manageTab = document.getElementById('tab-manage');
-      if (manageTab && manageTab.classList.contains('active') && data.active) {
-        renderAdminGroups(data.session);
-      }
-      const alert = document.getElementById('active-session-alert');
-      if (data.active) {
-        alert.classList.remove('hidden');
-        alert.style.display = 'flex';
-        document.getElementById('active-session-name').textContent =
-          ` "${data.session.subject}" — ${data.session.mode === 'manual' ? 'Tự chọn' : 'Random'} — ${data.session.groups.length} nhóm`;
-      } else {
-        alert.classList.add('hidden');
-      }
-    }
-    state.session = data.active ? data.session : null;
-    state.myGroup = data.myGroup || null;
-    state.isFixed = data.isFixed || false;
   } catch {}
 }
 
@@ -196,7 +247,7 @@ function renderUserSession(data) {
   const myGroupCard   = document.getElementById('my-group-card');
   const sliderTrigger = document.getElementById('slider-trigger-section');
 
-  if (!data.active) {
+  if (!data.active || !data.session) {
     banner.classList.add('hidden');
     noSession.classList.remove('hidden');
     groupsSection.classList.add('hidden');
@@ -285,7 +336,7 @@ async function joinGroup(groupId) {
     const data = await API.post('/api/session/join', { groupId });
     state.myGroup = data.myGroup;
     toast(`Đã tham gia Nhóm ${groupId}! 🎉`, 'success');
-    await pollSessionStatus();
+    // Socket.io sẽ tự cập nhật giao diện qua sự kiện 'sessionUpdated'
   } catch (err) { toast(err.message, 'error'); }
 }
 
@@ -294,13 +345,12 @@ async function leaveGroup() {
     await API.post('/api/session/leave');
     state.myGroup = null;
     toast('Đã rời nhóm', 'info');
-    await pollSessionStatus();
   } catch (err) { toast(err.message, 'error'); }
 }
 
 // ─── Admin Stats ──────────────────────────────────────────────────────
 function renderAdminStats(data) {
-  if (data.active) {
+  if (data.active && data.session) {
     const session = data.session;
     const assigned = session.groups.reduce((s, g) => s + g.members.length, 0);
     document.getElementById('stat-groups').textContent = session.groups.length;
@@ -318,15 +368,27 @@ async function loadAdminSession() {
   try {
     const data = await API.get('/api/session/status');
     state.session = data.active ? data.session : null;
+    state.myGroup = data.myGroup || null;
+    state.isFixed = data.isFixed || false;
+    renderAdminStats(data);
     updateManageTab(data);
     updateFixedTab(data);
+    const alert = document.getElementById('active-session-alert');
+    if (data.active) {
+      alert.classList.remove('hidden');
+      alert.style.display = 'flex';
+      document.getElementById('active-session-name').textContent =
+        ` "${data.session.subject}" — ${data.session.mode === 'manual' ? 'Tự chọn' : 'Random'} — ${data.session.groups.length} nhóm`;
+    } else {
+      alert.classList.add('hidden');
+    }
   } catch (err) { toast(err.message, 'error'); }
 }
 
 function updateManageTab(data) {
   const noMsg = document.getElementById('no-active-session-msg');
   const content = document.getElementById('manage-content');
-  if (!data.active) {
+  if (!data.active || !data.session) {
     noMsg.classList.remove('hidden'); content.classList.add('hidden');
     return;
   }
@@ -339,12 +401,11 @@ function updateManageTab(data) {
 function updateFixedTab(data) {
   const noMsg = document.getElementById('no-active-session-fixed-msg');
   const content = document.getElementById('fixed-content');
-  if (!data.active) { noMsg.classList.remove('hidden'); content.classList.add('hidden'); return; }
+  if (!data.active || !data.session) { noMsg.classList.remove('hidden'); content.classList.add('hidden'); return; }
   noMsg.classList.add('hidden'); content.classList.remove('hidden');
   if (state.members.length > 0) {
     renderFixedAssignList(data.session);
   } else {
-    // Load members then render
     API.get('/api/class/members').then(members => {
       state.members = members;
       renderFixedAssignList(data.session);
@@ -462,7 +523,7 @@ async function changeCapacity(groupId, delta) {
   const newCap = Math.max(grp.members.length, grp.capacity + delta);
   try {
     await API.post('/api/admin/session/update-capacity', { groupId, capacity: newCap });
-    await pollSessionStatus();
+    // Socket.io sẽ tự broadcast cập nhật
   } catch (err) { toast(err.message, 'error'); }
 }
 
@@ -575,7 +636,7 @@ function openSlider() {
   if (!state.session) return;
   const available = state.session.groups.filter(g => g.members.length < g.capacity);
   if (available.length === 0) { toast('Tất cả các nhóm đã đầy!', 'warning'); return; }
-  sliderState.groups = state.session.groups; // all groups for visual
+  sliderState.groups = state.session.groups;
   sliderState.spinning = false;
 
   document.getElementById('slider-result').classList.add('hidden');
@@ -583,9 +644,7 @@ function openSlider() {
   document.getElementById('slider-spin-btn').textContent = '🎰 Bốc thăm!';
   document.getElementById('slider-sub-text').textContent = 'Nhấn nút để hệ thống chọn nhóm cho bạn!';
 
-  // Build initial slot track (replicate groups multiple times for effect)
   buildSlotTrack(sliderState.groups, -1);
-
   document.getElementById('slider-overlay').classList.remove('hidden');
 }
 
@@ -597,8 +656,6 @@ function closeSlider() {
 function buildSlotTrack(groups, winnerGroupId) {
   const track = document.getElementById('slot-track');
   const colors = SLOT_COLORS;
-
-  // Repeat items many times for scroll effect
   const REPEATS = 8;
   const items = [];
   for (let r = 0; r < REPEATS; r++) {
@@ -616,7 +673,6 @@ function buildSlotTrack(groups, winnerGroupId) {
     </div>`;
   }).join('');
 
-  // Reset position
   track.style.transition = 'none';
   track.style.transform = 'translateX(0)';
 }
@@ -631,21 +687,18 @@ async function spinSlider() {
   document.getElementById('slider-result').classList.add('hidden');
 
   try {
-    // Call API FIRST to get the real winner group
     const data = await API.post('/api/session/spin', {});
     const winnerGroupId = data.groupId;
     const winnerGroupName = data.groupName;
     const groups = sliderState.groups;
 
-    // Rebuild track with winner highlighted at the end
     buildSlotTrack(groups, winnerGroupId);
 
     const track = document.getElementById('slot-track');
-    const itemWidth = 110; // slot-item width + gap
+    const itemWidth = 110;
     const totalGroups = groups.length;
     const REPEATS = 8;
 
-    // Find winner index in last repeat
     const lastRepeatStart = (REPEATS - 1) * totalGroups;
     let winnerIdxInLastRepeat = 0;
     groups.forEach((g, i) => {
@@ -653,41 +706,33 @@ async function spinSlider() {
     });
     const winnerAbsoluteIdx = lastRepeatStart + winnerIdxInLastRepeat;
 
-    // Window center (slot window is about 240px wide center item at ~120)
     const windowCenterOffset = 120;
     const finalTranslate = -(winnerAbsoluteIdx * itemWidth - windowCenterOffset);
 
-    // Animate: fast scroll then ease-out to winner
     track.style.transition = 'none';
     track.style.transform = 'translateX(0)';
 
-    // Wait a tiny frame before starting
     await new Promise(r => setTimeout(r, 50));
 
     track.style.transition = 'transform 3.5s cubic-bezier(0.12, 0.8, 0.3, 1)';
     track.style.transform = `translateX(${finalTranslate}px)`;
 
-    // Wait for animation to finish
     await new Promise(r => setTimeout(r, 3700));
 
-    // Highlight winner item
     const allItems = track.querySelectorAll('.slot-item');
     allItems.forEach(el => el.classList.remove('winner'));
     if (allItems[winnerAbsoluteIdx]) allItems[winnerAbsoluteIdx].classList.add('winner');
 
-    // Show result
     const resultEl = document.getElementById('slider-result');
     document.getElementById('slider-result-name').textContent = winnerGroupName;
     resultEl.classList.remove('hidden');
     document.getElementById('slider-sub-text').textContent = '🎉 Bốc thăm hoàn tất!';
 
-    // Confetti
     launchConfetti();
     toast(`🎉 Chúc mừng! Bạn vào ${winnerGroupName}!`, 'success');
     state.myGroup = winnerGroupId;
-    await pollSessionStatus();
+    // Socket.io sẽ tự cập nhật state.session qua sự kiện 'sessionUpdated'
 
-    // Auto close after 4s
     setTimeout(() => closeSlider(), 4000);
 
   } catch (err) {
@@ -734,7 +779,6 @@ function openProfileModal() {
     document.getElementById('new-password').value = '';
     document.getElementById('confirm-password').value = '';
   }).catch(() => {});
-  // Avatar grid
   const grid = document.getElementById('avatar-grid');
   const current = state.user.avatar;
   grid.innerHTML = AVATARS.map(a =>
@@ -786,7 +830,6 @@ async function saveProfile() {
   }
 
   const body = {};
-  // No username change — password and avatar only
   if (newPassword) { body.oldPassword = oldPassword; body.newPassword = newPassword; }
   if (state.selectedAvatarEmoji !== null) body.avatar = state.selectedAvatarEmoji;
 

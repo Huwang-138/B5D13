@@ -4,11 +4,20 @@ const bcrypt = require('bcryptjs');
 const cors = require('cors');
 const path = require('path');
 const multer = require('multer');
-const fs = require('fs');
+const http = require('http');
+const { Server } = require('socket.io');
+const jwt = require('jsonwebtoken');
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server, {
+  cors: { origin: '*', methods: ['GET', 'POST'] },
+});
+
 const PORT = process.env.PORT || 3000;
 const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/quanly_lop';
+const JWT_SECRET = process.env.JWT_SECRET || 'qlnhom_super_secret_2025_!@#';
+const JWT_EXPIRES = '30d'; // Token kéo dài 30 ngày
 
 // ─── Middleware ───────────────────────────────────────────────────
 app.use(cors());
@@ -98,28 +107,40 @@ async function seedDatabase() {
   }
 }
 
-// ─── Auth Helper ──────────────────────────────────────────────────
-// Simple token: base64(userId:timestamp) — lightweight, no jwt lib needed
+// ─── JWT Auth Helper ──────────────────────────────────────────────
 function makeToken(userId) {
-  return Buffer.from(`${userId}:${Date.now()}`).toString('base64');
+  return jwt.sign({ userId: userId.toString() }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
 }
-const tokenStore = new Map(); // token → userId (in-memory, OK for single instance)
 
 async function authMiddleware(req, res, next) {
   const token = req.headers['authorization']?.split(' ')[1];
-  if (!token || !tokenStore.has(token)) {
-    return res.status(401).json({ error: 'Chưa đăng nhập' });
+  if (!token) return res.status(401).json({ error: 'Chưa đăng nhập' });
+  try {
+    const decoded = jwt.verify(token, JWT_SECRET);
+    const user = await User.findById(decoded.userId).lean();
+    if (!user) return res.status(401).json({ error: 'Tài khoản không tồn tại' });
+    req.user = user;
+    next();
+  } catch (err) {
+    return res.status(401).json({ error: 'Token không hợp lệ hoặc đã hết hạn, vui lòng đăng nhập lại' });
   }
-  const userId = tokenStore.get(token);
-  const user = await User.findById(userId).lean();
-  if (!user) return res.status(401).json({ error: 'Tài khoản không tồn tại' });
-  req.user = user;
-  next();
 }
 
 function adminOnly(req, res, next) {
   if (req.user.role !== 'admin') return res.status(403).json({ error: 'Chỉ Admin mới có quyền' });
   next();
+}
+
+// ─── Socket.io Helper: broadcast session update ───────────────────
+async function broadcastSessionUpdate() {
+  try {
+    const session = await Session.findOne({ active: true })
+      .populate('groups.members groups.fixedMembers', 'fullName username avatar stt')
+      .lean();
+    io.emit('sessionUpdated', session || null);
+  } catch (err) {
+    console.error('broadcastSessionUpdate error:', err.message);
+  }
 }
 
 // ─── Auth Routes ──────────────────────────────────────────────────
@@ -131,15 +152,13 @@ app.post('/api/auth/login', async (req, res) => {
     if (!user) return res.status(401).json({ error: 'Tài khoản không tồn tại' });
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(401).json({ error: 'Mật khẩu không đúng' });
-    const token = makeToken(user._id.toString());
-    tokenStore.set(token, user._id.toString());
+    const token = makeToken(user._id);
     res.json({ token, user: { id: user._id, username: user.username, fullName: user.fullName, role: user.role, avatar: user.avatar, stt: user.stt } });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/auth/logout', authMiddleware, (req, res) => {
-  const token = req.headers['authorization']?.split(' ')[1];
-  tokenStore.delete(token);
+  // JWT is stateless — client just deletes the token
   res.json({ ok: true });
 });
 
@@ -153,14 +172,9 @@ app.get('/api/user/me', authMiddleware, async (req, res) => {
 
 app.patch('/api/user/profile', authMiddleware, async (req, res) => {
   try {
-    const { username, oldPassword, newPassword, avatar } = req.body;
+    const { oldPassword, newPassword, avatar } = req.body;
     const user = await User.findById(req.user._id);
     const updates = {};
-    if (username && username !== user.username) {
-      const exists = await User.findOne({ username: username.toLowerCase().trim() });
-      if (exists) return res.status(400).json({ error: 'Tên tài khoản đã tồn tại' });
-      updates.username = username.toLowerCase().trim();
-    }
     if (newPassword) {
       if (!oldPassword) return res.status(400).json({ error: 'Cần nhập mật khẩu cũ' });
       const ok = await bcrypt.compare(oldPassword, user.password);
@@ -193,10 +207,8 @@ app.get('/api/class/members', authMiddleware, async (req, res) => {
 // ─── Session Routes (Admin) ───────────────────────────────────────
 app.post('/api/admin/session/create', authMiddleware, adminOnly, async (req, res) => {
   try {
-    // Deactivate old sessions
     await Session.updateMany({ active: true }, { active: false, completedAt: new Date() });
     const { subject, mode, groupCount, memberPerGroup, fixedAssignments } = req.body;
-    // Calculate group sizes
     const totalMembers = 25;
     let numGroups = parseInt(groupCount) || 0;
     if (!numGroups && memberPerGroup) numGroups = Math.ceil(totalMembers / parseInt(memberPerGroup));
@@ -207,8 +219,7 @@ app.post('/api/admin/session/create', authMiddleware, adminOnly, async (req, res
     for (let i = 0; i < numGroups; i++) {
       groups.push({ groupId: i + 1, name: `Nhóm ${i + 1}`, capacity: baseSize + (i < extra ? 1 : 0), members: [], fixedMembers: [] });
     }
-    // Apply fixed assignments
-    const fixedList = fixedAssignments || []; // [{userId, groupId}]
+    const fixedList = fixedAssignments || [];
     for (const fa of fixedList) {
       const grp = groups.find(g => g.groupId === parseInt(fa.groupId));
       if (grp) {
@@ -218,6 +229,7 @@ app.post('/api/admin/session/create', authMiddleware, adminOnly, async (req, res
     }
     const session = await Session.create({ subject: subject || 'Môn học', mode: mode || 'manual', groups, createdBy: req.user._id, active: true });
     const populated = await session.populate('groups.members groups.fixedMembers', 'fullName username avatar stt');
+    await broadcastSessionUpdate();
     res.json(populated);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -232,6 +244,7 @@ app.get('/api/admin/sessions', authMiddleware, adminOnly, async (req, res) => {
 app.post('/api/admin/session/stop', authMiddleware, adminOnly, async (req, res) => {
   try {
     await Session.updateMany({ active: true }, { active: false, completedAt: new Date() });
+    await broadcastSessionUpdate();
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -243,6 +256,7 @@ app.post('/api/admin/session/reset', authMiddleware, adminOnly, async (req, res)
     for (const g of session.groups) { g.members = [...g.fixedMembers]; }
     await session.save();
     const populated = await session.populate('groups.members groups.fixedMembers', 'fullName username avatar stt');
+    await broadcastSessionUpdate();
     res.json(populated);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -256,6 +270,7 @@ app.post('/api/admin/session/update-capacity', authMiddleware, adminOnly, async 
     if (!grp) return res.status(404).json({ error: 'Không tìm thấy nhóm' });
     grp.capacity = parseInt(capacity);
     await session.save();
+    await broadcastSessionUpdate();
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -266,39 +281,37 @@ app.post('/api/admin/session/move-member', authMiddleware, adminOnly, async (req
     const session = await Session.findOne({ active: true });
     if (!session) return res.status(404).json({ error: 'Không có phiên nào đang hoạt động' });
     const uid = new mongoose.Types.ObjectId(userId);
-    // Remove from all groups first
     for (const g of session.groups) {
       g.members = g.members.filter(m => m.toString() !== uid.toString());
     }
-    // Add to target group
     if (toGroupId) {
       const toGrp = session.groups.find(g => g.groupId === parseInt(toGroupId));
       if (toGrp) toGrp.members.push(uid);
     }
     await session.save();
     const populated = await session.populate('groups.members groups.fixedMembers', 'fullName username avatar stt');
+    await broadcastSessionUpdate();
     res.json(populated);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
 app.post('/api/admin/session/assign-fixed', authMiddleware, adminOnly, async (req, res) => {
   try {
-    const { userId, groupId } = req.body; // groupId null = remove fixed
+    const { userId, groupId } = req.body;
     const session = await Session.findOne({ active: true });
     if (!session) return res.status(404).json({ error: 'Không có phiên nào đang hoạt động' });
     const uid = new mongoose.Types.ObjectId(userId);
-    // Remove fixed from all groups
     for (const g of session.groups) {
       g.members = g.members.filter(m => m.toString() !== uid.toString());
       g.fixedMembers = g.fixedMembers.filter(m => m.toString() !== uid.toString());
     }
-    // Add to new group as fixed
     if (groupId) {
       const grp = session.groups.find(g => g.groupId === parseInt(groupId));
       if (grp) { grp.members.push(uid); grp.fixedMembers.push(uid); }
     }
     await session.save();
     const populated = await session.populate('groups.members groups.fixedMembers', 'fullName username avatar stt');
+    await broadcastSessionUpdate();
     res.json(populated);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -307,17 +320,14 @@ app.post('/api/admin/session/auto-assign', authMiddleware, adminOnly, async (req
   try {
     const session = await Session.findOne({ active: true });
     if (!session) return res.status(404).json({ error: 'Không có phiên nào đang hoạt động' });
-    // Get all users
     const allUsers = await User.find({}, '_id').lean();
     const assignedIds = new Set();
     for (const g of session.groups) g.members.forEach(m => assignedIds.add(m.toString()));
     const unassigned = allUsers.map(u => u._id).filter(id => !assignedIds.has(id.toString()));
-    // Shuffle
     for (let i = unassigned.length - 1; i > 0; i--) {
       const j = Math.floor(Math.random() * (i + 1));
       [unassigned[i], unassigned[j]] = [unassigned[j], unassigned[i]];
     }
-    // Fill groups
     let idx = 0;
     for (const g of session.groups) {
       while (g.members.length < g.capacity && idx < unassigned.length) {
@@ -326,6 +336,7 @@ app.post('/api/admin/session/auto-assign', authMiddleware, adminOnly, async (req
     }
     await session.save();
     const populated = await session.populate('groups.members groups.fixedMembers', 'fullName username avatar stt');
+    await broadcastSessionUpdate();
     res.json(populated);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -354,12 +365,11 @@ app.get('/api/admin/export', authMiddleware, adminOnly, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ─── Session Status (User + Admin polling) ────────────────────────
+// ─── Session Status (User + Admin) ────────────────────────────────
 app.get('/api/session/status', authMiddleware, async (req, res) => {
   try {
     const session = await Session.findOne({ active: true }).populate('groups.members groups.fixedMembers', 'fullName username avatar stt').lean();
     if (!session) return res.json({ active: false });
-    // Find which group current user is in
     const myId = req.user._id.toString();
     let myGroup = null;
     let isFixed = false;
@@ -372,31 +382,28 @@ app.get('/api/session/status', authMiddleware, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-// ─── Join Group (User) ────────────────────────────────────────────
+// ─── Join Group (User + Admin in user mode) ────────────────────────
 app.post('/api/session/join', authMiddleware, async (req, res) => {
   try {
     const { groupId } = req.body;
     const session = await Session.findOne({ active: true });
     if (!session) return res.status(404).json({ error: 'Không có phiên nào đang hoạt động' });
     const uid = new mongoose.Types.ObjectId(req.user._id);
-    // Check if user is fixed in any group
     for (const g of session.groups) {
       if (g.fixedMembers.some(m => m.toString() === uid.toString())) {
         return res.status(403).json({ error: 'Bạn đã được Admin xếp cố định vào nhóm, không thể thay đổi' });
       }
     }
-    // Remove from all groups
     for (const g of session.groups) {
       g.members = g.members.filter(m => m.toString() !== uid.toString());
     }
-    // Join target group
     const targetGroup = session.groups.find(g => g.groupId === parseInt(groupId));
     if (!targetGroup) return res.status(404).json({ error: 'Nhóm không tồn tại' });
     if (targetGroup.members.length >= targetGroup.capacity) return res.status(400).json({ error: 'Nhóm đã đầy' });
     targetGroup.members.push(uid);
     await session.save();
     const populated = await session.populate('groups.members groups.fixedMembers', 'fullName username avatar stt');
-    // Return just what user needs
+    await broadcastSessionUpdate();
     const myId = uid.toString();
     let myGroup = null, isFixed = false;
     for (const g of populated.groups) {
@@ -415,7 +422,6 @@ app.post('/api/session/leave', authMiddleware, async (req, res) => {
     const session = await Session.findOne({ active: true });
     if (!session) return res.status(404).json({ error: 'Không có phiên nào đang hoạt động' });
     const uid = req.user._id.toString();
-    // Check fixed
     for (const g of session.groups) {
       if (g.fixedMembers.some(m => m.toString() === uid)) {
         return res.status(403).json({ error: 'Bạn đã được Admin xếp cố định, không thể rời nhóm' });
@@ -425,6 +431,7 @@ app.post('/api/session/leave', authMiddleware, async (req, res) => {
       g.members = g.members.filter(m => m.toString() !== uid);
     }
     await session.save();
+    await broadcastSessionUpdate();
     res.json({ ok: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -435,26 +442,36 @@ app.post('/api/session/spin', authMiddleware, async (req, res) => {
     if (!session) return res.status(404).json({ error: 'Không có phiên nào đang hoạt động' });
     if (session.mode !== 'random') return res.status(400).json({ error: 'Phiên này không phải chế độ random' });
     const uid = new mongoose.Types.ObjectId(req.user._id);
-    // Check fixed
     for (const g of session.groups) {
       if (g.fixedMembers.some(m => m.toString() === uid.toString())) {
         return res.status(403).json({ error: 'Bạn đã được Admin xếp cố định vào nhóm' });
       }
     }
-    // Check if already in a group
     for (const g of session.groups) {
       if (g.members.some(m => m.toString() === uid.toString())) {
         return res.status(400).json({ error: 'Bạn đã được xếp nhóm rồi' });
       }
     }
-    // Find available groups
     const available = session.groups.filter(g => g.members.length < g.capacity);
     if (available.length === 0) return res.status(400).json({ error: 'Tất cả các nhóm đã đầy' });
-    // Pick random
     const chosen = available[Math.floor(Math.random() * available.length)];
     chosen.members.push(uid);
     await session.save();
+    await broadcastSessionUpdate();
     res.json({ ok: true, groupId: chosen.groupId, groupName: chosen.name });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ─── Admin reset password for a user ─────────────────────────────
+app.post('/api/admin/user/reset-password', authMiddleware, adminOnly, async (req, res) => {
+  try {
+    const { userId } = req.body;
+    const targetUser = await User.findById(userId).lean();
+    if (!targetUser) return res.status(404).json({ error: 'Người dùng không tồn tại' });
+    const defaultPw = dobToPassword(targetUser.dob);
+    const hashed = await bcrypt.hash(defaultPw, 10);
+    await User.findByIdAndUpdate(userId, { password: hashed });
+    res.json({ ok: true, message: `Đã reset về mật khẩu mặc định: ${defaultPw}` });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -467,7 +484,7 @@ app.get('*', (req, res) => {
 mongoose.connect(MONGODB_URI).then(async () => {
   console.log('✅ Connected to MongoDB');
   await seedDatabase();
-  app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
+  server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 }).catch(err => {
   console.error('❌ MongoDB connection error:', err.message);
   process.exit(1);

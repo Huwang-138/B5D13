@@ -6,6 +6,7 @@
   <title>Quản lý Nhóm Lớp Học</title>
   <meta name="description" content="Ứng dụng chia và chọn nhóm học tập trực tuyến cho lớp học" />
   <link rel="stylesheet" href="/css/style.css" />
+  <script src="/socket.io/socket.io.js"></script>
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👥</text></svg>" />
 </head>
 <body>
@@ -28,6 +29,7 @@
           <div id="nav-role-el" class="nav-role-badge"></div>
         </div>
       </div>
+      <button id="btn-admin-toggle" class="btn btn-secondary btn-sm hidden" onclick="toggleAdminUserMode()">🎓 Chế độ HS</button>
       <button class="btn btn-ghost btn-sm" onclick="logout()" id="btn-logout">Đăng xuất</button>
     </div>
   </nav>
