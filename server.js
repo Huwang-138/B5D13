@@ -352,7 +352,7 @@ app.get('/api/violations/my-points', authMiddleware, async (req, res) => {
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.get('/api/violations/leaderboard', authMiddleware, adminOnly, async (req, res) => {
+app.get('/api/violations/leaderboard', authMiddleware, async (req, res) => {
   try {
     const users = await User.find({}, 'fullName stt role squad').lean();
     const violations = await Violation.find({}).lean();
