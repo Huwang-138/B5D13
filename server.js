@@ -113,6 +113,8 @@ const notificationSchema = new mongoose.Schema({
   targetGroup: { type: Number, default: null },
   targetRole: { type: String, default: null },
   triggeredBy: { type: mongoose.Schema.Types.ObjectId, ref: 'User', default: null },
+  relatedViolation: { type: mongoose.Schema.Types.ObjectId, ref: 'Violation', default: null },
+  relatedSession: { type: mongoose.Schema.Types.ObjectId, ref: 'Session', default: null },
 }, { timestamps: true });
 
 const Violation = mongoose.model('Violation', violationSchema);
@@ -301,7 +303,8 @@ app.post('/api/violations', authMiddleware, adminOnly, async (req, res) => {
     const notif = await Notification.create({
       message: messageText,
       type: 'warning',
-      targetUser: userId
+      targetUser: userId,
+      relatedViolation: violation._id
     });
     io.emit('newNotification', notif);
 
@@ -382,12 +385,26 @@ app.post('/api/violations/:id/appeal', authMiddleware, async (req, res) => {
       return res.status(403).json({ error: 'Không có quyền khiếu nại lỗi của người khác' });
     }
 
+    const thirtyMinsAgo = new Date(Date.now() - 30 * 60 * 1000);
+    const recentAppeal = await Notification.findOne({
+      triggeredBy: req.user._id,
+      targetRole: 'admin',
+      message: { $regex: 'vừa khiếu nại về lỗi' },
+      createdAt: { $gte: thirtyMinsAgo }
+    });
+
+    if (recentAppeal) {
+      const timeLeft = Math.ceil((recentAppeal.createdAt.getTime() + 30 * 60 * 1000 - Date.now()) / 60000);
+      return res.status(429).json({ error: `Bạn chỉ được khiếu nại 30 phút một lần. Vui lòng thử lại sau ${timeLeft} phút.` });
+    }
+
     const messageText = `${req.user.fullName} vừa khiếu nại về lỗi ${violation.type} (-${violation.points} điểm)`;
     const notif = await Notification.create({
       message: messageText,
       type: 'warning',
       targetRole: 'admin',
-      triggeredBy: req.user._id
+      triggeredBy: req.user._id,
+      relatedViolation: violation._id
     });
     io.emit('newNotification', notif);
 
@@ -415,6 +432,8 @@ app.delete('/api/violations/:id', authMiddleware, adminOnly, async (req, res) =>
   try {
     const violation = await Violation.findByIdAndDelete(req.params.id);
     if (!violation) return res.status(404).json({ error: 'Không tìm thấy lỗi' });
+    
+    await Notification.deleteMany({ relatedViolation: req.params.id });
     
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -492,6 +511,10 @@ app.get('/api/notifications', authMiddleware, async (req, res) => {
 // ─── Session Routes (Admin) ───────────────────────────────────────
 app.post('/api/admin/session/create', authMiddleware, adminOnly, async (req, res) => {
   try {
+    const activeSessions = await Session.find({ active: true });
+    for (const s of activeSessions) {
+      await Notification.deleteMany({ relatedSession: s._id });
+    }
     await Session.updateMany({ active: true }, { active: false, completedAt: new Date() });
     const { subject, mode, groupCount, memberPerGroup, fixedAssignments } = req.body;
     const totalMembers = 25;
@@ -528,6 +551,10 @@ app.get('/api/admin/sessions', authMiddleware, adminOnly, async (req, res) => {
 
 app.post('/api/admin/session/stop', authMiddleware, adminOnly, async (req, res) => {
   try {
+    const activeSessions = await Session.find({ active: true });
+    for (const s of activeSessions) {
+      await Notification.deleteMany({ relatedSession: s._id });
+    }
     await Session.updateMany({ active: true }, { active: false, completedAt: new Date() });
     await broadcastSessionUpdate();
     res.json({ ok: true });
@@ -695,7 +722,8 @@ app.post('/api/session/join', authMiddleware, async (req, res) => {
       message: `${req.user.fullName} vừa vào ${targetGroup.name}.`,
       type: 'success',
       targetGroup: targetGroup.groupId,
-      triggeredBy: req.user._id
+      triggeredBy: req.user._id,
+      relatedSession: session._id
     });
     io.emit('newNotification', notif);
 
@@ -759,7 +787,8 @@ app.post('/api/session/spin', authMiddleware, async (req, res) => {
       message: `${req.user.fullName} vừa bốc thăm vào ${chosen.name}.`,
       type: 'success',
       targetGroup: chosen.groupId,
-      triggeredBy: req.user._id
+      triggeredBy: req.user._id,
+      relatedSession: session._id
     });
     io.emit('newNotification', notif);
 
