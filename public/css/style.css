@@ -114,7 +114,7 @@
 }
 
 /* ═══ LGBT MODE FIXES ═══ */
-[data-theme="lgbt"] body { background: linear-gradient(45deg, #ff00a0, #ff5050, #ffeb3b, #00e676, #00e5ff, #d500f9, #ff00a0); background-size: 400% 400%; animation: lgbtBackground 10s ease infinite; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
+[data-theme="lgbt"] body { background: linear-gradient(45deg, #7B2CBF, #3A0CA3, #4361EE, #4CC9F0, #10B981, #F59E0B, #E63946, #7B2CBF); background-size: 400% 400%; animation: lgbtBackground 15s ease infinite; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
 @keyframes lgbtBackground { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
 [data-theme="lgbt"] .card, [data-theme="lgbt"] .sidebar { background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(12px); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
 @keyframes rainbowBG { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
