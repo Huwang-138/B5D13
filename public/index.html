@@ -465,27 +465,7 @@
               </div>
             </div>
 
-            <!-- LEADERBOARD MODAL -->
-            <div id="leaderboard-overlay" class="hidden"
-              style="position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;"
-              onclick="if(event.target===this)this.classList.add('hidden')">
-              <div class="card" style="width:100%;max-width:480px;padding:0;overflow:hidden;margin:auto;">
-                <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;">
-                  <span style="font-weight:700;font-size:15px;">🏆 Bảng xếp hạng điểm trừ</span>
-                  <button class="btn btn-ghost" style="padding:4px 8px;font-size:18px;"
-                    onclick="document.getElementById('leaderboard-overlay').classList.add('hidden')">✕</button>
-                </div>
-                <div style="display:flex; border-bottom:1px solid var(--border); padding: 0 10px;">
-                  <button id="lb-tab-all" class="lb-tab active" onclick="switchLbTab('all')"
-                    style="flex:1; padding: 10px 4px; background:none; border:none; color:var(--cyan); border-bottom: 2px solid var(--cyan); font-weight: 600; cursor:pointer; white-space: nowrap; font-size: 13px;">Cả lớp</button>
-                  <button id="lb-tab-sq1" class="lb-tab" onclick="switchLbTab('sq1')"
-                    style="flex:1; padding: 10px 4px; background:none; border:none; color:var(--text-2); border-bottom: 2px solid transparent; font-weight: 600; cursor:pointer; white-space: nowrap; font-size: 13px;">Tiểu đội 1</button>
-                  <button id="lb-tab-sq2" class="lb-tab" onclick="switchLbTab('sq2')"
-                    style="flex:1; padding: 10px 4px; background:none; border:none; color:var(--text-2); border-bottom: 2px solid transparent; font-weight: 600; cursor:pointer; white-space: nowrap; font-size: 13px;">Tiểu đội 2</button>
-                </div>
-                <div style="max-height:60vh;overflow-y:auto;" id="leaderboard-body"></div>
-              </div>
-            </div>
+
           </div>
 
           <!-- ========================================== -->
@@ -720,6 +700,28 @@
     <img id="avatar-zoom-img" src=""
       style="max-width: 90vw; max-height: 90vh; border-radius: 12px; object-fit: contain; display: none;" />
     <div id="avatar-zoom-text" style="font-size: 150px; display: none; line-height: 1;"></div>
+  </div>
+
+  <!-- LEADERBOARD MODAL -->
+  <div id="leaderboard-overlay" class="hidden"
+    style="position:fixed;inset:0;z-index:500;background:rgba(0,0,0,0.75);backdrop-filter:blur(8px);display:flex;align-items:flex-start;justify-content:center;padding:16px;overflow-y:auto;"
+    onclick="if(event.target===this)this.classList.add('hidden')">
+    <div class="card" style="width:100%;max-width:480px;padding:0;overflow:hidden;margin:auto;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:16px 20px;">
+        <span style="font-weight:700;font-size:15px;">🏆 Bảng xếp hạng điểm trừ</span>
+        <button class="btn btn-ghost" style="padding:4px 8px;font-size:18px;"
+          onclick="document.getElementById('leaderboard-overlay').classList.add('hidden')">✕</button>
+      </div>
+      <div style="display:flex; border-bottom:1px solid var(--border); padding: 0 10px;">
+        <button id="lb-tab-all" class="lb-tab active" onclick="switchLbTab('all')"
+          style="flex:1; padding: 10px 4px; background:none; border:none; color:var(--cyan); border-bottom: 2px solid var(--cyan); font-weight: 600; cursor:pointer; white-space: nowrap; font-size: 13px;">Cả lớp</button>
+        <button id="lb-tab-sq1" class="lb-tab" onclick="switchLbTab('sq1')"
+          style="flex:1; padding: 10px 4px; background:none; border:none; color:var(--text-2); border-bottom: 2px solid transparent; font-weight: 600; cursor:pointer; white-space: nowrap; font-size: 13px;">Tiểu đội 1</button>
+        <button id="lb-tab-sq2" class="lb-tab" onclick="switchLbTab('sq2')"
+          style="flex:1; padding: 10px 4px; background:none; border:none; color:var(--text-2); border-bottom: 2px solid transparent; font-weight: 600; cursor:pointer; white-space: nowrap; font-size: 13px;">Tiểu đội 2</button>
+      </div>
+      <div style="max-height:60vh;overflow-y:auto;" id="leaderboard-body"></div>
+    </div>
   </div>
 
   <script src="/js/app.js"></script>
