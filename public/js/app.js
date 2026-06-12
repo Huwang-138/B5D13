@@ -348,7 +348,7 @@ function renderUserSession(data) {
   const myGroupCard = document.getElementById('my-group-card');
   const sliderTrigger = document.getElementById('slider-trigger-section');
 
-  if (!data.active || !data.session) {
+  if (!data.active && !data.lastSession) {
     banner.classList.add('hidden');
     noSession.classList.remove('hidden');
     groupsSection.classList.add('hidden');
@@ -357,15 +357,25 @@ function renderUserSession(data) {
     return;
   }
 
-  const session = data.session;
+  const session = data.active ? data.session : data.lastSession;
+  
   noSession.classList.add('hidden');
   banner.classList.remove('hidden');
   document.getElementById('sb-subject').textContent = session.subject;
   document.getElementById('sb-mode-badge').innerHTML =
     session.mode === 'manual' ? '🖱️ Tự chọn' : '🎰 Ngẫu nhiên';
   document.getElementById('sb-groups-badge').innerHTML = `${session.groups.length} nhóm`;
+  
+  // Nếu là lịch sử (không active)
+  if (!data.active) {
+    document.getElementById('sb-mode-badge').innerHTML = 'Đã kết thúc';
+    document.getElementById('sb-mode-badge').className = 'badge'; // xám
+    data.myGroup = null; 
+  } else {
+    document.getElementById('sb-mode-badge').className = 'badge badge-purple';
+  }
 
-  if (data.myGroup) {
+  if (data.myGroup && data.active) {
     myGroupCard.classList.remove('hidden');
     const grp = session.groups.find(g => g.groupId === data.myGroup);
     document.getElementById('my-group-name').textContent = grp ? grp.name : `Nhóm ${data.myGroup}`;
@@ -376,14 +386,14 @@ function renderUserSession(data) {
   } else {
     myGroupCard.classList.add('hidden');
     groupsSection.classList.remove('hidden');
-    if (session.mode === 'random') {
+    if (session.mode === 'random' && data.active) {
       sliderTrigger.classList.remove('hidden');
     } else {
       sliderTrigger.classList.add('hidden');
     }
   }
 
-  renderGroupsGrid(session, data.myGroup, data.isFixed, session.mode);
+  renderGroupsGrid(session, data.myGroup, data.isFixed, data.active ? session.mode : 'history');
 }
 
 function renderGroupsGrid(session, myGroupId, isFixed, mode) {
@@ -704,6 +714,84 @@ async function autoAssignRemaining() {
   } catch (err) { toast(err.message, 'error'); }
 }
 
+// ─── PDF Export (Client-side) ─────────────────────────────────────────
+async function exportSessionPDF(sessionId) {
+  try {
+    toast('⏳ Đang tạo PDF...', 'info');
+    const res = await API.get(`/api/admin/sessions`);
+    const session = res.find(s => s._id === sessionId);
+    if (!session) throw new Error('Không tìm thấy dữ liệu phiên');
+
+    // Tạo HTML tạm thời để xuất PDF bằng font tiếng Việt hiện tại
+    const container = document.createElement('div');
+    container.style.padding = '30px';
+    container.style.fontFamily = "'Be Vietnam Pro', sans-serif";
+    container.style.color = '#000';
+    container.style.background = '#fff';
+    container.style.width = '800px';
+
+    let html = `
+      <h2 style="text-align:center; margin-bottom:10px; font-size: 24px; color: #111;">Danh sách phân nhóm</h2>
+      <h3 style="text-align:center; margin-bottom:5px; font-size: 18px; color: #333;">${session.subject || 'Không tên'}</h3>
+      <p style="text-align:center; margin-bottom:30px; font-size: 14px; color: #555;">
+        Thời gian: ${new Date(session.createdAt).toLocaleString('vi-VN')} | Chế độ: ${session.mode === 'manual' ? 'Tự chọn' : 'Ngẫu nhiên'}
+      </p>
+    `;
+
+    session.groups.forEach((g) => {
+      html += `
+        <div style="margin-bottom: 20px; page-break-inside: avoid;">
+          <h4 style="margin-bottom: 10px; font-size: 16px; border-bottom: 2px solid #ccc; padding-bottom: 5px; color: #222;">
+            ${g.name} (${g.members.length} TV)
+          </h4>
+          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
+            <thead>
+              <tr>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left; width: 50px;">STT</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Họ và tên</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 120px;">Ngày sinh</th>
+                <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 120px;">Số điện thoại</th>
+              </tr>
+            </thead>
+            <tbody>
+      `;
+      g.members.forEach((m, idx) => {
+        html += `
+              <tr>
+                <td style="border: 1px solid #ddd; padding: 8px;">${idx + 1}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${m.fullName || m.username || '?'}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${m.dob || ''}</td>
+                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${m.phone || ''}</td>
+              </tr>
+        `;
+      });
+      html += `
+            </tbody>
+          </table>
+        </div>
+      `;
+    });
+
+    container.innerHTML = html;
+    
+    // Tùy chọn cấu hình html2pdf
+    const opt = {
+      margin:       10,
+      filename:     `nhom-${session.subject ? session.subject.replace(/\s+/g, '-') : 'lop'}.pdf`,
+      image:        { type: 'jpeg', quality: 0.98 },
+      html2canvas:  { scale: 2, useCORS: true },
+      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+    };
+
+    // Xuất PDF
+    await html2pdf().set(opt).from(container).save();
+    toast('✅ Đã xuất PDF thành công!', 'success');
+  } catch (err) {
+    console.error('Lỗi xuất PDF:', err);
+    toast(err.message || 'Lỗi khi xuất PDF', 'error');
+  }
+}
+
 async function loadHistory() {
   try {
     const sessions = await API.get('/api/admin/sessions');
@@ -721,7 +809,7 @@ async function loadHistory() {
       const groupsHtml = s.groups.map((g, idx) => {
         const color = colors[idx % colors.length];
         const memberChips = (g.members || []).map(m =>
-          `<span class="history-member-chip">${m.fullName || m.username || '?'}</span>`
+          `<span class="history-member-chip" style="cursor:pointer;" onclick="showUserProfileModal('${m._id}')">${m.fullName || m.username || '?'}</span>`
         ).join('');
         return `<div class="history-group-section">
           <div class="history-group-name" style="color:${color}">${g.name} <span style="font-size:11px;color:var(--text-2);font-weight:400;">(${g.members.length} người)</span></div>
@@ -729,9 +817,12 @@ async function loadHistory() {
         </div>`;
       }).join('');
       return `<div class="card history-card">
-        <div class="history-header">
-          <div class="history-subject">${s.subject} ${status}</div>
-          <div class="history-date">🕐 ${date} | ${s.mode === 'manual' ? '🖱️ Tự chọn' : '🎰 Random'}</div>
+        <div class="history-header" style="display:flex; justify-content:space-between; align-items:flex-start;">
+          <div>
+            <div class="history-subject">${s.subject} ${status}</div>
+            <div class="history-date">🕐 ${date} | ${s.mode === 'manual' ? '🖱️ Tự chọn' : '🎰 Random'}</div>
+          </div>
+          <button class="btn btn-secondary btn-sm" onclick="exportSessionPDF('${s._id}')" style="gap:4px;">📄 Xuất PDF</button>
         </div>
         <div class="history-groups">${groupsHtml}</div>
       </div>`;
@@ -1440,27 +1531,52 @@ function playSiren() {
     if (!AudioContextClass) return;
     const audioCtx = new AudioContextClass();
 
-    // Tạo oscillator chính phát tiếng còi
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
 
-    osc.type = 'sawtooth';
-    osc.frequency.setValueAtTime(300, audioCtx.currentTime);
+    // Dùng sóng square để âm thanh gắt và chói hơn
+    osc.type = 'square';
+    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
 
-    // Tần số dao động wailing (tiếng còi cảnh sát hú lên hú xuống)
     const modulator = audioCtx.createOscillator();
     const modGain = audioCtx.createGain();
-    modulator.frequency.value = 2.5; // Tần số hú 2.5 lần/giây
-    modGain.gain.value = 200; // Dao động +/- 200Hz xung quanh 300Hz (100Hz - 500Hz)
+    
+    // Tăng tốc độ hú và biên độ hú để nghe kinh dị hơn
+    modulator.frequency.value = 6; 
+    modGain.gain.value = 600; 
 
     modulator.connect(modGain);
     modGain.connect(osc.frequency);
 
     osc.connect(gain);
     gain.connect(audioCtx.destination);
+    
+    // Max volume
+    gain.gain.value = 1;
 
     osc.start();
     modulator.start();
+    
+    // Thêm một sóng răng cưa siêu chói ở tần số cao
+    const osc2 = audioCtx.createOscillator();
+    const gain2 = audioCtx.createGain();
+    osc2.type = 'sawtooth';
+    osc2.frequency.setValueAtTime(2500, audioCtx.currentTime);
+    osc2.connect(gain2);
+    gain2.connect(audioCtx.destination);
+    gain2.gain.value = 0.5;
+    osc2.start();
+    
+    // Hú chớp giật (LFO ngắt âm lượng)
+    const lfo = audioCtx.createOscillator();
+    lfo.type = 'square';
+    lfo.frequency.value = 15; // 15 chớp/giây
+    const lfoGain = audioCtx.createGain();
+    lfoGain.gain.value = 0.8;
+    lfo.connect(lfoGain);
+    lfoGain.connect(gain.gain);
+    lfo.start();
+    
   } catch (err) {
     console.error("Audio failed to play", err);
   }
@@ -1471,7 +1587,25 @@ function antiInspectAlert(e) {
   if (warned) return;
   warned = true;
 
-  const msg = "Hải Long ơi đừng có mà táy máy!!";
+  const name = (state.user && state.user.fullName) ? state.user.fullName : "bạn";
+  let os = "thiết bị không xác định";
+  const ua = navigator.userAgent;
+  if (/Windows/.test(ua)) os = "Windows";
+  else if (/Mac/.test(ua)) os = "MacOS";
+  else if (/Android/.test(ua)) os = "Android";
+  else if (/iOS|iPhone|iPad/.test(ua)) os = "iOS";
+  else if (/Linux/.test(ua)) os = "Linux";
+
+  let msg = `CẢNH BÁO: Phát hiện hành vi can thiệp từ ${name} bằng ${os}! Hệ thống đã ghi nhận IP.`;
+  
+  // Lấy IP nếu có thể
+  fetch('https://api.ipify.org?format=json')
+    .then(r => r.json())
+    .then(d => {
+      msg = `CẢNH BÁO: Phát hiện hành vi can thiệp trái phép từ ${name} bằng ${os}! IP của bạn: ${d.ip} đã bị ghi nhận.`;
+      const msgEl = document.getElementById('anti-inspect-msg');
+      if (msgEl) msgEl.textContent = msg;
+    }).catch(e => {});
 
   // Phát tiếng còi hú báo động
   playSiren();
@@ -1480,21 +1614,20 @@ function antiInspectAlert(e) {
   document.body.innerHTML = `
     <style>
       @keyframes blink {
-        0% { background-color: #150000; }
-        50% { background-color: #000000; }
-        100% { background-color: #150000; }
+        0%, 49% { background-color: #ff0000; filter: invert(0); }
+        50%, 100% { background-color: #000000; filter: invert(100%); }
       }
       @keyframes scanline {
         0% { transform: translateY(-100%); }
         100% { transform: translateY(100%); }
       }
       @keyframes glitch {
-        0% { transform: translate(0); text-shadow: 2px 2px #ff0000, -2px -2px #00ffff; }
-        20% { transform: translate(-3px, 3px); text-shadow: -3px 1px #ff0000, 2px -2px #00ffff; }
-        40% { transform: translate(-3px, -3px); text-shadow: 2px -3px #ff0000, -1px 3px #00ffff; }
-        60% { transform: translate(3px, 3px); text-shadow: -2px 2px #ff0000, 3px -1px #00ffff; }
-        80% { transform: translate(3px, -3px); text-shadow: 3px -2px #ff0000, -3px 2px #00ffff; }
-        100% { transform: translate(0); text-shadow: 2px 2px #ff0000, -2px -2px #00ffff; }
+        0% { transform: translate(0); text-shadow: 4px 4px #00ff00, -4px -4px #0000ff; }
+        20% { transform: translate(-8px, 8px); text-shadow: -6px 2px #00ff00, 4px -4px #0000ff; }
+        40% { transform: translate(-8px, -8px); text-shadow: 4px -6px #00ff00, -2px 6px #0000ff; }
+        60% { transform: translate(8px, 8px); text-shadow: -4px 4px #00ff00, 6px -2px #0000ff; }
+        80% { transform: translate(8px, -8px); text-shadow: 6px -4px #00ff00, -6px 4px #0000ff; }
+        100% { transform: translate(0); text-shadow: 4px 4px #00ff00, -4px -4px #0000ff; }
       }
       @keyframes slideTrackLeft {
         0% { transform: translateX(0); }
@@ -1526,12 +1659,14 @@ function antiInspectAlert(e) {
         justify-content: center;
         flex-direction: column;
         box-sizing: border-box;
-        animation: blink 0.5s infinite;
+        animation: blink 0.1s infinite;
         font-family: 'Courier New', Courier, monospace;
-        position: relative;
+        position: fixed;
+        top: 0; left: 0;
+        z-index: 999999;
         overflow: hidden;
-        color: #ff3333;
-        background-color: #000;
+        color: #ffffff;
+        background-color: #ff0000;
       }
 
       /* CRT Scanline & Laser scanner */
@@ -1548,10 +1683,10 @@ function antiInspectAlert(e) {
       }
       .laser-scanner {
         position: absolute;
-        top: 0; left: 0; width: 100%; height: 8px;
-        background: #ff0000;
-        box-shadow: 0 0 15px #ff0000, 0 0 30px #ff0000;
-        animation: scanline 4s linear infinite;
+        top: 0; left: 0; width: 100%; height: 20px;
+        background: #00ff00;
+        box-shadow: 0 0 30px #00ff00, 0 0 60px #00ff00;
+        animation: scanline 1.5s linear infinite;
         z-index: 11;
         pointer-events: none;
       }
@@ -1597,22 +1732,22 @@ function antiInspectAlert(e) {
 
       /* Tiêu đề Glitch */
       .glitch-title {
-        font-size: 80px;
+        font-size: 120px;
         font-weight: 900;
         text-transform: uppercase;
-        animation: glitch 1.2s linear infinite;
+        animation: glitch 0.3s linear infinite;
         z-index: 20;
         margin-bottom: 15px;
         letter-spacing: 5px;
-        color: #ff3333;
+        color: #ffff00;
       }
       .glitch-subtitle {
-        font-size: 36px;
-        font-weight: 700;
+        font-size: 50px;
+        font-weight: 900;
         letter-spacing: 8px;
-        animation: glitch 1.8s linear infinite;
+        animation: glitch 0.5s linear infinite;
         z-index: 20;
-        color: #ffffff;
+        color: #00ff00;
       }
 
       /* Hộp thoại Custom Alert giả lập rung lắc */
@@ -1706,7 +1841,7 @@ function antiInspectAlert(e) {
       <div class="custom-alert-overlay" id="custom-alert">
         <div class="custom-alert-box">
           <div class="custom-alert-header">Cảnh báo phát hiện thao tác lạ:</div>
-          <div class="custom-alert-body">${msg}</div>
+          <div class="custom-alert-body" id="anti-inspect-msg">${msg}</div>
           <div class="custom-alert-footer">
             <button class="custom-alert-btn" onclick="document.getElementById('custom-alert').style.display='none'">OK</button>
           </div>

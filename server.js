@@ -567,7 +567,7 @@ app.post('/api/admin/session/create', authMiddleware, adminOnly, async (req, res
 
 app.get('/api/admin/sessions', authMiddleware, adminOnly, async (req, res) => {
   try {
-    const sessions = await Session.find({}).sort('-createdAt').limit(20).populate('groups.members groups.fixedMembers', 'fullName username avatar stt').lean();
+    const sessions = await Session.find({}).sort('-createdAt').limit(20).populate('groups.members groups.fixedMembers', 'fullName username avatar stt dob phone gender hometown').lean();
     res.json(sessions);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -682,7 +682,10 @@ app.post('/api/admin/session/auto-assign', authMiddleware, adminOnly, async (req
 app.get('/api/session/status', authMiddleware, async (req, res) => {
   try {
     const session = await Session.findOne({ active: true }).populate('groups.members groups.fixedMembers', 'fullName username avatar stt').lean();
-    if (!session) return res.json({ active: false });
+    if (!session) {
+      const lastSession = await Session.findOne({ active: false }).sort({ createdAt: -1 }).populate('groups.members groups.fixedMembers', 'fullName username avatar stt').lean();
+      return res.json({ active: false, lastSession });
+    }
     const myId = req.user._id.toString();
     let myGroup = null;
     let isFixed = false;
