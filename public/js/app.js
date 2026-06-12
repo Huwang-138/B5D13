@@ -17,6 +17,8 @@ let state = {
   selectedAvatarEmoji: null,
 };
 
+const lockIcon = `<svg width="1em" height="1em" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block; vertical-align:-0.125em;"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 10 0v4"></path></svg>`;
+
 // ─── Socket.io ────────────────────────────────────────────────────────
 const socket = io();
 
@@ -427,7 +429,7 @@ function renderGroupsGrid(session, myGroupId, isFixed, mode) {
       return `<div class="member-item" style="cursor:pointer;" onclick="event.stopPropagation();showUserProfileModal('${m._id}')">
         <div class="member-avatar-sm">${avatarHtml}</div>
         <span class="member-name">${m.fullName}</span>
-        ${isFixedMember ? '<span class="member-fixed">🔒</span>' : ''}
+        ${isFixedMember ? `<span class="member-fixed">${lockIcon}</span>` : ''}
       </div>`;
     }).join('');
 
@@ -552,7 +554,7 @@ function renderAdminGroups(session) {
       const avatarHtml = m.avatar && m.avatar.startsWith('data:') ? `<img src="${m.avatar}" alt="" />` : (m.avatar || m.fullName.charAt(0));
       return `<div class="admin-member-item">
         <div class="member-avatar-sm">${avatarHtml}</div>
-        <span class="admin-member-name">${m.fullName} ${isFixedMember ? '🔒' : ''}</span>
+        <span class="admin-member-name">${m.fullName} ${isFixedMember ? lockIcon : ''}</span>
         <div class="admin-member-actions">
           <select class="input" style="padding:3px 6px;font-size:11px;height:26px;" onchange="moveMember('${m._id}', ${g.groupId}, this.value, this)">
             <option value="">Chuyển...</option>
@@ -605,7 +607,7 @@ function renderFixedAssignList(session) {
     const options = session.groups.map(g => `<option value="${g.groupId}" ${currentGroupId === g.groupId ? 'selected' : ''}>${g.name}</option>`).join('');
     return `<div class="assign-item">
       <div class="member-avatar-sm">${m.avatar && m.avatar.startsWith('data:') ? `<img src="${m.avatar}" alt="" />` : (m.avatar || m.fullName.charAt(0))}</div>
-      <span class="assign-item-name">${m.fullName} ${isFixed ? '🔒' : ''}</span>
+      <span class="assign-item-name">${m.fullName} ${isFixed ? lockIcon : ''}</span>
       <div class="assign-item-group" style="display:flex;gap:5px;align-items:center;">
         <select class="input" style="padding:5px 8px;font-size:12px;" id="fixed-select-${m._id}">
           <option value="">Không cố định</option>
@@ -622,7 +624,7 @@ async function applyFixed(userId) {
   const groupId = sel.value || null;
   try {
     const data = await API.post('/api/admin/session/assign-fixed', { userId, groupId });
-    toast(groupId ? '🔒 Đã xếp cố định!' : 'Đã bỏ xếp cố định', 'success');
+    toast(groupId ? `${lockIcon} Đã xếp cố định!` : 'Đã bỏ xếp cố định', 'success');
     state.session = data;
     renderFixedAssignList(data);
     renderAdminGroups(data);
@@ -731,45 +733,27 @@ async function exportSessionPDF(sessionId) {
     container.style.width = '800px';
 
     let html = `
-      <h2 style="text-align:center; margin-bottom:10px; font-size: 24px; color: #111;">Danh sách phân nhóm</h2>
-      <h3 style="text-align:center; margin-bottom:5px; font-size: 18px; color: #333;">${session.subject || 'Không tên'}</h3>
-      <p style="text-align:center; margin-bottom:30px; font-size: 14px; color: #555;">
-        Thời gian: ${new Date(session.createdAt).toLocaleString('vi-VN')} | Chế độ: ${session.mode === 'manual' ? 'Tự chọn' : 'Ngẫu nhiên'}
-      </p>
+      <div style="text-align:center; font-family: 'Times New Roman', serif; margin-bottom: 30px;">
+        <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">Môn học: ${session.subject || 'Không tên'}</div>
+        <div style="font-size: 20px; font-weight: bold;">Ngày: ${new Date(session.createdAt).toLocaleDateString('vi-VN')}</div>
+      </div>
     `;
 
     session.groups.forEach((g) => {
       html += `
-        <div style="margin-bottom: 20px; page-break-inside: avoid;">
-          <h4 style="margin-bottom: 10px; font-size: 16px; border-bottom: 2px solid #ccc; padding-bottom: 5px; color: #222;">
-            ${g.name} (${g.members.length} TV)
-          </h4>
-          <table style="width: 100%; border-collapse: collapse; font-size: 14px;">
-            <thead>
-              <tr>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left; width: 50px;">STT</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: left;">Họ và tên</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 120px;">Ngày sinh</th>
-                <th style="border: 1px solid #ddd; padding: 8px; text-align: center; width: 120px;">Số điện thoại</th>
-              </tr>
-            </thead>
-            <tbody>
+        <div style="margin-bottom: 20px; page-break-inside: avoid; font-family: 'Times New Roman', serif;">
+          <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">
+            ${g.name}:
+          </div>
       `;
-      g.members.forEach((m, idx) => {
+      g.members.forEach((m) => {
         html += `
-              <tr>
-                <td style="border: 1px solid #ddd; padding: 8px;">${idx + 1}</td>
-                <td style="border: 1px solid #ddd; padding: 8px; font-weight: bold;">${m.fullName || m.username || '?'}</td>
-                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${m.dob || ''}</td>
-                <td style="border: 1px solid #ddd; padding: 8px; text-align: center;">${m.phone || ''}</td>
-              </tr>
+          <div style="font-size: 16px; margin-bottom: 8px; margin-left: 0px;">
+            - ${m.fullName || m.username || '?'}
+          </div>
         `;
       });
-      html += `
-            </tbody>
-          </table>
-        </div>
-      `;
+      html += `</div>`;
     });
 
     container.innerHTML = html;
@@ -1534,16 +1518,14 @@ function playSiren() {
     const osc = audioCtx.createOscillator();
     const gain = audioCtx.createGain();
 
-    // Dùng sóng square để âm thanh gắt và chói hơn
-    osc.type = 'square';
-    osc.frequency.setValueAtTime(400, audioCtx.currentTime);
+    osc.type = 'sawtooth';
+    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
 
     const modulator = audioCtx.createOscillator();
     const modGain = audioCtx.createGain();
     
-    // Tăng tốc độ hú và biên độ hú để nghe kinh dị hơn
-    modulator.frequency.value = 6; 
-    modGain.gain.value = 600; 
+    modulator.frequency.value = 2; 
+    modGain.gain.value = 400; 
 
     modulator.connect(modGain);
     modGain.connect(osc.frequency);
@@ -1551,30 +1533,27 @@ function playSiren() {
     osc.connect(gain);
     gain.connect(audioCtx.destination);
     
-    // Max volume
     gain.gain.value = 1;
 
     osc.start();
     modulator.start();
     
-    // Thêm một sóng răng cưa siêu chói ở tần số cao
     const osc2 = audioCtx.createOscillator();
     const gain2 = audioCtx.createGain();
-    osc2.type = 'sawtooth';
-    osc2.frequency.setValueAtTime(2500, audioCtx.currentTime);
+    osc2.type = 'square';
+    osc2.frequency.setValueAtTime(3000, audioCtx.currentTime);
     osc2.connect(gain2);
     gain2.connect(audioCtx.destination);
-    gain2.gain.value = 0.5;
+    gain2.gain.value = 1;
     osc2.start();
     
-    // Hú chớp giật (LFO ngắt âm lượng)
     const lfo = audioCtx.createOscillator();
     lfo.type = 'square';
-    lfo.frequency.value = 15; // 15 chớp/giây
+    lfo.frequency.value = 20;
     const lfoGain = audioCtx.createGain();
-    lfoGain.gain.value = 0.8;
+    lfoGain.gain.value = 1;
     lfo.connect(lfoGain);
-    lfoGain.connect(gain.gain);
+    lfoGain.connect(gain2.gain);
     lfo.start();
     
   } catch (err) {
@@ -1584,10 +1563,13 @@ function playSiren() {
 
 function antiInspectAlert(e) {
   if (e) e.preventDefault();
+  if (window.matchMedia("(max-width: 768px)").matches || /Mobi|Android|iPhone/i.test(navigator.userAgent)) return;
   if (warned) return;
   warned = true;
 
-  const name = (state.user && state.user.fullName) ? state.user.fullName : "bạn";
+  const fullName = (state.user && state.user.fullName) ? state.user.fullName : "bạn";
+  const nameParts = fullName.trim().split(' ');
+  const name = nameParts[nameParts.length - 1];
   let os = "thiết bị không xác định";
   const ua = navigator.userAgent;
   if (/Windows/.test(ua)) os = "Windows";
@@ -1596,16 +1578,24 @@ function antiInspectAlert(e) {
   else if (/iOS|iPhone|iPad/.test(ua)) os = "iOS";
   else if (/Linux/.test(ua)) os = "Linux";
 
-  let msg = `CẢNH BÁO: Phát hiện hành vi can thiệp từ ${name} bằng ${os}! Hệ thống đã ghi nhận IP.`;
+  let msg = `CẢNH BÁO: Phát hiện hành vi can thiệp trái phép từ ${name} bằng ${os}! Hệ thống đang truy xuất vị trí...`;
   
   // Lấy IP nếu có thể
-  fetch('https://api.ipify.org?format=json')
+  fetch('https://ipapi.co/json/')
     .then(r => r.json())
     .then(d => {
-      msg = `CẢNH BÁO: Phát hiện hành vi can thiệp trái phép từ ${name} bằng ${os}! IP của bạn: ${d.ip} đã bị ghi nhận.`;
+      msg = `CẢNH BÁO: Phát hiện hành vi can thiệp trái phép từ ${name} bằng ${os}! IP: ${d.ip} tại ${d.city}, ${d.region} đã bị hệ thống ghi nhận.`;
       const msgEl = document.getElementById('anti-inspect-msg');
       if (msgEl) msgEl.textContent = msg;
-    }).catch(e => {});
+    }).catch(e => {
+      fetch('https://api.ipify.org?format=json')
+        .then(r => r.json())
+        .then(d => {
+          msg = `CẢNH BÁO: Phát hiện hành vi can thiệp trái phép từ ${name} bằng ${os}! IP: ${d.ip} đã bị ghi nhận.`;
+          const msgEl = document.getElementById('anti-inspect-msg');
+          if (msgEl) msgEl.textContent = msg;
+        }).catch(e => {});
+    });
 
   // Phát tiếng còi hú báo động
   playSiren();
@@ -1971,4 +1961,21 @@ async function subscribeToPush() {
     const btn = document.getElementById('btn-subscribe-push');
     if (btn) btn.innerHTML = '🔔 Bật thông báo';
   }
+}
+
+function openAvatarZoom() {
+  const overlay = document.getElementById('avatar-zoom-overlay');
+  const imgEl = document.getElementById('avatar-zoom-img');
+  const textEl = document.getElementById('avatar-zoom-text');
+  const avatarHtml = document.getElementById('modal-user-avatar').innerHTML;
+  if (avatarHtml.includes('<img')) {
+    imgEl.src = document.getElementById('modal-user-avatar').querySelector('img').src;
+    imgEl.style.display = 'block';
+    textEl.style.display = 'none';
+  } else {
+    textEl.innerHTML = avatarHtml;
+    imgEl.style.display = 'none';
+    textEl.style.display = 'block';
+  }
+  overlay.classList.remove('hidden');
 }

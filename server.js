@@ -731,6 +731,21 @@ app.post('/api/session/join', authMiddleware, async (req, res) => {
     });
     io.emit('newNotification', notif);
 
+    // Send Web Push Notification to group members
+    const targetUsers = await User.find({ _id: { $in: targetGroup.members } });
+    const pushPayload = JSON.stringify({
+      title: 'Thành viên mới 🎉',
+      body: `${req.user.fullName} vừa tham gia ${targetGroup.name}.`,
+      url: '/'
+    });
+    targetUsers.forEach(u => {
+      if (u._id.toString() !== req.user._id.toString() && u.pushSubscriptions && u.pushSubscriptions.length > 0) {
+        u.pushSubscriptions.forEach(sub => {
+          webpush.sendNotification(sub, pushPayload).catch(e => console.error('Push error:', e));
+        });
+      }
+    });
+
     const myId = uid.toString();
     let myGroup = null, isFixed = false;
     for (const g of populated.groups) {
@@ -795,6 +810,21 @@ app.post('/api/session/spin', authMiddleware, async (req, res) => {
       relatedSession: session._id
     });
     io.emit('newNotification', notif);
+
+    // Send Web Push Notification to group members
+    const targetUsers = await User.find({ _id: { $in: chosen.members } });
+    const pushPayload = JSON.stringify({
+      title: 'Thành viên mới 🎉',
+      body: `${req.user.fullName} vừa bốc thăm vào ${chosen.name}.`,
+      url: '/'
+    });
+    targetUsers.forEach(u => {
+      if (u._id.toString() !== req.user._id.toString() && u.pushSubscriptions && u.pushSubscriptions.length > 0) {
+        u.pushSubscriptions.forEach(sub => {
+          webpush.sendNotification(sub, pushPayload).catch(e => console.error('Push error:', e));
+        });
+      }
+    });
 
     res.json({ ok: true, groupId: chosen.groupId, groupName: chosen.name });
   } catch (err) { res.status(500).json({ error: err.message }); }
