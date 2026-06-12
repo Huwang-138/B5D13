@@ -350,7 +350,7 @@
                 <div id="tab-history" class="admin-tab-content animate-in">
                   <div class="section-header" style="margin-bottom:16px;">
                     <div class="section-title">📜 Lịch sử các phiên</div>
-                    <button class="btn btn-secondary btn-sm" onclick="loadHistory()">🔄 Làm mới</button>
+                    <button class="btn btn-ghost btn-sm" onclick="loadHistory(this)" style="padding: 4px 8px; font-size: 11px;">🔄 Làm mới</button>
                   </div>
                   <div id="history-list"></div>
                 </div>
@@ -419,19 +419,19 @@
 
             <!-- HEADER BAR FOR VIOLATIONS -->
             <div id="user-points-bar"
-              style="display:none; margin-bottom: 16px; align-items:center; justify-content:space-between; gap:12px; flex-wrap: wrap;">
+              style="display:none; margin-bottom: 16px; flex-direction: column; gap: 12px; width: 100%;">
 
-              <!-- Points Box (Left) -->
+              <!-- Points Box (Top) -->
               <div id="points-box" class="card"
-                style="padding: 8px 16px; display:flex; align-items:center; gap: 8px; width: fit-content; margin: 0;">
-                <span style="font-size: 12px; opacity: 0.6;">🔥</span>
-                <span style="font-size: 12px; font-weight: 500; color: var(--text-2);">Điểm trừ:</span>
+                style="padding: 10px 16px; display:flex; align-items:center; gap: 10px; width: 100%; border-left: 4px solid var(--rose); background: rgba(244,63,94,0.08); margin: 0;">
+                <span style="font-size: 16px;">🔥</span>
+                <span style="font-size: 13px; font-weight: 600; color: var(--text-1);">Điểm trừ:</span>
                 <span id="user-total-points"
-                  style="font-size: 18px; font-weight: 900; color: var(--rose); margin-left: 2px;">0</span>
+                  style="font-size: 22px; font-weight: 900; color: var(--rose); margin-left: auto;">0</span>
               </div>
 
-              <!-- Action Buttons: Top điểm trừ (trái) - Làm mới (phải) cùng hàng -->
-              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap: wrap;">
+              <!-- Action Buttons: Top điểm trừ (trái) - Làm mới (phải) -->
+              <div style="display:flex; align-items:center; justify-content:space-between; width: 100%;">
                 <div id="admin-leaderboard-bar">
                   <button class="btn btn-secondary btn-sm" onclick="showLeaderboard()" style="gap:6px;">🏆 Top
                     điểm trừ</button>

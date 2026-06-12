@@ -6,6 +6,13 @@
    ════════════════════════════════════════════════════════════════════ */
 
 // ─── State ───────────────────────────────────────────────────────────
+function escapeHTML(str) {
+  if (typeof str !== 'string') return '';
+  return str.replace(/[&<>"']/g, function (m) {
+    return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[m];
+  });
+}
+
 let state = {
   token: localStorage.getItem('token') || null,
   user: JSON.parse(localStorage.getItem('user') || 'null'),
@@ -450,7 +457,7 @@ function renderGroupsGrid(session, myGroupId, isFixed, mode) {
         : (m.avatar || m.fullName.charAt(0));
       return `<div class="member-item" style="cursor:pointer;" onclick="event.stopPropagation();showUserProfileModal('${m._id}')">
         <div class="member-avatar-sm">${avatarHtml}</div>
-        <span class="member-name">${m.fullName}</span>
+        <span class="member-name">${escapeHTML(m.fullName)}</span>
         ${isFixedMember ? `<span class="member-fixed">${lockIcon}</span>` : ''}
       </div>`;
     }).join('');
@@ -458,7 +465,7 @@ function renderGroupsGrid(session, myGroupId, isFixed, mode) {
     return `<div class="group-card ${canJoin ? 'joinable' : ''} ${isFull ? 'full' : ''} ${isMyGroup ? 'my-group' : ''}"
       onclick="${canJoin ? `joinGroup(${g.groupId})` : ''}" >
       <div class="group-header">
-        <span class="group-name" style="color:${color}">${g.name}</span>
+        <span class="group-name" style="color:${color}">${escapeHTML(g.name)}</span>
         <span class="group-count">${g.members.length}/${g.capacity}</span>
       </div>
       <div class="group-progress-bar">
@@ -576,12 +583,12 @@ function renderAdminGroups(session) {
       const avatarHtml = m.avatar && m.avatar.startsWith('data:') ? `<img src="${m.avatar}" alt="" />` : (m.avatar || m.fullName.charAt(0));
       return `<div class="admin-member-item">
         <div class="member-avatar-sm">${avatarHtml}</div>
-        <span class="admin-member-name">${m.fullName} ${isFixedMember ? lockIcon : ''}</span>
+        <span class="admin-member-name">${escapeHTML(m.fullName)} ${isFixedMember ? lockIcon : ''}</span>
         <div class="admin-member-actions">
           <select class="input" style="padding:3px 6px;font-size:11px;height:26px;" onchange="moveMember('${m._id}', ${g.groupId}, this.value, this)">
             <option value="">Chuyển...</option>
             ${session.groups.filter(gg => gg.groupId !== g.groupId).map(gg =>
-        `<option value="${gg.groupId}">${gg.name}</option>`
+        `<option value="${gg.groupId}">${escapeHTML(gg.name)}</option>`
       ).join('')}
             <option value="remove">❌ Bỏ khỏi nhóm</option>
           </select>
@@ -590,7 +597,7 @@ function renderAdminGroups(session) {
     }).join('');
     return `<div class="card admin-group-card">
       <div class="admin-group-header">
-        <span class="admin-group-name" style="color:${color}">${g.name}</span>
+        <span class="admin-group-name" style="color:${color}">${escapeHTML(g.name)}</span>
         <div class="capacity-editor">
           <button class="capacity-btn" onclick="changeCapacity(${g.groupId}, -1)">−</button>
           <span class="capacity-val">${g.members.length}/<strong>${g.capacity}</strong></span>
@@ -611,7 +618,7 @@ function renderAdminGroups(session) {
   const unassigned = state.members.filter(m => !allMemberIds.has(m._id.toString()));
   document.getElementById('unassigned-count').textContent = unassigned.length;
   document.getElementById('unassigned-list').innerHTML = unassigned.map(m =>
-    `<span class="unassigned-chip">${m.fullName}</span>`
+    `<span class="unassigned-chip">${escapeHTML(m.fullName)}</span>`
   ).join('');
 }
 
@@ -626,10 +633,10 @@ function renderFixedAssignList(session) {
       const fixedIds = g.fixedMembers.map(f => (f._id || f).toString());
       if (fixedIds.includes(m._id.toString())) { currentGroupId = g.groupId; isFixed = true; break; }
     }
-    const options = session.groups.map(g => `<option value="${g.groupId}" ${currentGroupId === g.groupId ? 'selected' : ''}>${g.name}</option>`).join('');
+    const options = session.groups.map(g => `<option value="${g.groupId}" ${currentGroupId === g.groupId ? 'selected' : ''}>${escapeHTML(g.name)}</option>`).join('');
     return `<div class="assign-item">
       <div class="member-avatar-sm">${m.avatar && m.avatar.startsWith('data:') ? `<img src="${m.avatar}" alt="" />` : (m.avatar || m.fullName.charAt(0))}</div>
-      <span class="assign-item-name">${m.fullName} ${isFixed ? lockIcon : ''}</span>
+      <span class="assign-item-name">${escapeHTML(m.fullName)} ${isFixed ? lockIcon : ''}</span>
       <div class="assign-item-group" style="display:flex;gap:5px;align-items:center;">
         <select class="input" style="padding:5px 8px;font-size:12px;" id="fixed-select-${m._id}">
           <option value="">Không cố định</option>
@@ -756,8 +763,10 @@ async function exportSessionPDF(sessionId) {
 
     let html = `
       <div style="text-align:center; font-family: 'Times New Roman', serif; margin-bottom: 30px;">
-        <div style="font-size: 24px; font-weight: bold; margin-bottom: 10px;">Môn học: ${session.subject || 'Không tên'}</div>
+      <div style="margin-bottom:16px;">
+      <div class="session-subject" style="font-size:18px;font-weight:700;color:var(--text-1);">${escapeHTML(session.subject) || 'Phiên chia nhóm'}</div>
         <div style="font-size: 20px; font-weight: bold;">Ngày: ${new Date(session.createdAt).toLocaleDateString('vi-VN')}</div>
+      </div>
       </div>
     `;
 
@@ -765,13 +774,13 @@ async function exportSessionPDF(sessionId) {
       html += `
         <div style="margin-bottom: 20px; page-break-inside: avoid; font-family: 'Times New Roman', serif;">
           <div style="font-size: 18px; font-weight: bold; margin-bottom: 10px;">
-            ${g.name}:
+            ${escapeHTML(g.name)}:
           </div>
       `;
       g.members.forEach((m) => {
         html += `
           <div style="font-size: 16px; margin-bottom: 8px; margin-left: 0px;">
-            - ${m.fullName || m.username || '?'}
+            - ${escapeHTML(m.fullName || m.username || '?')}
           </div>
         `;
       });
@@ -798,7 +807,13 @@ async function exportSessionPDF(sessionId) {
   }
 }
 
-async function loadHistory() {
+async function loadHistory(btn) {
+  let originalHtml = '';
+  if (btn) {
+    originalHtml = btn.innerHTML;
+    btn.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+    btn.disabled = true;
+  }
   try {
     const sessions = await API.get('/api/admin/sessions');
     const list = document.getElementById('history-list');
@@ -815,25 +830,31 @@ async function loadHistory() {
       const groupsHtml = s.groups.map((g, idx) => {
         const color = colors[idx % colors.length];
         const memberChips = (g.members || []).map(m =>
-          `<span class="history-member-chip" style="cursor:pointer;" onclick="showUserProfileModal('${m._id}')">${m.fullName || m.username || '?'}</span>`
+          `<span class="history-member-chip" style="cursor:pointer;" onclick="showUserProfileModal('${m._id}')">${escapeHTML(m.fullName || m.username || '?')}</span>`
         ).join('');
         return `<div class="history-group-section">
-          <div class="history-group-name" style="color:${color}">${g.name} <span style="font-size:11px;color:var(--text-2);font-weight:400;">(${g.members.length} người)</span></div>
+          <div class="history-group-name" style="color:${color}">${escapeHTML(g.name)} <span style="font-size:11px;color:var(--text-2);font-weight:400;">(${g.members.length} người)</span></div>
           <div class="history-member-list">${memberChips || '<span style="font-size:11px;color:var(--text-3);">Chưa có thành viên</span>'}</div>
         </div>`;
       }).join('');
       return `<div class="card history-card">
         <div class="history-header" style="display:flex; justify-content:space-between; align-items:flex-start;">
           <div>
-            <div class="history-subject">${s.subject} ${status}</div>
+            <div class="history-subject">${escapeHTML(s.subject)} ${status}</div>
             <div class="history-date">🕐 ${date} | ${s.mode === 'manual' ? '🖱️ Tự chọn' : '🎰 Random'}</div>
           </div>
-          <button class="btn btn-secondary" onclick="exportSessionPDF('${s._id}')" style="padding: 4px 8px; font-size: 11px; gap:4px; border-radius: 6px; height: fit-content; margin-top: 2px;">📄 Xuất PDF</button>
+          <button class="btn btn-ghost btn-sm" onclick="exportSessionPDF('${s._id}')" style="padding: 4px 8px; font-size: 11px;">📄 Xuất PDF</button>
         </div>
         <div class="history-groups">${groupsHtml}</div>
       </div>`;
     }).join('');
   } catch (err) { toast(err.message, 'error'); }
+  finally {
+    if (btn) {
+      btn.innerHTML = originalHtml || '🔄 Làm mới';
+      btn.disabled = false;
+    }
+  }
 }
 
 // ─── Tab Switching ────────────────────────────────────────────────────
@@ -894,7 +915,7 @@ function buildSlotTrack(groups, winnerGroupId) {
     return `<div class="slot-item ${isWinner && idx >= items.length - groups.length ? 'winner' : ''}"
       style="background:${color}22;border-color:${color}44;">
       <span style="font-size:20px;">📋</span>
-      <span style="color:${color}">${group.name}</span>
+      <span style="color:${color}">${escapeHTML(group.name)}</span>
     </div>`;
   }).join('');
 
@@ -1222,8 +1243,8 @@ function appendNotificationHTML(n, highlight = false) {
   el.innerHTML = `
     <div style="display:flex; gap:12px;">
       <div class="notif-icon">${icon}</div>
-      <div class="notif-content">
-        <div class="notif-msg">${n.message}</div>
+      <div style="flex:1;">
+        <div style="color:var(--text-1); font-size:13px; margin-bottom:4px; line-height:1.4;">${escapeHTML(n.message)}</div>
         <div class="notif-time">${dateStr}</div>
       </div>
     </div>
@@ -1352,8 +1373,8 @@ async function loadViolations(btn) {
       const tr = document.createElement('tr');
       const d = new Date(v.createdAt);
       const dateStr = d.toLocaleDateString('vi-VN') + '<br><span style="font-size:11px;color:var(--text-3);">' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + '</span>';
-      const uname = v.user?.fullName || '?';
-      const violationLabel = (v.type === 'Khác' && v.note) ? v.note : v.type;
+      const uname = escapeHTML(v.user?.fullName || '?');
+      const violationLabel = escapeHTML((v.type === 'Khác' && v.note) ? v.note : v.type);
 
       const studentColHtml = isAdmin ? `<td style="font-size:13px;color:var(--text-1);text-align:center;">${uname}</td>` : '';
       const actionBtn = isAdmin
