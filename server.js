@@ -25,6 +25,17 @@ const MONGODB_URI = process.env.MONGODB_URI || 'mongodb+srv://huwang1308:O75Pt08
 const JWT_SECRET = process.env.JWT_SECRET || 'qlnhom_super_secret_2025_!@#';
 const JWT_EXPIRES = '30d'; // Token kéo dài 30 ngày
 
+// ─── Socket.io Authentication Middleware ──────────────────────────
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token;
+  if (!token) return next(new Error("Authentication error"));
+  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+    if (err) return next(new Error("Authentication error"));
+    socket.userId = decoded.userId;
+    next();
+  });
+});
+
 // ─── Web Push Configuration ───────────────────────────────────────
 let VAPID_PUBLIC = process.env.VAPID_PUBLIC;
 let VAPID_PRIVATE = process.env.VAPID_PRIVATE;
@@ -60,6 +71,7 @@ app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.set('trust proxy', 1);
 
 // ─── Rate Limiting ────────────────────────────────────────────────
 const generalLimiter = rateLimit({
@@ -269,7 +281,12 @@ app.patch('/api/user/profile', authMiddleware, async (req, res) => {
       if (!ok) return res.status(400).json({ error: 'Mật khẩu cũ không đúng' });
       updates.password = await bcrypt.hash(newPassword, 10);
     }
-    if (avatar !== undefined) updates.avatar = avatar;
+    if (avatar !== undefined) {
+      if (avatar !== '' && !avatar.startsWith('data:image/')) {
+        return res.status(400).json({ error: 'Định dạng ảnh không hợp lệ!' });
+      }
+      updates.avatar = avatar;
+    }
     const updated = await User.findByIdAndUpdate(req.user._id, updates, { new: true }).lean();
     res.json({ id: updated._id, username: updated.username, fullName: updated.fullName, role: updated.role, avatar: updated.avatar });
   } catch (err) { res.status(500).json({ error: err.message }); }
@@ -356,7 +373,18 @@ app.get('/api/notifications/vapid-key', (req, res) => {
 app.post('/api/notifications/subscribe', authMiddleware, async (req, res) => {
   try {
     const subscription = req.body;
+    
+    // Bảo vệ 1: Chặn payload quá lớn (DoS prevention)
+    if (JSON.stringify(subscription).length > 2000) {
+      return res.status(400).json({ error: 'Payload quá lớn' });
+    }
+
     const user = await User.findById(req.user._id);
+
+    // Bảo vệ 2: Giới hạn tối đa 5 thiết bị
+    if (user.pushSubscriptions.length >= 5) {
+      user.pushSubscriptions.shift(); // Xóa thiết bị cũ nhất
+    }
 
     // Lưu ý: Chỉ thêm nếu chưa có (dựa vào endpoint)
     const exists = user.pushSubscriptions.some(sub => sub.endpoint === subscription.endpoint);

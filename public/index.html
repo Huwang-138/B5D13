@@ -19,6 +19,50 @@
 </head>
 
 <body>
+  <noscript>
+    <style>
+      #app-loading,
+      #view-login,
+      #app-layout,
+      #toast-container {
+        display: none !important;
+      }
+
+      .noscript-warning {
+        position: fixed;
+        inset: 0;
+        background: #000;
+        color: #ff3333;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        z-index: 999999;
+        text-align: center;
+        padding: 20px;
+        font-family: monospace;
+      }
+
+      .noscript-warning h1 {
+        font-size: 40px;
+        text-transform: uppercase;
+        margin-bottom: 20px;
+        letter-spacing: 2px;
+        text-shadow: 0 0 10px red;
+      }
+
+      .noscript-warning p {
+        font-size: 18px;
+        margin-bottom: 10px;
+      }
+    </style>
+    <div class="noscript-warning">
+      <h1>⚠️ HÀNH VI BỊ CHẶN</h1>
+      <p>Hệ thống phát hiện trình duyệt của bạn đang tắt JavaScript (có thể do dùng công cụ chặn script để qua mặt bảo
+        mật).</p>
+      <p>Mọi chức năng đã bị vô hiệu hóa. Vui lòng BẬT LẠI JAVASCRIPT và tải lại trang!</p>
+    </div>
+  </noscript>
   <!-- App Loading Overlay -->
   <div id="app-loading" class="app-loading-overlay">
     <div class="loading-dots"><span></span><span></span><span></span></div>
@@ -331,19 +375,20 @@
                     <option value="" selected disabled>--Chọn loại lỗi--</option>
                     <option value="Không xếp hàng điểm danh hoặc xếp sai chỗ">Không xếp hàng điểm danh hoặc xếp sai chỗ
                     </option>
-                    <option value="Không xếp hàng đi lên lớp/về kí túc xá">Không xếp hàng đi lên lớp/về kí túc xá
+                    <option value="Không xếp hàng lên lớp/về kí túc xá">Không xếp hàng đi lên lớp/về kí túc xá
                     </option>
-                    <option value="Xếp hàng bấm điện thoại">Xếp hàng bấm điện thoại</option>
+                    <option value="Sử dụng điện thoại trái quy định">Sử dụng điện thoại trái quy định</option>
                     <option value="Nội vụ giường không gọn gàng/đồ cá nhân để lung tung">Nội vụ giường không gọn gàng/đồ
                       cá nhân để lung tung</option>
-                    <option value="Bị giáo viên nhắc nhở">Bị giáo viên nhắc nhở</option>
+                    <option value="Bị giảng viên nhắc nhở">Bị giảng viên nhắc nhở</option>
                     <option value="Không làm vệ sinh khu vực/làm không sạch">Không làm vệ sinh khu vực/làm không sạch
                     </option>
                     <option value="Trốn phân công nhiệm vụ không lí do">Trốn phân công nhiệm vụ không lí do</option>
                     <option value="Vắng điểm danh">Vắng điểm danh</option>
-                    <option value="Trong giờ hành chính lên lớp, vắng mặt không báo cáo (Trừ việc đi vệ sinh)">Trong giờ
-                      hành chính lên lớp, vắng mặt không báo cáo (Trừ việc đi vệ sinh)</option>
-                    <option value="Lên lớp muộn (Quá 20-30p)">Lên lớp muộn (Quá 20-30p)</option>
+                    <option value="Trong giờ hành chính lên lớp, vắng mặt không báo cáo">Trong giờ
+                      hành chính lên lớp, vắng mặt không báo cáo</option>
+                    <option value="Lên lớp muộn (quá 15p) mà không báo cáo">Lên lớp muộn (quá 15p) mà không báo cáo
+                    </option>
                     <option value="Quá ồn ào trong lớp">Quá ồn ào trong lớp</option>
                     <option value="Khác">Khác</option>
                   </select>
@@ -357,7 +402,7 @@
                   </div>
                   <div class="input-group" style="width:50px; flex-shrink:0;">
                     <label class="input-label" style="font-size:12px;text-align:center;">Điểm</label>
-                    <input id="v-points" class="input" type="number" min="0" value="1"
+                    <input id="v-points" class="input" type="number" min="0" value="5"
                       style="padding: 0 4px; height: 42px; text-align: center;" />
                   </div>
                   <button class="btn btn-rose" onclick="addViolation()"
