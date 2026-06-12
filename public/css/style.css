@@ -137,11 +137,15 @@
 @keyframes rainbowBG { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
 @keyframes floatRainbow { 0%, 100% { transform: translateY(0) rotate(0deg); filter: hue-rotate(0deg); } 50% { transform: translateY(-8px) rotate(2deg); filter: hue-rotate(180deg); } }
 @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 15px rgba(255,105,180,0.4); } 50% { box-shadow: 0 0 35px rgba(255,105,180,0.8); } }
+@keyframes wiggle { 0%, 100% { transform: rotate(0deg); } 25% { transform: rotate(-3deg) scale(1.02); } 75% { transform: rotate(3deg) scale(1.02); } }
+@keyframes rgbText { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
 [data-theme="lgbt"] * { transition: background-color 0.3s ease, border-color 0.3s ease; }
 [data-theme="lgbt"] .card { transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease; animation: pulseGlow 4s infinite; }
-[data-theme="lgbt"] .card:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 15px 40px rgba(255,105,180,0.8) !important; z-index: 10; }
+[data-theme="lgbt"] .card:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 15px 40px rgba(255,105,180,0.8) !important; z-index: 10; animation: pulseGlow 2s infinite, wiggle 0.4s ease-in-out infinite alternate; }
+[data-theme="lgbt"] h2, [data-theme="lgbt"] .section-title { background: linear-gradient(90deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #8b00ff); -webkit-background-clip: text; color: transparent !important; animation: rgbText 2s linear infinite; text-shadow: none !important; }
 [data-theme="lgbt"] .btn { transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); }
 [data-theme="lgbt"] .btn:active { transform: scale(0.9); }
+[data-theme="lgbt"] .btn-primary:hover { animation: wiggle 0.3s ease-in-out infinite alternate; filter: hue-rotate(90deg); }
 [data-theme="lgbt"] .nav-avatar { animation: rainbowBG 3s linear infinite, floatRainbow 4s ease-in-out infinite; background: linear-gradient(45deg, #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #8b00ff); background-size: 200% 200%; }
 
 html { scroll-behavior: smooth; }

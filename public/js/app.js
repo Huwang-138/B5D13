@@ -209,7 +209,10 @@ function updateNavbar() {
   if (avatarEl) setAvatarEl(avatarEl, state.user.avatar, state.user.fullName);
 
   const nameEl = document.getElementById('sidebar-username');
-  if (nameEl) nameEl.textContent = state.user.fullName;
+  if (nameEl) {
+    const parts = state.user.fullName.trim().split(' ');
+    nameEl.textContent = parts[parts.length - 1];
+  }
 
   const roleEl = document.getElementById('sidebar-role');
   if (roleEl) roleEl.textContent = state.user.role === 'admin' ? 'Quản trị viên' : 'Học viên';
@@ -810,7 +813,7 @@ async function loadHistory() {
             <div class="history-subject">${s.subject} ${status}</div>
             <div class="history-date">🕐 ${date} | ${s.mode === 'manual' ? '🖱️ Tự chọn' : '🎰 Random'}</div>
           </div>
-          <button class="btn btn-secondary btn-sm" onclick="exportSessionPDF('${s._id}')" style="gap:4px;">📄 Xuất PDF</button>
+          <button class="btn btn-secondary" onclick="exportSessionPDF('${s._id}')" style="padding: 4px 8px; font-size: 11px; gap:4px; border-radius: 6px; height: fit-content; margin-top: 2px;">📄 Xuất PDF</button>
         </div>
         <div class="history-groups">${groupsHtml}</div>
       </div>`;
@@ -1065,6 +1068,21 @@ function handleAvatarFile(event) {
   reader.readAsDataURL(file);
 }
 
+function checkSettingsChanges() {
+  const btn = document.getElementById('btn-save-avatar');
+  if (btn) btn.disabled = (state.selectedAvatarEmoji === null);
+}
+
+function checkPasswordChanges() {
+  const oldPw = document.getElementById('old-password').value;
+  const newPw = document.getElementById('new-password').value;
+  const confirmPw = document.getElementById('confirm-password').value;
+  const btn = document.getElementById('btn-change-password');
+  if (btn) {
+    btn.disabled = !(oldPw.length > 0 && newPw.length > 0 && confirmPw.length > 0);
+  }
+}
+
 async function saveAvatar() {
   if (state.selectedAvatarEmoji === null) { toast('Chưa chọn avatar nào', 'info'); return; }
   try {
@@ -1073,6 +1091,7 @@ async function saveAvatar() {
     localStorage.setItem('user', JSON.stringify(state.user));
     updateNavbar();
     state.selectedAvatarEmoji = null;
+    checkSettingsChanges();
     toast('✅ Đã lưu avatar!', 'success');
   } catch (err) { toast(err.message, 'error'); }
 }
@@ -1090,6 +1109,7 @@ async function changePassword() {
     document.getElementById('old-password').value = '';
     document.getElementById('new-password').value = '';
     document.getElementById('confirm-password').value = '';
+    checkPasswordChanges();
   } catch (err) { toast(err.message, 'error'); }
 }
 
