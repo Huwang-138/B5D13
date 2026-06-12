@@ -704,6 +704,12 @@ app.post('/api/session/join', authMiddleware, async (req, res) => {
     const { groupId } = req.body;
     const session = await Session.findOne({ active: true });
     if (!session) return res.status(404).json({ error: 'Không có phiên nào đang hoạt động' });
+    
+    // NGĂN CHẶN BYPASS BẰNG API KHI ĐANG Ở CHẾ ĐỘ RANDOM
+    if (session.mode !== 'manual') {
+      return res.status(403).json({ error: 'Hành vi bị chặn: Phiên này chỉ cho phép hệ thống bốc thăm ngẫu nhiên!' });
+    }
+
     const uid = new mongoose.Types.ObjectId(req.user._id);
     for (const g of session.groups) {
       if (g.fixedMembers.some(m => m.toString() === uid.toString())) {
@@ -763,6 +769,12 @@ app.post('/api/session/leave', authMiddleware, async (req, res) => {
   try {
     const session = await Session.findOne({ active: true });
     if (!session) return res.status(404).json({ error: 'Không có phiên nào đang hoạt động' });
+    
+    // NGĂN CHẶN BYPASS BẰNG API KHI ĐANG Ở CHẾ ĐỘ RANDOM
+    if (session.mode !== 'manual') {
+      return res.status(403).json({ error: 'Hành vi bị chặn: Phiên này chỉ cho phép hệ thống bốc thăm ngẫu nhiên!' });
+    }
+
     const uid = req.user._id.toString();
     for (const g of session.groups) {
       if (g.fixedMembers.some(m => m.toString() === uid)) {

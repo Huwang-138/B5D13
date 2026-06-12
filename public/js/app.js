@@ -360,19 +360,19 @@ function renderUserSession(data) {
   }
 
   const session = data.active ? data.session : data.lastSession;
-  
+
   noSession.classList.add('hidden');
   banner.classList.remove('hidden');
   document.getElementById('sb-subject').textContent = session.subject;
   document.getElementById('sb-mode-badge').innerHTML =
     session.mode === 'manual' ? '🖱️ Tự chọn' : '🎰 Ngẫu nhiên';
   document.getElementById('sb-groups-badge').innerHTML = `${session.groups.length} nhóm`;
-  
+
   // Nếu là lịch sử (không active)
   if (!data.active) {
     document.getElementById('sb-mode-badge').innerHTML = 'Đã kết thúc';
     document.getElementById('sb-mode-badge').className = 'badge'; // xám
-    data.myGroup = null; 
+    data.myGroup = null;
   } else {
     document.getElementById('sb-mode-badge').className = 'badge badge-purple';
   }
@@ -757,14 +757,14 @@ async function exportSessionPDF(sessionId) {
     });
 
     container.innerHTML = html;
-    
+
     // Tùy chọn cấu hình html2pdf
     const opt = {
-      margin:       10,
-      filename:     `nhom-${session.subject ? session.subject.replace(/\s+/g, '-') : 'lop'}.pdf`,
-      image:        { type: 'jpeg', quality: 0.98 },
-      html2canvas:  { scale: 2, useCORS: true },
-      jsPDF:        { unit: 'mm', format: 'a4', orientation: 'portrait' }
+      margin: 10,
+      filename: `nhom-${session.subject ? session.subject.replace(/\s+/g, '-') : 'lop'}.pdf`,
+      image: { type: 'jpeg', quality: 0.98 },
+      html2canvas: { scale: 2, useCORS: true },
+      jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
     };
 
     // Xuất PDF
@@ -1016,7 +1016,7 @@ async function checkPushSubscriptionStatus() {
         btn.style.opacity = '0.7';
       }
     }
-  } catch(e) { console.log('Push check error:', e); }
+  } catch (e) { console.log('Push check error:', e); }
 }
 
 function updateThemeButtons() {
@@ -1275,7 +1275,7 @@ async function loadViolations() {
     // Show/hide role-specific UI
     const userPointsBar = document.getElementById('user-points-bar');
     if (userPointsBar) userPointsBar.style.display = 'flex';
-    
+
     const pointsBox = document.getElementById('points-box');
     if (pointsBox) pointsBox.style.display = isAdmin ? 'none' : 'flex';
 
@@ -1523,21 +1523,21 @@ function playSiren() {
 
     const modulator = audioCtx.createOscillator();
     const modGain = audioCtx.createGain();
-    
-    modulator.frequency.value = 2; 
-    modGain.gain.value = 400; 
+
+    modulator.frequency.value = 2;
+    modGain.gain.value = 400;
 
     modulator.connect(modGain);
     modGain.connect(osc.frequency);
 
     osc.connect(gain);
     gain.connect(audioCtx.destination);
-    
+
     gain.gain.value = 1;
 
     osc.start();
     modulator.start();
-    
+
     const osc2 = audioCtx.createOscillator();
     const gain2 = audioCtx.createGain();
     osc2.type = 'square';
@@ -1546,7 +1546,7 @@ function playSiren() {
     gain2.connect(audioCtx.destination);
     gain2.gain.value = 1;
     osc2.start();
-    
+
     const lfo = audioCtx.createOscillator();
     lfo.type = 'square';
     lfo.frequency.value = 20;
@@ -1555,7 +1555,7 @@ function playSiren() {
     lfo.connect(lfoGain);
     lfoGain.connect(gain2.gain);
     lfo.start();
-    
+
   } catch (err) {
     console.error("Audio failed to play", err);
   }
@@ -1578,23 +1578,23 @@ function antiInspectAlert(e) {
   else if (/iOS|iPhone|iPad/.test(ua)) os = "iOS";
   else if (/Linux/.test(ua)) os = "Linux";
 
-  let msg = `CẢNH BÁO: Phát hiện hành vi can thiệp trái phép từ ${name} bằng ${os}! Hệ thống đang truy xuất vị trí...`;
-  
+  let msg = `CẢNH BÁO: ${name} lại dùng ${os} để tinh nghịch rồi! Hệ thống đang truy xuất vị trí...`;
+
   // Lấy IP nếu có thể
   fetch('https://ipapi.co/json/')
     .then(r => r.json())
     .then(d => {
-      msg = `CẢNH BÁO: Phát hiện hành vi can thiệp trái phép từ ${name} bằng ${os}! IP: ${d.ip} tại ${d.city}, ${d.region} đã bị hệ thống ghi nhận.`;
+      msg = `CẢNH BÁO: ${name} lại dùng ${os} để tinh nghịch rồi! IP: ${d.ip} tại ${d.city}, ${d.region} đã bị ghi nhận rồi nhé.`;
       const msgEl = document.getElementById('anti-inspect-msg');
       if (msgEl) msgEl.textContent = msg;
     }).catch(e => {
       fetch('https://api.ipify.org?format=json')
         .then(r => r.json())
         .then(d => {
-          msg = `CẢNH BÁO: Phát hiện hành vi can thiệp trái phép từ ${name} bằng ${os}! IP: ${d.ip} đã bị ghi nhận.`;
+          msg = `CẢNH BÁO: ${name} lại dùng ${os} để tinh nghịch rồi! IP: ${d.ip} đã bị ghi nhận rồi nhé.`;
           const msgEl = document.getElementById('anti-inspect-msg');
           if (msgEl) msgEl.textContent = msg;
-        }).catch(e => {});
+        }).catch(e => { });
     });
 
   // Phát tiếng còi hú báo động
