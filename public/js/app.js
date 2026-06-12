@@ -1317,7 +1317,9 @@ async function loadViolations() {
       } catch (e) { }
     }
 
-    tbody.innerHTML = `<tr><td colspan="${COLS}" style="text-align:center;padding:20px;color:var(--text-2);font-size:13px;">Đang tải...</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="${COLS}" style="text-align:center;padding:30px;">
+      <div class="loading-dots"><span></span><span></span><span></span></div>
+    </td></tr>`;
     const list = await API.get('/api/violations');
     tbody.innerHTML = '';
     if (list.length === 0) {

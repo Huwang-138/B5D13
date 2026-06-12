@@ -419,20 +419,11 @@
 
             <!-- HEADER BAR FOR VIOLATIONS -->
             <div id="user-points-bar"
-              style="display:none; margin-bottom: 16px; align-items:flex-end; justify-content:space-between; gap:12px;">
+              style="display:none; margin-bottom: 16px; align-items:center; justify-content:space-between; gap:12px;">
 
               <!-- Points Box (Left) -->
-              <div id="points-box" class="card"
-                style="padding: 12px 20px; display:flex; align-items:center; justify-content: space-between; gap:20px; border-left: 4px solid var(--rose); background: linear-gradient(90deg, rgba(244,63,94,0.1) 0%, rgba(244,63,94,0) 100%);">
-                <div style="display: flex; align-items: center; gap: 12px;">
-                  <div style="width: 40px; height: 40px; border-radius: 50%; background: rgba(244,63,94,0.15); display: flex; align-items: center; justify-content: center; color: var(--rose); font-size: 20px;">
-                    🔥
-                  </div>
-                  <div style="display: flex; flex-direction: column;">
-                    <span style="font-size:12px; font-weight:600; color:var(--text-2); text-transform:uppercase; letter-spacing:0.5px;">Tổng điểm bị trừ</span>
-                  </div>
-                </div>
-                <div id="user-total-points" style="font-size:28px; font-weight:800; color:var(--rose); text-shadow: 0 2px 4px rgba(244,63,94,0.2);">0</div>
+              <div id="points-box" class="badge badge-rose" style="padding: 8px 14px; font-size: 14px; gap: 8px; display:flex; align-items:center; height: 32px;">
+                🔥 Tổng điểm trừ: <span id="user-total-points" style="font-size: 16px; font-weight: 800;">0</span>
               </div>
 
               <!-- Action Buttons: Top điểm trừ (trái) - Làm mới (phải) cùng hàng -->
