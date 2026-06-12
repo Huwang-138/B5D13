@@ -75,13 +75,13 @@
         style="display: flex; flex-direction: column; justify-content: space-between;">
         <div>
           <div class="sidebar-user-info"
-            style="padding: 16px; border-bottom: 1px solid var(--border); background: rgba(255,255,255,0.02);">
+            style="padding: 16px; border-bottom: 1px solid var(--border); background: var(--bg-card);">
             <div class="profile-info-box"
               style="display: flex; align-items: center; gap: 14px; padding: 12px; background: rgba(139,92,246,0.06); border: 1px solid rgba(139,92,246,0.2); border-radius: 16px; cursor: pointer; transition: all 0.2s;"
               onclick="showUserProfileModal(state.user._id)">
               <!-- Avatar -->
               <div class="nav-avatar profile-big-avatar" id="sidebar-avatar"
-                style="width: 64px; height: 64px; font-size: 32px; border-radius: 50%; box-shadow: 0 4px 10px rgba(0,0,0,0.3); display: flex; align-items: center; justify-content: center; border: 2px solid rgba(139,92,246,0.3); flex-shrink: 0;">
+                style="width: 64px; height: 64px; font-size: 32px; border-radius: 50%; box-shadow: var(--shadow-glow); display: flex; align-items: center; justify-content: center; border: 2px solid rgba(139,92,246,0.3); flex-shrink: 0;">
                 👤</div>
 
               <!-- Info Column -->
@@ -405,7 +405,7 @@
                   <button class="btn btn-ghost" style="padding:4px 8px;font-size:18px;"
                     onclick="document.getElementById('leaderboard-overlay').classList.add('hidden')">✕</button>
                 </div>
-                <div style="display:flex; border-bottom:1px solid rgba(255,255,255,0.05); padding: 0 10px;">
+                <div style="display:flex; border-bottom:1px solid var(--border); padding: 0 10px;">
                   <button id="lb-tab-all" class="lb-tab active" onclick="switchLbTab('all')"
                     style="flex:1; padding: 10px; background:none; border:none; color:var(--cyan); border-bottom: 2px solid var(--cyan); font-weight: 600; cursor:pointer;">Cả
                     lớp</button>
@@ -566,37 +566,37 @@
     <div id="user-profile-overlay" class="hidden"
       style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; background: rgba(0,0,0,0.7); z-index: 10000; display: flex; align-items: center; justify-content: center; backdrop-filter: blur(8px);">
       <div
-        style="background: linear-gradient(to bottom, #2a2a3e, #181824); width: 90%; max-width: 400px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); box-shadow: 0 15px 40px rgba(0,0,0,0.6); overflow: hidden; animation: slideUp 0.3s ease;">
+        style="background: var(--modal-bg); width: 90%; max-width: 400px; border-radius: 20px; border: 1px solid var(--border); box-shadow: var(--shadow-card); overflow: hidden; animation: slideUp 0.3s ease;">
         <div style="padding: 30px 24px 24px; text-align: center; position: relative;">
           <button onclick="document.getElementById('user-profile-overlay').classList.add('hidden')"
             style="position: absolute; top: 16px; right: 16px; background: none; border: none; font-size: 20px; color: var(--text-2); cursor: pointer; transition: color 0.2s;"
-            onmouseover="this.style.color='#fff'" onmouseout="this.style.color='var(--text-2)'">✕</button>
+            onmouseover="this.style.color='var(--text-1)'" onmouseout="this.style.color='var(--text-2)'">✕</button>
 
           <div id="modal-user-avatar"
-            style="width: 86px; height: 86px; font-size: 40px; margin: 0 auto 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(139,92,246,0.15); border: 2px solid rgba(139,92,246,0.4); box-shadow: 0 6px 20px rgba(0,0,0,0.3); overflow: hidden;">
+            style="width: 86px; height: 86px; font-size: 40px; margin: 0 auto 16px; border-radius: 50%; display: flex; align-items: center; justify-content: center; background: rgba(139,92,246,0.15); border: 2px solid rgba(139,92,246,0.4); box-shadow: var(--shadow-glow); overflow: hidden;">
             👤</div>
 
           <h2 id="modal-user-name"
-            style="font-size: 22px; color: #fff; margin-bottom: 4px; font-weight: 700; letter-spacing: 0.5px;">—</h2>
+            style="font-size: 22px; color: var(--text-1); margin-bottom: 4px; font-weight: 700; letter-spacing: 0.5px;">—</h2>
           <div id="modal-user-role" style="font-size: 14px; color: var(--text-2); margin-bottom: 24px;">—</div>
 
           <div
-            style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px 12px; text-align: left; background: rgba(0,0,0,0.3); padding: 18px; border-radius: 14px; border: 1px solid rgba(255,255,255,0.03);">
+            style="display: grid; grid-template-columns: 1fr 1fr; gap: 16px 12px; text-align: left; background: var(--modal-inner); padding: 18px; border-radius: 14px; border: 1px solid var(--border);">
             <div style="display: flex; gap: 10px; align-items: center;">
               <span style="width: 20px; text-align: center; display: inline-block;">🎂</span>
-              <span id="modal-user-dob" style="font-size: 13.5px; color: #f8fafc; font-weight: 500;">—</span>
+              <span id="modal-user-dob" style="font-size: 13.5px; color: var(--text-1); font-weight: 500;">—</span>
             </div>
             <div style="display: flex; gap: 10px; align-items: center;">
               <span style="width: 20px; text-align: center; display: inline-block;">⚧</span>
-              <span id="modal-user-gender" style="font-size: 13.5px; color: #f8fafc; font-weight: 500;">—</span>
+              <span id="modal-user-gender" style="font-size: 13.5px; color: var(--text-1); font-weight: 500;">—</span>
             </div>
             <div style="display: flex; gap: 10px; align-items: center;">
               <span style="width: 20px; text-align: center; display: inline-block;">📍</span>
-              <span id="modal-user-hometown" style="font-size: 13.5px; color: #f8fafc; font-weight: 500;">—</span>
+              <span id="modal-user-hometown" style="font-size: 13.5px; color: var(--text-1); font-weight: 500;">—</span>
             </div>
             <div style="display: flex; gap: 10px; align-items: center;">
               <span style="width: 20px; text-align: center; display: inline-block;">📞</span>
-              <span id="modal-user-phone" style="font-size: 13.5px; color: #f8fafc; font-weight: 500;">—</span>
+              <span id="modal-user-phone" style="font-size: 13.5px; color: var(--text-1); font-weight: 500;">—</span>
             </div>
           </div>
         </div>
