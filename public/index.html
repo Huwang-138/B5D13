@@ -238,7 +238,7 @@
                   <div class="section-header"
                     style="display: flex; justify-content: space-between; align-items: center;">
                     <div class="section-title">📊 DANH SÁCH NHÓM</div>
-                    <button class="btn btn-ghost btn-sm" onclick="fetchSessionStatus()"
+                    <button class="btn btn-ghost btn-sm" onclick="refreshGroups(this)"
                       style="padding: 4px 8px; font-size: 11px;">🔄 Làm mới</button>
                   </div>
                   <div id="groups-grid" class="groups-grid"></div>
@@ -419,16 +419,18 @@
 
             <!-- HEADER BAR FOR VIOLATIONS -->
             <div id="user-points-bar"
-              style="display:none; margin-bottom: 16px; align-items:center; justify-content:space-between; gap:12px;">
+              style="display:none; margin-bottom: 16px; align-items:center; justify-content:space-between; gap:12px; flex-wrap: wrap;">
 
               <!-- Points Box (Left) -->
-              <div id="points-box" class="badge badge-rose" style="padding: 8px 14px; font-size: 14px; gap: 8px; display:flex; align-items:center; height: 32px;">
-                🔥 Tổng điểm trừ: <span id="user-total-points" style="font-size: 16px; font-weight: 800;">0</span>
+              <div id="points-box" style="padding: 4px 12px; display:flex; align-items:center; gap: 6px; background: rgba(244,63,94,0.05); border: 1px solid rgba(244,63,94,0.2); border-radius: 20px; height: 32px;">
+                <span style="font-size: 11px; opacity: 0.6;">🔥</span>
+                <span style="font-size: 11px; font-weight: 500; color: var(--text-2);">Tổng điểm:</span>
+                <span id="user-total-points" style="font-size: 18px; font-weight: 900; color: var(--rose); margin-left: 2px;">0</span>
               </div>
 
               <!-- Action Buttons: Top điểm trừ (trái) - Làm mới (phải) cùng hàng -->
               <div
-                style="display:flex; align-items:center; justify-content:space-between; margin-left:auto; gap:8px; flex:1;">
+                style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap: wrap;">
                 <div id="admin-leaderboard-bar">
                   <button class="btn btn-secondary btn-sm" onclick="showLeaderboard()" style="gap:6px;">🏆 Top
                     điểm trừ</button>

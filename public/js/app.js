@@ -341,6 +341,22 @@ async function fetchSessionStatus() {
   } catch { }
 }
 
+async function refreshGroups(btn) {
+  if (btn) {
+    btn.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+    btn.disabled = true;
+  }
+  await fetchSessionStatus();
+  if (state.user && state.user.role === 'admin' && typeof loadAdminSessions === 'function') {
+    try { await loadAdminSessions(); } catch(e){}
+  }
+  if (btn) {
+    btn.innerHTML = '🔄 Làm mới';
+    btn.disabled = false;
+    toast('Đã làm mới dữ liệu nhóm', 'success');
+  }
+}
+
 // ─── Class Members (background load) ─────────────────────────────────
 async function loadClassMembersBackground(isAdmin = false) {
   try {
