@@ -1571,7 +1571,7 @@ function antiInspectAlert(e) {
   if (warned) return;
   warned = true;
 
-  const fullName = (state.user && state.user.fullName) ? state.user.fullName : "bạn";
+  const fullName = (state.user && state.user.fullName) ? state.user.fullName : "Bạn";
   const nameParts = fullName.trim().split(' ');
   const name = nameParts[nameParts.length - 1];
   let os = "thiết bị không xác định";

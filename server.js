@@ -29,8 +29,11 @@ const JWT_EXPIRES = '30d'; // Token kéo dài 30 ngày
 io.use((socket, next) => {
   const token = socket.handshake.auth?.token;
   if (!token) return next(new Error("Authentication error"));
-  jwt.verify(token, JWT_SECRET, (err, decoded) => {
+  jwt.verify(token, JWT_SECRET, async (err, decoded) => {
     if (err) return next(new Error("Authentication error"));
+    const User = mongoose.model('User');
+    const user = await User.findById(decoded.userId).lean();
+    if (!user || user.password !== decoded.pwHash) return next(new Error("Authentication error"));
     socket.userId = decoded.userId;
     next();
   });
@@ -202,8 +205,8 @@ async function seedDatabase() {
 }
 
 // ─── JWT Auth Helper ──────────────────────────────────────────────
-function makeToken(userId) {
-  return jwt.sign({ userId: userId.toString() }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
+function makeToken(user) {
+  return jwt.sign({ userId: user._id.toString(), pwHash: user.password }, JWT_SECRET, { expiresIn: JWT_EXPIRES });
 }
 
 async function authMiddleware(req, res, next) {
@@ -212,7 +215,7 @@ async function authMiddleware(req, res, next) {
   try {
     const decoded = jwt.verify(token, JWT_SECRET);
     const user = await User.findById(decoded.userId).lean();
-    if (!user) return res.status(401).json({ error: 'Tài khoản không tồn tại' });
+    if (!user || user.password !== decoded.pwHash) return res.status(401).json({ error: 'Tài khoản không tồn tại hoặc mật khẩu đã bị đổi' });
     req.user = user;
     next();
   } catch (err) {
@@ -252,7 +255,7 @@ app.post('/api/auth/login', loginLimiter, async (req, res) => {
     if (!user) return res.status(401).json({ error: 'Tài khoản hoặc số điện thoại không tồn tại' });
     const ok = await bcrypt.compare(password, user.password);
     if (!ok) return res.status(401).json({ error: 'Mật khẩu không đúng' });
-    const token = makeToken(user._id);
+    const token = makeToken(user);
     res.json({ token, user: { id: user._id, username: user.username, fullName: user.fullName, role: user.role, avatar: user.avatar, stt: user.stt } });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
