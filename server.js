@@ -10,6 +10,8 @@ const jwt = require('jsonwebtoken');
 const fs = require('fs');
 const webpush = require('web-push');
 const cron = require('node-cron');
+const helmet = require('helmet');
+const rateLimit = require('express-rate-limit');
 
 const app = express();
 const server = http.createServer(app);
@@ -32,10 +34,10 @@ async function initVapidKeys() {
     webpush.setVapidDetails('mailto:admin@quanlylop.com', VAPID_PUBLIC, VAPID_PRIVATE);
     return;
   }
-  
+
   const Setting = mongoose.model('Setting');
   let vapidSetting = await Setting.findOne({ key: 'vapid' });
-  
+
   if (!vapidSetting) {
     const keys = webpush.generateVAPIDKeys();
     vapidSetting = await Setting.create({ key: 'vapid', value: keys });
@@ -50,10 +52,31 @@ async function initVapidKeys() {
 }
 
 // ─── Middleware ───────────────────────────────────────────────────
+app.use(helmet({
+  contentSecurityPolicy: false, // Tắt CSP vì dùng inline scripts/styles
+  crossOriginEmbedderPolicy: false
+}));
 app.use(cors());
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ extended: true, limit: '5mb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+
+// ─── Rate Limiting ────────────────────────────────────────────────
+const generalLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 phút
+  max: 100,
+  message: { error: 'Quá nhiều yêu cầu, vui lòng thử lại sau.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+const loginLimiter = rateLimit({
+  windowMs: 60 * 1000, // 1 phút
+  max: 5,
+  message: { error: 'Đăng nhập quá nhiều lần, vui lòng thử lại sau 1 phút.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+app.use('/api/', generalLimiter);
 
 // Multer (avatar upload - stored as base64 in DB for Render compatibility)
 const storage = multer.memoryStorage();
@@ -122,31 +145,31 @@ const Notification = mongoose.model('Notification', notificationSchema);
 
 // ─── Seed Data ────────────────────────────────────────────────────
 const STUDENTS = [
-  { stt:1,  fullName:'Trần Trọng Thế Anh',   dob:'28/04/2004', gender:'Nam', hometown:'Thái Bình',   phone:'0941139262', username:'trantrongtheanh',  role:'user'  },
-  { stt:2,  fullName:'Bùi Xuân Bằng',         dob:'19/01/2005', gender:'Nam', hometown:'Thanh Hóa',   phone:'0347157821', username:'buixuanbang',       role:'user'  },
-  { stt:3,  fullName:'Nguyễn Nhật Bình',      dob:'31/05/2005', gender:'Nam', hometown:'Quảng Trị',   phone:'0948024515', username:'nguyennhatbinh',    role:'user'  },
-  { stt:4,  fullName:'Đỗ Chí Công',           dob:'05/07/2005', gender:'Nam', hometown:'Hà Nội',      phone:'0782000061', username:'dochicong',         role:'user'  },
-  { stt:5,  fullName:'Nguyễn Phương Duy',     dob:'04/01/2005', gender:'Nam', hometown:'Bắc Ninh',    phone:'0965041035', username:'nguyenphuongduy',   role:'user'  },
-  { stt:6,  fullName:'Phương Thế Duy',        dob:'04/07/2004', gender:'Nam', hometown:'Lâm Đồng',    phone:'0902219391', username:'phuongtheduy',      role:'user'  },
-  { stt:7,  fullName:'Nguyễn Thành Đạt',      dob:'15/12/2004', gender:'Nam', hometown:'Hải Dương',   phone:'0917633317', username:'nguyenthanhdat',    role:'user'  },
-  { stt:8,  fullName:'Nguyễn Tuấn Đạt',       dob:'30/10/2003', gender:'Nam', hometown:'Gia Lai',     phone:'0782273030', username:'nguyentuandat',     role:'user'  },
-  { stt:9,  fullName:'Nguyễn Đăng Hải',       dob:'02/07/2003', gender:'Nam', hometown:'Hà Nội',      phone:'0854309399', username:'nguyendanghai',     role:'user'  },
-  { stt:10, fullName:'Lê Quang Quốc Hiệu',    dob:'29/11/2005', gender:'Nam', hometown:'TT-Huế',      phone:'0812733455', username:'lequangquochieu',   role:'user'  },
-  { stt:11, fullName:'Đào Văn Xuân Hoàng',    dob:'13/01/2005', gender:'Nam', hometown:'Lâm Đồng',    phone:'0792047112', username:'daovanxuanhoang',   role:'user'  },
-  { stt:12, fullName:'Nguyễn Hữu Hoàng',      dob:'13/08/2004', gender:'Nam', hometown:'Hải Phòng',   phone:'0943888822', username:'nguyenhuuhoang',    role:'admin' },
-  { stt:13, fullName:'Phan Huỳnh Khang',       dob:'09/10/2004', gender:'Nam', hometown:'Phú Yên',     phone:'0358675444', username:'phanhuynhkhang',    role:'user'  },
-  { stt:14, fullName:'Huỳnh Quốc Khải',        dob:'24/09/2003', gender:'Nam', hometown:'Đồng Tháp',   phone:'0389469195', username:'huynhquockhai',     role:'user'  },
-  { stt:15, fullName:'Nguyễn Hải Long',        dob:'04/11/2005', gender:'Nam', hometown:'Hà Nam',      phone:'0859936330', username:'nguyenhailong',     role:'user'  },
-  { stt:16, fullName:'Trần Lê Na',             dob:'05/01/2005', gender:'Nữ',  hometown:'Quảng Bình',  phone:'0964337595', username:'tranlena',          role:'user'  },
-  { stt:17, fullName:'Nguyễn Thiện Nghĩa',     dob:'18/10/2005', gender:'Nam', hometown:'An Giang',    phone:'0359890788', username:'nguyenthiennghia',  role:'user'  },
-  { stt:18, fullName:'Vũ Trần Trung Nghĩa',    dob:'05/05/2005', gender:'Nam', hometown:'Gia Lai',     phone:'0987255079', username:'vutrantrungnghia',  role:'user'  },
-  { stt:19, fullName:'Huỳnh Hữu Nhân',         dob:'04/11/2005', gender:'Nam', hometown:'Bạc Liêu',    phone:'0902227954', username:'huynhhuunhan',      role:'user'  },
-  { stt:20, fullName:'Nguyễn Thành Quân',      dob:'29/11/2004', gender:'Nam', hometown:'Kon Tum',     phone:'0329464014', username:'nguyenthanhquan',   role:'user'  },
-  { stt:21, fullName:'Trịnh Duy Tuấn',         dob:'16/06/2005', gender:'Nam', hometown:'Nam Định',    phone:'0388203916', username:'trinhduytuan',      role:'user'  },
-  { stt:22, fullName:'Nguyễn Gia Tuyến',       dob:'18/11/2004', gender:'Nam', hometown:'Bắc Ninh',    phone:'0344412229', username:'nguyengiatuyen',    role:'user'  },
-  { stt:23, fullName:'Lê Thanh Tùng',          dob:'09/05/2005', gender:'Nam', hometown:'Thái Nguyên', phone:'0375200186', username:'lethanhtung',       role:'admin' },
-  { stt:24, fullName:'Lê Phước Vinh',          dob:'14/03/2005', gender:'Nam', hometown:'Kon Tum',     phone:'0348824479', username:'lephuocvinh',       role:'user'  },
-  { stt:25, fullName:'Hoàng Thị Lệ Vy',        dob:'03/09/2005', gender:'Nữ',  hometown:'Đắk Lắk',    phone:'0363417355', username:'hoangthilevy',      role:'user'  },
+  { stt: 1, fullName: 'Trần Trọng Thế Anh', dob: '28/04/2004', gender: 'Nam', hometown: 'Thái Bình', phone: '0941139262', username: 'trantrongtheanh', role: 'user' },
+  { stt: 2, fullName: 'Bùi Xuân Bằng', dob: '19/01/2005', gender: 'Nam', hometown: 'Thanh Hóa', phone: '0347157821', username: 'buixuanbang', role: 'user' },
+  { stt: 3, fullName: 'Nguyễn Nhật Bình', dob: '31/05/2005', gender: 'Nam', hometown: 'Quảng Trị', phone: '0948024515', username: 'nguyennhatbinh', role: 'user' },
+  { stt: 4, fullName: 'Đỗ Chí Công', dob: '05/07/2005', gender: 'Nam', hometown: 'Hà Nội', phone: '0782000061', username: 'dochicong', role: 'user' },
+  { stt: 5, fullName: 'Nguyễn Phương Duy', dob: '04/01/2005', gender: 'Nam', hometown: 'Bắc Ninh', phone: '0965041035', username: 'nguyenphuongduy', role: 'user' },
+  { stt: 6, fullName: 'Phương Thế Duy', dob: '04/07/2004', gender: 'Nam', hometown: 'Lâm Đồng', phone: '0902219391', username: 'phuongtheduy', role: 'user' },
+  { stt: 7, fullName: 'Nguyễn Thành Đạt', dob: '15/12/2004', gender: 'Nam', hometown: 'Hải Dương', phone: '0917633317', username: 'nguyenthanhdat', role: 'user' },
+  { stt: 8, fullName: 'Nguyễn Tuấn Đạt', dob: '30/10/2003', gender: 'Nam', hometown: 'Gia Lai', phone: '0782273030', username: 'nguyentuandat', role: 'user' },
+  { stt: 9, fullName: 'Nguyễn Đăng Hải', dob: '02/07/2003', gender: 'Nam', hometown: 'Hà Nội', phone: '0854309399', username: 'nguyendanghai', role: 'user' },
+  { stt: 10, fullName: 'Lê Quang Quốc Hiệu', dob: '29/11/2005', gender: 'Nam', hometown: 'TT-Huế', phone: '0812733455', username: 'lequangquochieu', role: 'user' },
+  { stt: 11, fullName: 'Đào Văn Xuân Hoàng', dob: '13/01/2005', gender: 'Nam', hometown: 'Lâm Đồng', phone: '0792047112', username: 'daovanxuanhoang', role: 'user' },
+  { stt: 12, fullName: 'Nguyễn Hữu Hoàng', dob: '13/08/2004', gender: 'Nam', hometown: 'Hải Phòng', phone: '0943888822', username: 'nguyenhuuhoang', role: 'admin' },
+  { stt: 13, fullName: 'Phan Huỳnh Khang', dob: '09/10/2004', gender: 'Nam', hometown: 'Phú Yên', phone: '0358675444', username: 'phanhuynhkhang', role: 'user' },
+  { stt: 14, fullName: 'Huỳnh Quốc Khải', dob: '24/09/2003', gender: 'Nam', hometown: 'Đồng Tháp', phone: '0389469195', username: 'huynhquockhai', role: 'user' },
+  { stt: 15, fullName: 'Nguyễn Hải Long', dob: '04/11/2005', gender: 'Nam', hometown: 'Hà Nam', phone: '0859936330', username: 'nguyenhailong', role: 'user' },
+  { stt: 16, fullName: 'Trần Lê Na', dob: '05/01/2005', gender: 'Nữ', hometown: 'Quảng Bình', phone: '0964337595', username: 'tranlena', role: 'user' },
+  { stt: 17, fullName: 'Nguyễn Thiện Nghĩa', dob: '18/10/2005', gender: 'Nam', hometown: 'An Giang', phone: '0359890788', username: 'nguyenthiennghia', role: 'user' },
+  { stt: 18, fullName: 'Vũ Trần Trung Nghĩa', dob: '05/05/2005', gender: 'Nam', hometown: 'Gia Lai', phone: '0987255079', username: 'vutrantrungnghia', role: 'user' },
+  { stt: 19, fullName: 'Huỳnh Hửu Nhân', dob: '04/11/2005', gender: 'Nam', hometown: 'Bạc Liêu', phone: '0902227954', username: 'huynhhuunhan', role: 'user' },
+  { stt: 20, fullName: 'Nguyễn Thành Quân', dob: '29/11/2004', gender: 'Nam', hometown: 'Kon Tum', phone: '0329464014', username: 'nguyenthanhquan', role: 'user' },
+  { stt: 21, fullName: 'Trịnh Duy Tuấn', dob: '16/06/2005', gender: 'Nam', hometown: 'Nam Định', phone: '0388203916', username: 'trinhduytuan', role: 'user' },
+  { stt: 22, fullName: 'Nguyễn Gia Tuyến', dob: '18/11/2005', gender: 'Nam', hometown: 'Bắc Ninh', phone: '0344412229', username: 'nguyengiatuyen', role: 'user' },
+  { stt: 23, fullName: 'Lê Thanh Tùng', dob: '09/05/2005', gender: 'Nam', hometown: 'Thái Nguyên', phone: '0375200186', username: 'lethanhtung', role: 'admin' },
+  { stt: 24, fullName: 'Lê Phước Vinh', dob: '14/03/2005', gender: 'Nam', hometown: 'Kon Tum', phone: '0348824479', username: 'lephuocvinh', role: 'user' },
+  { stt: 25, fullName: 'Hoàng Thị Lê Vy', dob: '03/09/2005', gender: 'Nữ', hometown: 'Đắk Lắk', phone: '0363417355', username: 'hoangthilevy', role: 'user' },
 ];
 
 function dobToPassword(dob) {
@@ -203,12 +226,12 @@ async function broadcastSessionUpdate() {
 }
 
 // ─── Auth Routes ──────────────────────────────────────────────────
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', loginLimiter, async (req, res) => {
   try {
     const { username, password } = req.body;
     if (!username || !password) return res.status(400).json({ error: 'Thiếu thông tin' });
     const searchStr = username.toLowerCase().trim();
-    const user = await User.findOne({ 
+    const user = await User.findOne({
       $or: [
         { username: searchStr },
         { phone: searchStr }
@@ -287,7 +310,7 @@ app.post('/api/violations', authMiddleware, adminOnly, async (req, res) => {
     const { userId, type, note, points } = req.body;
     if (!userId || !type) return res.status(400).json({ error: 'Thiếu thông tin lỗi' });
     if (type === 'Khác' && !note?.trim()) return res.status(400).json({ error: 'Vui lòng ghi chú nội dung lỗi' });
-    
+
     const violation = await Violation.create({
       user: userId,
       type,
@@ -296,7 +319,7 @@ app.post('/api/violations', authMiddleware, adminOnly, async (req, res) => {
       recordedBy: req.user._id
     });
     const populated = await violation.populate('user', 'fullName stt username');
-    
+
     // Create notification
     const noteText = note?.trim() ? ` (${note.trim()})` : '';
     const messageText = `Bạn vừa bị ghi lỗi: ${type}${noteText} (-${points} điểm)`;
@@ -334,7 +357,7 @@ app.post('/api/notifications/subscribe', authMiddleware, async (req, res) => {
   try {
     const subscription = req.body;
     const user = await User.findById(req.user._id);
-    
+
     // Lưu ý: Chỉ thêm nếu chưa có (dựa vào endpoint)
     const exists = user.pushSubscriptions.some(sub => sub.endpoint === subscription.endpoint);
     if (!exists) {
@@ -398,7 +421,7 @@ app.post('/api/violations/:id/appeal', authMiddleware, async (req, res) => {
       return res.status(429).json({ error: `Bạn chỉ được khiếu nại 30 phút một lần. Vui lòng thử lại sau ${timeLeft} phút.` });
     }
 
-    const messageText = `${req.user.fullName} vừa khiếu nại về lỗi ${violation.type} (-${violation.points} điểm)`;
+    const messageText = `${req.user.fullName} vừa khiếu nại về lỗi ${violation.type} (-${violation.points} điểm).`;
     const notif = await Notification.create({
       message: messageText,
       type: 'warning',
@@ -415,11 +438,11 @@ app.post('/api/violations/:id/appeal', authMiddleware, async (req, res) => {
       body: messageText,
       url: '/'
     });
-    
+
     admins.forEach(admin => {
       if (admin.pushSubscriptions && admin.pushSubscriptions.length > 0) {
         admin.pushSubscriptions.forEach(sub => {
-          webpush.sendNotification(sub, pushPayload).catch(e => {});
+          webpush.sendNotification(sub, pushPayload).catch(e => { });
         });
       }
     });
@@ -432,9 +455,9 @@ app.delete('/api/violations/:id', authMiddleware, adminOnly, async (req, res) =>
   try {
     const violation = await Violation.findByIdAndDelete(req.params.id);
     if (!violation) return res.status(404).json({ error: 'Không tìm thấy lỗi' });
-    
+
     await Notification.deleteMany({ relatedViolation: req.params.id });
-    
+
     res.json({ success: true });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
@@ -446,8 +469,8 @@ app.get('/api/notifications', authMiddleware, async (req, res) => {
     let myGroupId = null;
     if (session) {
       for (const g of session.groups) {
-        if (g.members.some(m => m.toString() === req.user._id.toString()) || 
-            (g.fixedMembers && g.fixedMembers.some(m => m.toString() === req.user._id.toString()))) {
+        if (g.members.some(m => m.toString() === req.user._id.toString()) ||
+          (g.fixedMembers && g.fixedMembers.some(m => m.toString() === req.user._id.toString()))) {
           myGroupId = g.groupId;
           break;
         }
@@ -477,7 +500,7 @@ app.get('/api/notifications', authMiddleware, async (req, res) => {
         let bday = new Date(today.getFullYear(), parseInt(m) - 1, parseInt(d));
         let diffTime = bday - today;
         let diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-        
+
         if (diffDays < 0) { // Passed this year, check next year
           bday = new Date(today.getFullYear() + 1, parseInt(m) - 1, parseInt(d));
           diffTime = bday - today;
@@ -653,29 +676,7 @@ app.post('/api/admin/session/auto-assign', authMiddleware, adminOnly, async (req
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
-app.get('/api/admin/export', authMiddleware, adminOnly, async (req, res) => {
-  try {
-    const { sessionId } = req.query;
-    let session;
-    if (sessionId) {
-      session = await Session.findById(sessionId).populate('groups.members', 'stt fullName dob gender hometown phone').lean();
-    } else {
-      session = await Session.findOne({ active: true }).populate('groups.members', 'stt fullName dob gender hometown phone').lean();
-    }
-    if (!session) return res.status(404).json({ error: 'Không tìm thấy phiên' });
-    const BOM = '\uFEFF';
-    let csv = BOM + `Môn học: ${session.subject}\r\nChế độ: ${session.mode === 'manual' ? 'Tự chọn' : 'Random'}\r\n\r\n`;
-    csv += 'Nhóm,STT,Họ và tên,Ngày sinh,Giới tính,Quê quán,Số điện thoại\r\n';
-    for (const g of session.groups) {
-      for (const m of g.members) {
-        csv += `"${g.name}","${m.stt}","${m.fullName}","${m.dob}","${m.gender}","${m.hometown}","${m.phone}"\r\n`;
-      }
-    }
-    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
-    res.setHeader('Content-Disposition', `attachment; filename="nhom-${session.subject || 'lop'}.csv"`);
-    res.send(csv);
-  } catch (err) { res.status(500).json({ error: err.message }); }
-});
+// CSV export đã được thay thế bằng PDF export phía client
 
 // ─── Session Status (User + Admin) ────────────────────────────────
 app.get('/api/session/status', authMiddleware, async (req, res) => {
@@ -716,7 +717,7 @@ app.post('/api/session/join', authMiddleware, async (req, res) => {
     await session.save();
     const populated = await session.populate('groups.members groups.fixedMembers', 'fullName username avatar stt');
     await broadcastSessionUpdate();
-    
+
     // Tạo notification
     const notif = await Notification.create({
       message: `${req.user.fullName} vừa vào ${targetGroup.name}.`,
@@ -801,11 +802,11 @@ app.post('/api/admin/user/reset-password', authMiddleware, adminOnly, async (req
   try {
     const { userId } = req.body;
     const targetUser = await User.findById(userId).lean();
-    if (!targetUser) return res.status(404).json({ error: 'Người dùng không tồn tại' });
+    if (!targetUser) return res.status(404).json({ error: 'Người dùng không tồn tại.' });
     const defaultPw = dobToPassword(targetUser.dob);
     const hashed = await bcrypt.hash(defaultPw, 10);
     await User.findByIdAndUpdate(userId, { password: hashed });
-    res.json({ ok: true, message: `Đã reset về mật khẩu mặc định: ${defaultPw}` });
+    res.json({ ok: true, message: `Đã reset về mật khẩu mặc định: ${defaultPw}.` });
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 
@@ -829,7 +830,7 @@ cron.schedule('0 7 * * *', async () => {
     if (birthdayUsers.length > 0) {
       const names = birthdayUsers.map(u => u.fullName).join(', ');
       const messageText = `🎉 Chúc mừng sinh nhật: ${names}! Hãy gửi những lời chúc tốt đẹp nhất đến ${birthdayUsers.length > 1 ? 'các bạn ấy' : 'bạn ấy'} nhé! 🎂`;
-      
+
       const pushPayload = JSON.stringify({
         title: 'Thông báo sinh nhật 🥳',
         body: messageText,
@@ -840,7 +841,7 @@ cron.schedule('0 7 * * *', async () => {
       for (const u of allUsers) {
         if (u.pushSubscriptions && u.pushSubscriptions.length > 0) {
           for (const sub of u.pushSubscriptions) {
-            webpush.sendNotification(sub, pushPayload).catch(e => {});
+            webpush.sendNotification(sub, pushPayload).catch(e => { });
           }
         }
       }
@@ -855,7 +856,7 @@ mongoose.connect(MONGODB_URI).then(async () => {
   console.log('✅ Connected to MongoDB');
   await initVapidKeys();
   await seedDatabase();
-  
+
   // Migration: update existing squad 2 members if they exist and are not set
   try {
     const squad2Names = ["Nguyễn Phương Duy", "Nguyễn Tuấn Đạt", "Nguyễn Đăng Hải", "Lê Quang Quốc Hiệu", "Đào Văn Xuân Hoàng", "Nguyễn Hữu Hoàng", "Huỳnh Quốc Khải", "Phan Huỳnh Khang", "Trần Lê Na", "Nguyễn Hải Long", "Trịnh Duy Tuấn", "Lê Thanh Tùng", "Lê Phước Vinh"];
@@ -863,8 +864,24 @@ mongoose.connect(MONGODB_URI).then(async () => {
       { fullName: { $in: squad2Names }, squad: { $ne: 2 } },
       { $set: { squad: 2 } }
     );
-  } catch(e) {
+  } catch (e) {
     console.error("Migration error:", e);
+  }
+
+  // Migration: Sửa năm sinh Nguyễn Gia Tuyến → 2005 + reset mật khẩu
+  try {
+    const tuyen = await User.findOne({ username: 'nguyengiatuyen' });
+    if (tuyen && tuyen.dob === '18/11/2004') {
+      const newDob = '18/11/2005';
+      const newPw = await bcrypt.hash(dobToPassword(newDob), 10);
+      await User.updateOne(
+        { username: 'nguyengiatuyen' },
+        { $set: { dob: newDob, password: newPw } }
+      );
+      console.log('✅ Migration: Đã sửa năm sinh + reset mật khẩu Nguyễn Gia Tuyến → 2005');
+    }
+  } catch (e) {
+    console.error('Migration error (Nguyễn Gia Tuyến):', e);
   }
 
   server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

@@ -314,10 +314,10 @@ function togglePasswordVisibility(inputId, btn) {
   const input = document.getElementById(inputId);
   if (input.type === 'password') {
     input.type = 'text';
-    btn.textContent = '🙈';
+    btn.innerHTML = `<svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94'/><path d='M1 1l22 22'/><path d='M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19'/></svg>`;
   } else {
     input.type = 'password';
-    btn.textContent = '👁️';
+    btn.innerHTML = `<svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/><circle cx='12' cy='12' r='3'/></svg>`;
   }
 }
 
@@ -414,7 +414,7 @@ function renderGroupsGrid(session, myGroupId, isFixed, mode) {
       const avatarHtml = m.avatar && m.avatar.startsWith('data:')
         ? `<img src="${m.avatar}" alt="" />`
         : (m.avatar || m.fullName.charAt(0));
-      return `<div class="member-item">
+      return `<div class="member-item" style="cursor:pointer;" onclick="event.stopPropagation();showUserProfileModal('${m._id}')">
         <div class="member-avatar-sm">${avatarHtml}</div>
         <span class="member-name">${m.fullName}</span>
         ${isFixedMember ? '<span class="member-fixed">🔒</span>' : ''}
@@ -482,17 +482,7 @@ async function joinGroup(groupId) {
 
 // ─── Admin Stats ──────────────────────────────────────────────────────
 function renderAdminStats(data) {
-  if (data.active && data.session) {
-    const session = data.session;
-    const assigned = session.groups.reduce((s, g) => s + g.members.length, 0);
-    document.getElementById('stat-groups').textContent = session.groups.length;
-    document.getElementById('stat-assigned').textContent = assigned;
-    document.getElementById('stat-unassigned').textContent = 25 - assigned;
-  } else {
-    document.getElementById('stat-groups').textContent = '0';
-    document.getElementById('stat-assigned').textContent = '0';
-    document.getElementById('stat-unassigned').textContent = '25';
-  }
+  // Stats cards removed per user request
 }
 
 // ─── Admin Session ────────────────────────────────────────────────────
@@ -923,7 +913,7 @@ function initSettingsTab() {
   const grid = document.getElementById('avatar-grid');
   if (grid && grid.children.length === 0) {
     grid.innerHTML = '';
-    const emojis = ['👤', '👨', '👩', '👦', '👧', '👨‍🎓', '👩‍🎓', '🕵️', '👮', '👽', '👻', '🤖', '👾', '🦊', '🐱', '🐻', '🐼', '🐯', '🦁', '🐮', '🐸'];
+    const emojis = ['👤', '👨', '👩', '👦', '👧', '👨‍🎓', '👩‍🎓', '🕵️', '👮', '👽', '👻', '🤖', '👾', '🦊', '🐱', '🐻', '🐼', '🐯', '🦁', '🐮', '🐸', '🦉', '🐺', '🦄'];
     emojis.forEach(e => {
       const el = document.createElement('div');
       el.className = 'avatar-option';
@@ -933,6 +923,45 @@ function initSettingsTab() {
       grid.appendChild(el);
     });
   }
+  // Check push subscription status (fix iOS re-display issue)
+  checkPushSubscriptionStatus();
+  // Highlight current theme
+  updateThemeButtons();
+}
+
+async function checkPushSubscriptionStatus() {
+  try {
+    if ('serviceWorker' in navigator && 'PushManager' in window) {
+      const reg = await navigator.serviceWorker.ready;
+      const sub = await reg.pushManager.getSubscription();
+      const btn = document.getElementById('btn-subscribe-push');
+      if (sub && btn) {
+        btn.innerHTML = '✅ Đã bật thông báo';
+        btn.disabled = true;
+        btn.style.opacity = '0.7';
+      }
+    }
+  } catch(e) { console.log('Push check error:', e); }
+}
+
+function updateThemeButtons() {
+  const current = localStorage.getItem('app-theme') || '';
+  document.querySelectorAll('.theme-btn').forEach(btn => {
+    btn.style.borderColor = '';
+    btn.style.background = '';
+  });
+  const activeBtn = document.querySelector(`.theme-btn[onclick="setTheme('${current}')"]`);
+  if (activeBtn) {
+    activeBtn.style.borderColor = 'var(--purple)';
+    activeBtn.style.background = 'rgba(139,92,246,0.15)';
+  }
+}
+
+function setTheme(theme) {
+  localStorage.setItem('app-theme', theme);
+  document.documentElement.setAttribute('data-theme', theme);
+  updateThemeButtons();
+  toast(theme === 'dark' ? '🌙 Dark Mode' : theme === 'lgbt' ? '🌈 LGBT Mode' : '☀️ Light Mode', 'success');
 }
 
 function selectAvatar(emoji, el) {
@@ -957,54 +986,32 @@ function handleAvatarFile(event) {
   reader.readAsDataURL(file);
 }
 
-function checkSettingsChanges() {
-  const oldP = document.getElementById('old-password')?.value;
-  const newP = document.getElementById('new-password')?.value;
-  const cfmP = document.getElementById('confirm-password')?.value;
-
-  const hasChanges = (oldP || newP || cfmP) || (state.selectedAvatarEmoji !== null);
-  const btn = document.getElementById('btn-save-settings');
-  if (btn) btn.disabled = !hasChanges;
-}
-
-async function saveSettings() {
-  const oldPassword = document.getElementById('old-password').value;
-  const newPassword = document.getElementById('new-password').value;
-  const confirmPassword = document.getElementById('confirm-password').value;
-  const btn = document.getElementById('btn-save-settings');
-
-  if (newPassword && newPassword !== confirmPassword) {
-    toast('Mật khẩu xác nhận không khớp!', 'error'); return;
-  }
-  if (newPassword && newPassword.length < 6) {
-    toast('Mật khẩu mới phải có ít nhất 6 ký tự', 'warning'); return;
-  }
-
-  const body = {};
-  if (newPassword) { body.oldPassword = oldPassword; body.newPassword = newPassword; }
-  if (state.selectedAvatarEmoji !== null) body.avatar = state.selectedAvatarEmoji;
-
-  if (!Object.keys(body).length) { toast('Không có thay đổi nào', 'info'); return; }
-
-  btn.disabled = true;
-  btn.textContent = '⏳ Đang lưu...';
-
+async function saveAvatar() {
+  if (state.selectedAvatarEmoji === null) { toast('Chưa chọn avatar nào', 'info'); return; }
   try {
-    const updated = await API.patch('/api/user/profile', body);
+    const updated = await API.patch('/api/user/profile', { avatar: state.selectedAvatarEmoji });
     state.user = { ...state.user, ...updated };
     localStorage.setItem('user', JSON.stringify(state.user));
     updateNavbar();
-    toast('✅ Đã lưu thay đổi thành công!', 'success');
+    state.selectedAvatarEmoji = null;
+    toast('✅ Đã lưu avatar!', 'success');
+  } catch (err) { toast(err.message, 'error'); }
+}
+
+async function changePassword() {
+  const oldPassword = document.getElementById('old-password').value;
+  const newPassword = document.getElementById('new-password').value;
+  const confirmPassword = document.getElementById('confirm-password').value;
+  if (!oldPassword || !newPassword) { toast('Vui lòng nhập đầy đủ mật khẩu', 'warning'); return; }
+  if (newPassword !== confirmPassword) { toast('Mật khẩu xác nhận không khớp!', 'error'); return; }
+  if (newPassword.length < 6) { toast('Mật khẩu mới phải có ít nhất 6 ký tự', 'warning'); return; }
+  try {
+    await API.patch('/api/user/profile', { oldPassword, newPassword });
+    toast('✅ Đổi mật khẩu thành công!', 'success');
     document.getElementById('old-password').value = '';
     document.getElementById('new-password').value = '';
     document.getElementById('confirm-password').value = '';
-    state.selectedAvatarEmoji = null;
-  } catch (err) {
-    toast(err.message, 'error');
-  } finally {
-    btn.textContent = '💾 Lưu thay đổi';
-    checkSettingsChanges();
-  }
+  } catch (err) { toast(err.message, 'error'); }
 }
 
 // ─── App Tabs Logic ───────────────────────────────────────────────────
@@ -1121,8 +1128,13 @@ function handleNotificationClick(n) {
     const userId = String(n._id).replace('bday-', '');
     showUserProfileModal(userId);
   } else if ((n.type === 'success' && n.targetGroup) || n.message.includes('nhóm') || n.message.includes('bốc thăm')) {
-    const tabBtn = document.querySelector('[data-tab="tab-chia-nhom"]');
-    if (tabBtn) switchAppTab('tab-chia-nhom', tabBtn);
+    // Hiển thị profile của người vừa vào nhóm thay vì chuyển tab
+    if (n.triggeredBy) {
+      showUserProfileModal(n.triggeredBy);
+    } else {
+      const tabBtn = document.querySelector('[data-tab="tab-chia-nhom"]');
+      if (tabBtn) switchAppTab('tab-chia-nhom', tabBtn);
+    }
   }
 }
 
@@ -1217,7 +1229,7 @@ async function loadViolations() {
     list.forEach(v => {
       const tr = document.createElement('tr');
       const d = new Date(v.createdAt);
-      const dateStr = d.toLocaleDateString('vi-VN') + '<br><span style="font-size:11px;color:var(--text-3);">' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit' }) + '</span>';
+      const dateStr = d.toLocaleDateString('vi-VN') + '<br><span style="font-size:11px;color:var(--text-3);">' + d.toLocaleTimeString('vi-VN', { hour: '2-digit', minute: '2-digit', second: '2-digit' }) + '</span>';
       const uname = v.user?.fullName || '?';
       const violationLabel = (v.type === 'Khác' && v.note) ? v.note : v.type;
 
@@ -1254,6 +1266,7 @@ async function addViolation() {
   const note = document.getElementById('v-note')?.value?.trim() || '';
 
   if (!userId) { toast('Chưa chọn học viên', 'error'); return; }
+  if (!type) { toast('Chưa chọn loại lỗi', 'error'); return; }
   if (type === 'Khác' && !note) { toast('Vui lòng ghi chú nội dung lỗi', 'error'); return; }
 
   try {
@@ -1372,6 +1385,15 @@ loadClassMembersBackground = async function (isAdmin) {
 // Removed makeDraggableNotif function
 
 function init() {
+  // Dismiss loading overlay
+  setTimeout(() => {
+    const overlay = document.getElementById('app-loading');
+    if (overlay) {
+      overlay.classList.add('fade-out');
+      setTimeout(() => overlay.remove(), 500);
+    }
+  }, 800);
+
   if (state.token && state.user) {
     if (state.user.role === 'admin') showAdminView();
     else showUserView();
@@ -1683,7 +1705,7 @@ function antiInspectAlert(e) {
 
       <div class="custom-alert-overlay" id="custom-alert">
         <div class="custom-alert-box">
-          <div class="custom-alert-header">Anh Hoàng yêu quý của em cho biết:</div>
+          <div class="custom-alert-header">Cảnh báo phát hiện thao tác lạ:</div>
           <div class="custom-alert-body">${msg}</div>
           <div class="custom-alert-footer">
             <button class="custom-alert-btn" onclick="document.getElementById('custom-alert').style.display='none'">OK</button>

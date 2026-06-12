@@ -11,11 +11,19 @@
   <link rel="manifest" href="/manifest.json" />
   <link rel="apple-touch-icon" href="/logo.png" />
   <script src="/socket.io/socket.io.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>👥</text></svg>" />
+  <script>document.documentElement.setAttribute('data-theme', localStorage.getItem('app-theme') || '');</script>
 </head>
 
 <body>
+  <!-- App Loading Overlay -->
+  <div id="app-loading" class="app-loading-overlay">
+    <div class="loading-dots"><span></span><span></span><span></span></div>
+    <div class="loading-text">Đang tải...</div>
+  </div>
+
   <div id="app">
 
     <!-- ─── Toast Container ──────────────────────────────────────── -->
@@ -41,7 +49,7 @@
                 <input id="login-password" class="input" type="password" placeholder="VD: 01012000@"
                   autocomplete="current-password" required style="padding-right: 40px;" />
                 <button type="button" class="pwd-toggle-btn"
-                  onclick="togglePasswordVisibility('login-password', this)">👁️</button>
+                  onclick="togglePasswordVisibility('login-password', this)"><svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/><circle cx='12' cy='12' r='3'/></svg></button>
               </div>
             </div>
             <button id="login-btn" type="submit" class="btn btn-primary login-btn">
@@ -50,7 +58,7 @@
             </button>
           </form>
           <div class="login-hint">
-            Tài khoản mặc định: Tên không dấu viết liền <br> Mật khẩu mặc định: Ngày tháng năm sinh + @
+            Tài khoản mặc định: SĐT/Tên không dấu không cách <br> Mật khẩu mặc định: Ngày tháng năm sinh + @
           </div>
         </div>
       </div>
@@ -121,7 +129,7 @@
             <!-- Notifications Bell -->
             <div id="notif-wrapper" class="notif-wrapper">
               <button class="notif-btn" onclick="toggleNotifDropdown(event)">
-                🔔<span id="notif-count" class="notif-badge hidden">0</span>
+                <svg width='18' height='18' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9'/><path d='M13.73 21a2 2 0 0 1-3.46 0'/></svg><span id="notif-count" class="notif-badge hidden">0</span>
               </button>
               <div id="notif-dropdown" class="notif-dropdown hidden">
                 <div class="notif-header">Thông báo</div>
@@ -189,32 +197,7 @@
             <!-- View Admin (Chia nhóm) -->
             <div id="view-admin" class="view" style="padding:0; min-height:auto;">
               <div class="main-content" style="padding:0;">
-                <div class="admin-header" style="margin-bottom:20px;">
-                  <h1 class="page-title">🛠️ BẢNG QUẢN TRỊ</h1>
-                  <p class="page-sub">Quản lý phiên chia nhóm lớp học</p>
-                </div>
-                <div class="stats-grid">
-                  <div class="card stat-card">
-                    <div class="stat-icon">👥</div>
-                    <div class="stat-value" style="color:var(--purple)">25</div>
-                    <div class="stat-label">Thành viên</div>
-                  </div>
-                  <div class="card stat-card">
-                    <div class="stat-icon">📊</div>
-                    <div class="stat-value" id="stat-groups" style="color:var(--cyan)">0</div>
-                    <div class="stat-label">Số nhóm</div>
-                  </div>
-                  <div class="card stat-card">
-                    <div class="stat-icon">✅</div>
-                    <div class="stat-value" id="stat-assigned" style="color:var(--green)">0</div>
-                    <div class="stat-label">Có nhóm</div>
-                  </div>
-                  <div class="card stat-card">
-                    <div class="stat-icon">⏳</div>
-                    <div class="stat-value" id="stat-unassigned" style="color:var(--amber)">25</div>
-                    <div class="stat-label">Chưa có</div>
-                  </div>
-                </div>
+
                 <div class="admin-tabs">
                   <button class="admin-tab active" data-tab="tab-session" onclick="switchTab('tab-session', this)">🎯
                     Tạo phiên</button>
@@ -324,20 +307,16 @@
                   <label class="input-label">Loại lỗi</label>
                   <select id="v-type" class="input" style="padding: 0 12px; height: 42px;"
                     onchange="onViolationTypeChange()">
-                    <option value="Không xếp hàng điểm danh hoặc xếp sai chỗ">Không xếp hàng điểm danh hoặc xếp sai chỗ
-                    </option>
-                    <option value="Không xếp hàng đi lên lớp/về kí túc xá">Không xếp hàng đi lên lớp/về kí túc xá
-                    </option>
+                    <option value="" selected disabled>--Chọn loại lỗi--</option>
+                    <option value="Không xếp hàng điểm danh hoặc xếp sai chỗ">Không xếp hàng điểm danh hoặc xếp sai chỗ</option>
+                    <option value="Không xếp hàng đi lên lớp/về kí túc xá">Không xếp hàng đi lên lớp/về kí túc xá</option>
                     <option value="Xếp hàng bấm điện thoại">Xếp hàng bấm điện thoại</option>
-                    <option value="Nội vụ giường không gọn gàng/đồ cá nhân để lung tung">Nội vụ giường không gọn gàng/đồ
-                      cá nhân để lung tung</option>
+                    <option value="Nội vụ giường không gọn gàng/đồ cá nhân để lung tung">Nội vụ giường không gọn gàng/đồ cá nhân để lung tung</option>
                     <option value="Bị giáo viên nhắc nhở">Bị giáo viên nhắc nhở</option>
-                    <option value="Không làm vệ sinh khu vực/làm không sạch">Không làm vệ sinh khu vực/làm không sạch
-                    </option>
+                    <option value="Không làm vệ sinh khu vực/làm không sạch">Không làm vệ sinh khu vực/làm không sạch</option>
                     <option value="Trốn phân công nhiệm vụ không lí do">Trốn phân công nhiệm vụ không lí do</option>
                     <option value="Vắng điểm danh">Vắng điểm danh</option>
-                    <option value="Trong giờ hành chính lên lớp, vắng mặt không báo cáo (Trừ việc đi vệ sinh)">Trong giờ
-                      hành chính lên lớp, vắng mặt không báo cáo (Trừ việc đi vệ sinh)</option>
+                    <option value="Trong giờ hành chính lên lớp, vắng mặt không báo cáo (Trừ việc đi vệ sinh)">Trong giờ hành chính lên lớp, vắng mặt không báo cáo (Trừ việc đi vệ sinh)</option>
                     <option value="Lên lớp muộn (Quá 20-30p)">Lên lớp muộn (Quá 20-30p)</option>
                     <option value="Quá ồn ào trong lớp">Quá ồn ào trong lớp</option>
                     <option value="Khác">Khác</option>
@@ -381,14 +360,14 @@
                 </div>
               </div>
               
-              <!-- Action Buttons (Right) -->
-              <div style="display:flex; flex-direction:column; gap:8px; align-items:flex-end; margin-left:auto;">
-                <button class="btn btn-ghost btn-sm" onclick="loadViolations()"
-                  style="gap:6px; font-size:13px;">🔄 Làm mới</button>
-                <div id="admin-leaderboard-bar" style="display:flex;">
+              <!-- Action Buttons: Top điểm trừ (trái) - Làm mới (phải) cùng hàng -->
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-left:auto; gap:8px; flex:1;">
+                <div id="admin-leaderboard-bar">
                   <button class="btn btn-secondary btn-sm" onclick="showLeaderboard()" style="gap:6px;">🏆 Top
                     điểm trừ</button>
                 </div>
+                <button class="btn btn-ghost btn-sm" onclick="loadViolations()"
+                  style="gap:6px; font-size:13px;">🔄 Làm mới</button>
               </div>
 
             </div>
@@ -447,89 +426,92 @@
           <!-- ========================================== -->
           <div id="tab-cai-dat" class="app-tab-content animate-in">
             <div class="settings-grid">
+
+              <!-- Theme Settings -->
+              <div class="card settings-card">
+                <div class="settings-card-header" onclick="toggleSettingsCard('theme-settings-body', 'arrow-theme')" style="cursor: pointer; justify-content: space-between;">
+                  <div style="display: flex; align-items: center; gap: 16px;">
+                    <div class="settings-icon-box" style="background: rgba(139,92,246,0.1); color: var(--purple);">🎨</div>
+                    <div class="settings-card-title">Giao diện</div>
+                  </div>
+                  <div class="settings-arrow" id="arrow-theme" style="transition: transform 0.3s; color: var(--text-2);">▼</div>
+                </div>
+                <div class="settings-card-body hidden" id="theme-settings-body">
+                  <div style="display:flex; gap:10px; flex-wrap:wrap;">
+                    <button class="btn btn-secondary theme-btn" onclick="setTheme('')" style="flex:1; min-width:80px; padding:12px; justify-content:center;">☀️ Light</button>
+                    <button class="btn btn-secondary theme-btn" onclick="setTheme('dark')" style="flex:1; min-width:80px; padding:12px; justify-content:center;">🌙 Dark</button>
+                    <button class="btn btn-secondary theme-btn" onclick="setTheme('lgbt')" style="flex:1; min-width:80px; padding:12px; justify-content:center;">🌈 LGBT</button>
+                  </div>
+                </div>
+              </div>
+
               <!-- Avatar Settings -->
               <div class="card settings-card">
-                <div class="settings-card-header" onclick="toggleSettingsCard('avatar-settings-body', 'arrow-avatar')"
-                  style="cursor: pointer; justify-content: space-between;">
+                <div class="settings-card-header" onclick="toggleSettingsCard('avatar-settings-body', 'arrow-avatar')" style="cursor: pointer; justify-content: space-between;">
                   <div style="display: flex; align-items: center; gap: 16px;">
-                    <div class="settings-icon-box" style="background: rgba(6, 182, 212, 0.1); color: var(--cyan);">👤
-                    </div>
+                    <div class="settings-icon-box" style="background: rgba(6, 182, 212, 0.1); color: var(--cyan);">👤</div>
                     <div class="settings-card-title">Avatar</div>
                   </div>
-                  <div class="settings-arrow" id="arrow-avatar"
-                    style="transition: transform 0.3s; color: var(--text-2);">▼</div>
+                  <div class="settings-arrow" id="arrow-avatar" style="transition: transform 0.3s; color: var(--text-2);">▼</div>
                 </div>
                 <div class="settings-card-body hidden" id="avatar-settings-body">
                   <div class="avatar-grid" id="avatar-grid"></div>
                   <div class="upload-box">
-                    <label class="btn btn-secondary w-full" for="avatar-file-input"
-                      style="cursor:pointer; padding: 12px; justify-content: center; border: 1px dashed var(--border);">
+                    <label class="btn btn-secondary w-full" for="avatar-file-input" style="cursor:pointer; padding: 12px; justify-content: center; border: 1px dashed var(--border);">
                       <span style="font-size: 16px;">📤</span> Tải ảnh từ thiết bị
                     </label>
-                    <input id="avatar-file-input" type="file" accept="image/*" style="display:none;"
-                      onchange="handleAvatarFile(event)" />
+                    <input id="avatar-file-input" type="file" accept="image/*" style="display:none;" onchange="handleAvatarFile(event)" />
                     <div class="upload-hint">Định dạng hỗ trợ: JPG, PNG, GIF (Tối đa 2MB)</div>
                   </div>
+                  <button class="btn btn-primary w-full" onclick="saveAvatar()" style="margin-top:8px; border-radius:12px;">💾 Lưu avatar</button>
                 </div>
               </div>
 
               <!-- Password Settings -->
               <div class="card settings-card">
-                <div class="settings-card-header"
-                  onclick="toggleSettingsCard('password-settings-body', 'arrow-password')"
-                  style="cursor: pointer; justify-content: space-between;">
+                <div class="settings-card-header" onclick="toggleSettingsCard('password-settings-body', 'arrow-password')" style="cursor: pointer; justify-content: space-between;">
                   <div style="display: flex; align-items: center; gap: 16px;">
-                    <div class="settings-icon-box" style="background: rgba(244, 63, 94, 0.1); color: var(--rose);">🔒
-                    </div>
+                    <div class="settings-icon-box" style="background: rgba(244, 63, 94, 0.1); color: var(--rose);">🔒</div>
                     <div class="settings-card-title">Mật khẩu</div>
                   </div>
-                  <div class="settings-arrow" id="arrow-password"
-                    style="transition: transform 0.3s; color: var(--text-2);">▼</div>
+                  <div class="settings-arrow" id="arrow-password" style="transition: transform 0.3s; color: var(--text-2);">▼</div>
                 </div>
                 <div class="settings-card-body hidden" id="password-settings-body">
                   <div class="settings-form" style="display:flex; flex-direction:column; gap:16px;">
                     <div class="input-group">
                       <label class="input-label">Mật khẩu hiện tại</label>
                       <div class="password-input-wrapper">
-                        <input id="old-password" class="input settings-input" type="password"
-                          placeholder="Nhập mật khẩu cũ..." oninput="checkSettingsChanges()" />
-                        <button class="pwd-toggle-btn" type="button"
-                          onclick="togglePasswordVisibility('old-password', this)">👁️</button>
+                        <input id="old-password" class="input settings-input" type="password" placeholder="Nhập mật khẩu cũ..." />
+                        <button class="pwd-toggle-btn" type="button" onclick="togglePasswordVisibility('old-password', this)"><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/><circle cx='12' cy='12' r='3'/></svg></button>
                       </div>
                     </div>
                     <div class="input-group">
                       <label class="input-label">Mật khẩu mới</label>
                       <div class="password-input-wrapper">
-                        <input id="new-password" class="input settings-input" type="password"
-                          placeholder="Nhập mật khẩu mới..." oninput="checkSettingsChanges()" />
-                        <button class="pwd-toggle-btn" type="button"
-                          onclick="togglePasswordVisibility('new-password', this)">👁️</button>
+                        <input id="new-password" class="input settings-input" type="password" placeholder="Nhập mật khẩu mới..." />
+                        <button class="pwd-toggle-btn" type="button" onclick="togglePasswordVisibility('new-password', this)"><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/><circle cx='12' cy='12' r='3'/></svg></button>
                       </div>
                     </div>
                     <div class="input-group">
                       <label class="input-label">Xác nhận mật khẩu mới</label>
                       <div class="password-input-wrapper">
-                        <input id="confirm-password" class="input settings-input" type="password"
-                          placeholder="Nhập lại mật khẩu mới..." oninput="checkSettingsChanges()" />
-                        <button class="pwd-toggle-btn" type="button"
-                          onclick="togglePasswordVisibility('confirm-password', this)">👁️</button>
+                        <input id="confirm-password" class="input settings-input" type="password" placeholder="Nhập lại mật khẩu mới..." />
+                        <button class="pwd-toggle-btn" type="button" onclick="togglePasswordVisibility('confirm-password', this)"><svg width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='currentColor' stroke-width='2'><path d='M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z'/><circle cx='12' cy='12' r='3'/></svg></button>
                       </div>
                     </div>
+                    <button class="btn btn-primary w-full" onclick="changePassword()" style="border-radius:12px;">🔑 Đổi mật khẩu</button>
                   </div>
                 </div>
               </div>
 
               <!-- Notifications Settings -->
               <div class="card settings-card">
-                <div class="settings-card-header" onclick="toggleSettingsCard('notif-settings-body', 'arrow-notif')"
-                  style="cursor: pointer; justify-content: space-between;">
+                <div class="settings-card-header" onclick="toggleSettingsCard('notif-settings-body', 'arrow-notif')" style="cursor: pointer; justify-content: space-between;">
                   <div style="display: flex; align-items: center; gap: 16px;">
-                    <div class="settings-icon-box" style="background: rgba(16, 185, 129, 0.1); color: var(--green);">🔔
-                    </div>
+                    <div class="settings-icon-box" style="background: rgba(16, 185, 129, 0.1); color: var(--green);">🔔</div>
                     <div class="settings-card-title">Thông báo hệ thống</div>
                   </div>
-                  <div class="settings-arrow" id="arrow-notif"
-                    style="transition: transform 0.3s; color: var(--text-2);">▼</div>
+                  <div class="settings-arrow" id="arrow-notif" style="transition: transform 0.3s; color: var(--text-2);">▼</div>
                 </div>
                 <div class="settings-card-body hidden" id="notif-settings-body">
                   <div style="display:flex; flex-direction:column; gap:12px;">
@@ -537,16 +519,11 @@
                       Bật thông báo hệ thống để nhận tin nhắn ngay cả khi bạn không mở ứng dụng.
                     </p>
                     <button class="btn btn-secondary" onclick="subscribeToPush()" id="btn-subscribe-push"
-                      style="justify-content: center; padding: 12px; background: rgba(16, 185, 129, 0.1); color: var(--green); border-color: rgba(16, 185, 129, 0.2);">🔔
-                      Bật thông báo</button>
+                      style="justify-content: center; padding: 12px; background: rgba(16, 185, 129, 0.1); color: var(--green); border-color: rgba(16, 185, 129, 0.2);">🔔 Bật thông báo</button>
                   </div>
                 </div>
               </div>
 
-              <div>
-                <button id="btn-save-settings" class="btn btn-primary w-full btn-lg" style="border-radius: 16px;"
-                  onclick="saveSettings()" disabled>💾 Lưu thay đổi</button>
-              </div>
             </div>
           </div>
 
