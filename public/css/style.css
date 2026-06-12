@@ -116,26 +116,22 @@
 /* ═══ LGBT MODE FIXES ═══ */
 [data-theme="lgbt"] body { background: linear-gradient(45deg, #7B2CBF, #3A0CA3, #4361EE, #4CC9F0, #10B981, #F59E0B, #E63946, #7B2CBF); background-size: 400% 400%; animation: lgbtBackground 15s ease infinite; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
 @keyframes lgbtBackground { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-[data-theme="lgbt"] .card, [data-theme="lgbt"] .sidebar { background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(12px); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
 @keyframes rainbowBG { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
-@keyframes floatRainbow { 0%, 100% { transform: translateY(0) rotate(0deg); filter: hue-rotate(0deg); } 50% { transform: translateY(-8px) rotate(2deg); filter: hue-rotate(180deg); } }
 @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 15px rgba(255,105,180,0.4); } 50% { box-shadow: 0 0 35px rgba(255,105,180,0.8); } }
 @keyframes gentleWiggle { 0%, 100% { transform: translateY(-4px) rotate(0deg) scale(1.02); } 50% { transform: translateY(-4px) rotate(1deg) scale(1.02); filter: hue-rotate(30deg); } }
 @keyframes rgbText { 0% { filter: hue-rotate(0deg); } 100% { filter: hue-rotate(360deg); } }
 @keyframes gentleBorder { 0% { border-color: rgba(255,105,180,0.5); box-shadow: 0 0 10px rgba(255,105,180,0.3); } 50% { border-color: rgba(0,255,255,0.5); box-shadow: 0 0 10px rgba(0,255,255,0.3); } 100% { border-color: rgba(255,105,180,0.5); box-shadow: 0 0 10px rgba(255,105,180,0.3); } }
 
-[data-theme="lgbt"] * { transition: background-color 0.3s ease, border-color 0.3s ease; }
 [data-theme="lgbt"] .card { transition: transform 0.4s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.4s ease; animation: pulseGlow 5s infinite, gentleBorder 4s linear infinite; }
 [data-theme="lgbt"] .card:hover { transform: translateY(-4px) scale(1.02); box-shadow: 0 15px 40px rgba(255,105,180,0.6); z-index: 10; animation: gentleWiggle 1s ease-in-out infinite alternate; }
 [data-theme="lgbt"] .btn { transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1); border: 1px solid rgba(255,255,255,0.2); }
 [data-theme="lgbt"] .btn:hover { animation: gentleWiggle 0.6s ease-in-out infinite alternate; filter: hue-rotate(45deg); border-color: rgba(255,255,255,0.8); }
 [data-theme="lgbt"] .btn:active { transform: scale(0.9); }
-[data-theme="lgbt"] .nav-avatar { animation: floatRainbow 4s ease-in-out infinite; }
 
 html { scroll-behavior: smooth; }
 
 body, .card, .sidebar, .top-header, .bottom-nav, .modal-content, .history-card, .group-card, .notif-dropdown, .notif-item {
-  transition: background-color 0.5s ease, color 0.5s ease, border-color 0.5s ease, box-shadow 0.5s ease;
+  transition: background-color 0.8s cubic-bezier(0.4, 0, 0.2, 1), color 0.8s cubic-bezier(0.4, 0, 0.2, 1), border-color 0.8s cubic-bezier(0.4, 0, 0.2, 1), box-shadow 0.8s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 body {
@@ -220,7 +216,7 @@ body::after  { width: 400px; height: 400px; background: var(--cyan);   bottom: -
   cursor: pointer; transition: var(--transition); white-space: nowrap;
 }
 .btn:disabled { opacity: 0.4; cursor: not-allowed; }
-.btn:active:not(:disabled) { transform: scale(0.97); }
+.btn:active:not(:disabled) { transform: scale(0.94); }
 .btn-sm { padding: 6px 12px; font-size: 12px; }
 .btn-lg { padding: 12px 24px; font-size: 15px; }
 .btn-primary {
@@ -1035,10 +1031,10 @@ select.input option { background: var(--select-option-bg); }
 
 /* ─── Animations ─────────────────────────────────────────────── */
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from { opacity: 0; transform: translateY(12px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
-.animate-in { animation: fadeInUp 0.35s ease; }
+.animate-in { animation: fadeInUp 0.4s cubic-bezier(0.2, 0.8, 0.2, 1) forwards; }
 
 @keyframes pulse {
   0%, 100% { opacity: 1; }
