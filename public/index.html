@@ -134,9 +134,9 @@
                 👤</div>
 
               <!-- Info Column -->
-              <div style="display: flex; flex-direction: column; flex: 1; min-width: 0;">
+              <div style="display: flex; flex-direction: column; flex: 1; min-width: 0; align-items: center;">
                 <div id="sidebar-username"
-                  style="font-size: 16px; font-weight: 700; color: var(--text-1); margin-bottom: 6px; word-break: break-word; line-height: 1.2;">
+                  style="font-size: 16px; font-weight: 700; color: var(--text-1); margin-bottom: 6px; word-break: break-word; line-height: 1.2; text-align: center; text-transform: uppercase;">
                   —</div>
 
                 <div
@@ -433,8 +433,7 @@
               <!-- Action Buttons: Top điểm trừ (trái) - Làm mới (phải) -->
               <div style="display:flex; align-items:center; justify-content:space-between; width: 100%;">
                 <div id="admin-leaderboard-bar">
-                  <button class="btn btn-secondary btn-sm" onclick="showLeaderboard()" style="gap:6px;">🏆 Top
-                    điểm trừ</button>
+                  <button class="btn btn-secondary btn-sm" onclick="showLeaderboard()" style="gap:6px; font-size: 13px;">🏆 Top điểm trừ</button>
                 </div>
                 <button class="btn btn-ghost btn-sm" onclick="loadViolations(this)" style="gap:6px; font-size:13px;">🔄
                   Làm
@@ -451,7 +450,7 @@
                     <tr>
                       <th style="text-align:center; width:80px;">Thời gian</th>
                       <th id="col-student-name" style="text-align:center; width:100px;">Học viên</th>
-                      <th style="text-align:left; width:auto;">Lỗi vi phạm</th>
+                      <th style="text-align:center; width:auto;">Lỗi vi phạm</th>
                       <th style="text-align:center; width:50px;">Điểm</th>
                       <th id="col-action-head" style="text-align:center; width:36px;"></th>
                     </tr>
