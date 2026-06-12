@@ -341,8 +341,8 @@ app.post('/api/violations', authMiddleware, adminOnly, async (req, res) => {
     const populated = await violation.populate('user', 'fullName stt username');
 
     // Create notification
-    const noteText = note?.trim() ? ` (${note.trim()})` : '';
-    const messageText = `Bạn vừa bị ghi lỗi: ${type}${noteText} (-${points} điểm)`;
+    const typeLabel = (type === 'Khác' && note?.trim()) ? note.trim() : type;
+    const messageText = `Bạn vừa bị ghi lỗi: ${typeLabel} (-${points} điểm)`;
     const notif = await Notification.create({
       message: messageText,
       type: 'warning',
@@ -452,7 +452,8 @@ app.post('/api/violations/:id/appeal', authMiddleware, async (req, res) => {
       return res.status(429).json({ error: `Bạn chỉ được khiếu nại 30 phút một lần. Vui lòng thử lại sau ${timeLeft} phút.` });
     }
 
-    const messageText = `${req.user.fullName} vừa khiếu nại về lỗi ${violation.type} (-${violation.points} điểm).`;
+    const typeLabel = (violation.type === 'Khác' && violation.note) ? violation.note : violation.type;
+    const messageText = `${req.user.fullName} vừa khiếu nại về lỗi ${typeLabel} (-${violation.points} điểm).`;
     const notif = await Notification.create({
       message: messageText,
       type: 'warning',
@@ -494,6 +495,15 @@ app.delete('/api/violations/:id', authMiddleware, adminOnly, async (req, res) =>
 });
 
 // ─── Notifications Routes ─────────────────────────────────────────
+app.delete('/api/notifications/:id', authMiddleware, async (req, res) => {
+  try {
+    if (req.user.role !== 'admin') return res.status(403).json({ error: 'Permission denied' });
+    await Notification.findByIdAndDelete(req.params.id);
+    res.json({ success: true });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
 app.get('/api/notifications', authMiddleware, async (req, res) => {
   try {
     const session = await Session.findOne({ active: true }).lean();

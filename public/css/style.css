@@ -116,7 +116,7 @@
 /* ═══ LGBT MODE FIXES ═══ */
 [data-theme="lgbt"] body { background: linear-gradient(45deg, #ff00a0, #ff5050, #ffeb3b, #00e676, #00e5ff, #d500f9, #ff00a0); background-size: 400% 400%; animation: lgbtBackground 10s ease infinite; color: #fff; text-shadow: 0 1px 3px rgba(0,0,0,0.8); }
 @keyframes lgbtBackground { 0% { background-position: 0% 50%; } 50% { background-position: 100% 50%; } 100% { background-position: 0% 50%; } }
-[data-theme="lgbt"] .card, [data-theme="lgbt"] .sidebar { background: rgba(0, 0, 0, 0.7); backdrop-filter: blur(10px); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
+[data-theme="lgbt"] .card, [data-theme="lgbt"] .sidebar { background: rgba(0, 0, 0, 0.4); backdrop-filter: blur(12px); color: #fff; border: 1px solid rgba(255,255,255,0.2); }
 @keyframes rainbowBG { 0% { background-position: 0% 50%; } 100% { background-position: 200% 50%; } }
 @keyframes floatRainbow { 0%, 100% { transform: translateY(0) rotate(0deg); filter: hue-rotate(0deg); } 50% { transform: translateY(-8px) rotate(2deg); filter: hue-rotate(180deg); } }
 @keyframes pulseGlow { 0%, 100% { box-shadow: 0 0 15px rgba(255,105,180,0.4); } 50% { box-shadow: 0 0 35px rgba(255,105,180,0.8); } }

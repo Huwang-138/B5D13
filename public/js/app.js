@@ -1256,6 +1256,10 @@ function handleNotificationClick(n) {
   const notifDropdown = document.getElementById('notif-dropdown');
   if (notifDropdown) notifDropdown.classList.add('hidden');
 
+  if (n.message.includes('khiếu nại') && state.user?.role === 'admin') {
+    API.delete(`/api/notifications/${n._id}`).then(() => fetchNotifications()).catch(console.error);
+  }
+
   if (n.type === 'warning' || n.message.includes('lỗi')) {
     const tabBtn = document.querySelector('[data-tab="tab-danh-sach-loi"]');
     if (tabBtn) switchAppTab('tab-danh-sach-loi', tabBtn);
@@ -1378,8 +1382,8 @@ async function loadViolations(btn) {
 
       const studentColHtml = isAdmin ? `<td style="font-size:13px;color:var(--text-1);text-align:center;">${uname}</td>` : '';
       const actionBtn = isAdmin
-        ? `<button class="btn btn-ghost" style="padding:3px;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;background:rgba(255,255,255,0.05);" title="Xóa lỗi" onclick="deleteViolation('${v._id}');event.stopPropagation();"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg></button>`
-        : `<button class="btn btn-ghost" style="padding:3px;width:24px;height:24px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;font-size:12px;background:rgba(255,255,255,0.05);" title="Khiếu nại" onclick="appealViolation('${v._id}');event.stopPropagation();"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></button>`;
+        ? `<button class="btn btn-ghost" style="padding:0;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;opacity:0.7;" title="Xóa lỗi" onclick="deleteViolation('${v._id}');event.stopPropagation();"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 6h18"></path><path d="M19 6v14c0 1-1 2-2 2H7c-1 0-2-1-2-2V6"></path><path d="M8 6V4c0-1 1-2 2-2h4c1 0 2 1 2 2v2"></path></svg></button>`
+        : `<button class="btn btn-ghost" style="padding:0;width:24px;height:24px;display:inline-flex;align-items:center;justify-content:center;font-size:12px;opacity:0.7;" title="Khiếu nại" onclick="appealViolation('${v._id}');event.stopPropagation();"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path></svg></button>`;
 
       tr.innerHTML = `
         <td style="color:var(--text-2);font-size:13px;text-align:center;">${dateStr}</td>
