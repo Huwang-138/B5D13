@@ -422,20 +422,22 @@
               style="display:none; margin-bottom: 16px; align-items:center; justify-content:space-between; gap:12px; flex-wrap: wrap;">
 
               <!-- Points Box (Left) -->
-              <div id="points-box" style="padding: 4px 12px; display:flex; align-items:center; gap: 6px; background: rgba(244,63,94,0.05); border: 1px solid rgba(244,63,94,0.2); border-radius: 20px; height: 32px;">
-                <span style="font-size: 11px; opacity: 0.6;">🔥</span>
-                <span style="font-size: 11px; font-weight: 500; color: var(--text-2);">Tổng điểm:</span>
-                <span id="user-total-points" style="font-size: 18px; font-weight: 900; color: var(--rose); margin-left: 2px;">0</span>
+              <div id="points-box" class="card"
+                style="padding: 8px 16px; display:flex; align-items:center; gap: 8px; width: fit-content; margin: 0;">
+                <span style="font-size: 12px; opacity: 0.6;">🔥</span>
+                <span style="font-size: 12px; font-weight: 500; color: var(--text-2);">Điểm trừ:</span>
+                <span id="user-total-points"
+                  style="font-size: 18px; font-weight: 900; color: var(--rose); margin-left: 2px;">0</span>
               </div>
 
               <!-- Action Buttons: Top điểm trừ (trái) - Làm mới (phải) cùng hàng -->
-              <div
-                style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap: wrap;">
+              <div style="display:flex; align-items:center; justify-content:space-between; gap:8px; flex-wrap: wrap;">
                 <div id="admin-leaderboard-bar">
                   <button class="btn btn-secondary btn-sm" onclick="showLeaderboard()" style="gap:6px;">🏆 Top
                     điểm trừ</button>
                 </div>
-                <button class="btn btn-ghost btn-sm" onclick="loadViolations()" style="gap:6px; font-size:13px;">🔄 Làm
+                <button class="btn btn-ghost btn-sm" onclick="loadViolations(this)" style="gap:6px; font-size:13px;">🔄
+                  Làm
                   mới</button>
               </div>
 
@@ -554,7 +556,8 @@
                   onclick="toggleSettingsCard('password-settings-body', 'arrow-password')"
                   style="cursor: pointer; justify-content: space-between;">
                   <div style="display: flex; align-items: center; gap: 16px;">
-                    <div class="settings-icon-box" style="background: rgba(244, 63, 94, 0.1); color: var(--rose);">🔒</div>
+                    <div class="settings-icon-box" style="background: rgba(244, 63, 94, 0.1); color: var(--rose);">🔒
+                    </div>
                     <div class="settings-card-title">Mật khẩu</div>
                   </div>
                   <div class="settings-arrow" id="arrow-password"
@@ -601,7 +604,8 @@
                           </svg></button>
                       </div>
                     </div>
-                    <button id="btn-change-password" class="btn btn-primary w-full" onclick="changePassword()" style="border-radius:12px;" disabled>🔑 Đổi
+                    <button id="btn-change-password" class="btn btn-primary w-full" onclick="changePassword()"
+                      style="border-radius:12px;" disabled>🔑 Đổi
                       mật khẩu</button>
                   </div>
                 </div>

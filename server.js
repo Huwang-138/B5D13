@@ -933,32 +933,7 @@ mongoose.connect(MONGODB_URI).then(async () => {
   await initVapidKeys();
   await seedDatabase();
 
-  // Migration: update existing squad 2 members if they exist and are not set
-  try {
-    const squad2Names = ["Nguyễn Phương Duy", "Nguyễn Tuấn Đạt", "Nguyễn Đăng Hải", "Lê Quang Quốc Hiệu", "Đào Văn Xuân Hoàng", "Nguyễn Hữu Hoàng", "Huỳnh Quốc Khải", "Phan Huỳnh Khang", "Trần Lê Na", "Nguyễn Hải Long", "Trịnh Duy Tuấn", "Lê Thanh Tùng", "Lê Phước Vinh"];
-    await User.updateMany(
-      { fullName: { $in: squad2Names }, squad: { $ne: 2 } },
-      { $set: { squad: 2 } }
-    );
-  } catch (e) {
-    console.error("Migration error:", e);
-  }
 
-  // Migration: Sửa năm sinh Nguyễn Gia Tuyến → 2005 + reset mật khẩu
-  try {
-    const tuyen = await User.findOne({ username: 'nguyengiatuyen' });
-    if (tuyen && tuyen.dob === '18/11/2004') {
-      const newDob = '18/11/2005';
-      const newPw = await bcrypt.hash(dobToPassword(newDob), 10);
-      await User.updateOne(
-        { username: 'nguyengiatuyen' },
-        { $set: { dob: newDob, password: newPw } }
-      );
-      console.log('✅ Migration: Đã sửa năm sinh + reset mật khẩu Nguyễn Gia Tuyến → 2005');
-    }
-  } catch (e) {
-    console.error('Migration error (Nguyễn Gia Tuyến):', e);
-  }
 
   server.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
 }).catch(err => {

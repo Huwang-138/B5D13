@@ -259,14 +259,14 @@ function toggleAdminUserMode() {
     // Quay về trang quản trị
     state.isAdminInUserMode = false;
     showAdminView();
-    toast('🛠️ Quay lại trang Quản trị', 'info');
+    toast('Quay lại trang Quản trị', 'info');
   } else {
     // Chuyển sang chế độ học sinh
     state.isAdminInUserMode = true;
     updateNavbar();
     showView('view-user');
     fetchSessionStatus();
-    toast('🎓 Đã chuyển sang chế độ Học viên', 'info');
+    toast('Đã chuyển sang chế độ Học viên', 'info');
   }
 }
 
@@ -348,12 +348,11 @@ async function refreshGroups(btn) {
   }
   await fetchSessionStatus();
   if (state.user && state.user.role === 'admin' && typeof loadAdminSessions === 'function') {
-    try { await loadAdminSessions(); } catch(e){}
+    try { await loadAdminSessions(); } catch (e) { }
   }
   if (btn) {
     btn.innerHTML = '🔄 Làm mới';
     btn.disabled = false;
-    toast('Đã làm mới dữ liệu nhóm', 'success');
   }
 }
 
@@ -700,7 +699,7 @@ async function createSession() {
     const btn = document.getElementById('btn-create-session');
     btn.disabled = true; btn.textContent = 'Đang tạo...';
     await API.post('/api/admin/session/create', { subject, mode, groupCount });
-    toast(`✅ Đã tạo phiên "${subject}" thành công!`, 'success');
+    toast(`Đã tạo phiên "${subject}" thành công!`, 'success');
     await loadAdminSession();
     switchTab('tab-manage', document.querySelector('[data-tab="tab-manage"]'));
   } catch (err) { toast(err.message, 'error'); }
@@ -792,7 +791,7 @@ async function exportSessionPDF(sessionId) {
 
     // Xuất PDF
     await html2pdf().set(opt).from(container).save();
-    toast('✅ Đã xuất PDF thành công!', 'success');
+    toast('Đã xuất PDF thành công!', 'success');
   } catch (err) {
     console.error('Lỗi xuất PDF:', err);
     toast(err.message || 'Lỗi khi xuất PDF', 'error');
@@ -1034,7 +1033,7 @@ async function checkPushSubscriptionStatus() {
       const sub = await reg.pushManager.getSubscription();
       const btn = document.getElementById('btn-subscribe-push');
       if (sub && btn) {
-        btn.innerHTML = '✅ Đã bật thông báo';
+        btn.innerHTML = 'Đã bật thông báo';
         btn.disabled = true;
         btn.style.opacity = '0.7';
       }
@@ -1108,7 +1107,7 @@ async function saveAvatar() {
     updateNavbar();
     state.selectedAvatarEmoji = null;
     checkSettingsChanges();
-    toast('✅ Đã lưu avatar!', 'success');
+    toast('Đã lưu thành công avatar!', 'success');
   } catch (err) { toast(err.message, 'error'); }
 }
 
@@ -1121,7 +1120,7 @@ async function changePassword() {
   if (newPassword.length < 6) { toast('Mật khẩu mới phải có ít nhất 6 ký tự', 'warning'); return; }
   try {
     await API.patch('/api/user/profile', { oldPassword, newPassword });
-    toast('✅ Đổi mật khẩu thành công!', 'success');
+    toast('Đổi mật khẩu thành công!', 'success');
     document.getElementById('old-password').value = '';
     document.getElementById('new-password').value = '';
     document.getElementById('confirm-password').value = '';
@@ -1306,7 +1305,13 @@ socket.on('newNotification', (notif) => {
 });
 
 // ─── Violations Logic ─────────────────────────────────────────────────
-async function loadViolations() {
+async function loadViolations(btn) {
+  let originalHtml = '';
+  if (btn) {
+    originalHtml = btn.innerHTML;
+    btn.innerHTML = '<div class="loading-dots"><span></span><span></span><span></span></div>';
+    btn.disabled = true;
+  }
   try {
     const tbody = document.getElementById('violation-list');
     const isAdmin = state.user && state.user.role === 'admin';
@@ -1366,6 +1371,11 @@ async function loadViolations() {
     });
   } catch (err) {
     toast('Lỗi khi tải danh sách vi phạm', 'error');
+  } finally {
+    if (btn) {
+      btn.innerHTML = originalHtml || '🔄 Làm mới';
+      btn.disabled = false;
+    }
   }
 }
 
@@ -1986,9 +1996,9 @@ async function subscribeToPush() {
     });
 
     if (res.ok) {
-      alert('🎉 Đăng ký nhận thông báo thành công! Bạn sẽ nhận được thông báo ngay cả khi đã tắt app.');
+      alert('🎉 Đăng ký thành công! Bạn sẽ nhận được thông báo của web. 🎉');
       if (btn) {
-        btn.innerHTML = '✅ Đã bật thông báo';
+        btn.innerHTML = 'Đã bật thông báo';
         btn.disabled = true;
       }
     } else {
