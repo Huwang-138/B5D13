@@ -12,6 +12,8 @@ const webpush = require('web-push');
 const cron = require('node-cron');
 const helmet = require('helmet');
 const rateLimit = require('express-rate-limit');
+const crypto = require('crypto');
+const { DAI_CAT, TIEU_CAT, BINH_HOA, TIEU_HUNG, DAI_HUNG } = require('./fortunes');
 
 const app = express();
 const server = http.createServer(app);
@@ -115,7 +117,10 @@ const userSchema = new mongoose.Schema({
   role: { type: String, enum: ['admin', 'user'], default: 'user' },
   avatar: { type: String, default: '' }, // emoji or base64 data URL
   squad: { type: Number, default: 1 },
-  pushSubscriptions: { type: Array, default: [] }
+  pushSubscriptions: { type: Array, default: [] },
+  lastFortuneDate: { type: String, default: '' },
+  fortuneStreak: { type: Number, default: 0 },
+  maxFortuneStreak: { type: Number, default: 0 }
 }, { timestamps: true });
 
 const sessionSchema = new mongoose.Schema({
@@ -894,6 +899,339 @@ app.post('/api/admin/user/reset-password', authMiddleware, adminOnly, async (req
     const hashed = await bcrypt.hash(defaultPw, 10);
     await User.findByIdAndUpdate(userId, { password: hashed });
     res.json({ ok: true, message: `Đã reset về mật khẩu mặc định: ${defaultPw}.` });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+// ─── Fortune Telling (Tâm Linh) Routes ────────────────────────────
+
+// Helper function to get current fortune date string (YYYY-MM-DD) based on 7:00 AM cutoff
+function getFortuneDayString() {
+  const now = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Ho_Chi_Minh"}));
+  if (now.getHours() < 7) {
+    now.setDate(now.getDate() - 1); // If before 7AM, it belongs to previous day
+  }
+  const year = now.getFullYear();
+  const month = String(now.getMonth() + 1).padStart(2, '0');
+  const day = String(now.getDate()).padStart(2, '0');
+  return `${year}-${month}-${day}`;
+}
+
+function generateFortuneForUser(user, dateStr, allUsers = []) {
+  const rawString = `${user.fullName}-${user.dob}-${dateStr}`;
+  const hash = crypto.createHash('sha256').update(rawString).digest('hex');
+  
+  const indexHex = hash.substring(0, 8);
+  const luckyNumHex = hash.substring(8, 16);
+  const colorHex = hash.substring(16, 22);
+
+  // 1. Numerology (Chỉ số ngày cá nhân)
+  let personalDayScore = 0;
+  let parsedDOB = new Date();
+  let userYear = 2000;
+  if (user.dob) {
+    const parts = user.dob.split('/');
+    if (parts.length === 3) {
+      const dobDay = parseInt(parts[0]) || 1;
+      const dobMonth = parseInt(parts[1]) || 1;
+      userYear = parseInt(parts[2]) || 2000;
+      const [year, month, day] = dateStr.split('-');
+      
+      const sumDigits = (n) => String(n).split('').reduce((a, b) => a + parseInt(b), 0);
+      let totalSum = sumDigits(dobDay) + sumDigits(dobMonth) + sumDigits(parseInt(year)) + sumDigits(parseInt(month)) + sumDigits(parseInt(day));
+      while(totalSum > 9) {
+        totalSum = sumDigits(totalSum);
+      }
+      
+      if ([1, 3, 8, 9].includes(totalSum)) personalDayScore = 1;
+      else if ([4, 7].includes(totalSum)) personalDayScore = -1;
+      
+      parsedDOB = new Date(userYear, parts[1]-1, parts[0]);
+    }
+  }
+
+  // 2. Biorhythm (Nhịp sinh học)
+  const todayDate = new Date(dateStr);
+  const diffTime = Math.abs(todayDate - parsedDOB);
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  const physical = Math.sin(2 * Math.PI * diffDays / 23);
+  const emotional = Math.sin(2 * Math.PI * diffDays / 28);
+  const intellectual = Math.sin(2 * Math.PI * diffDays / 33);
+  
+  const bioAvg = (physical + emotional + intellectual) / 3;
+
+  // 3. Mệnh Ngũ Hành (0: Kim, 1: Mộc, 2: Thủy, 3: Hỏa, 4: Thổ)
+  const getNguHanhNam = (y) => {
+    if (!y) return 0;
+    const canMap = {4:1, 5:1, 6:2, 7:2, 8:3, 9:3, 0:4, 1:4, 2:5, 3:5};
+    const chiMap = {0:1, 1:1, 2:2, 3:2, 4:0, 5:0, 6:1, 7:1, 8:2, 9:2, 10:0, 11:0};
+    const can = canMap[y % 10] || 1;
+    const chi = chiMap[y % 12] || 0;
+    let menh = can + chi;
+    if (menh > 5) menh -= 5;
+    if (menh === 1) return 0; // Kim
+    if (menh === 5) return 1; // Mộc
+    if (menh === 2) return 2; // Thủy
+    if (menh === 3) return 3; // Hỏa
+    return 4; // Thổ
+  };
+
+  const getNguHanhNgay = (dateObj) => {
+    const dDays = Math.floor(dateObj.getTime() / 86400000);
+    const canIndex = (dDays + 3) % 10;
+    const chiIndex = (dDays + 11) % 12;
+    const canVal = Math.floor(canIndex / 2) + 1;
+    const chiMap = [0, 0, 1, 1, 2, 2, 0, 0, 1, 1, 2, 2];
+    const chiVal = chiMap[chiIndex];
+    let menh = canVal + chiVal;
+    if (menh > 5) menh -= 5;
+    if (menh === 1) return 0;
+    if (menh === 5) return 1;
+    if (menh === 2) return 2;
+    if (menh === 3) return 3;
+    return 4;
+  };
+
+  const getTuongSinhTuongKhac = (m1, m2) => {
+    if (m1 === m2) return 5;
+    const sinh = {0:2, 2:1, 1:3, 3:4, 4:0}; 
+    if (sinh[m1] === m2 || sinh[m2] === m1) return 10;
+    return -10;
+  };
+
+  const getBridgeScore = (m1, mDay, m2) => {
+    let bScore = 0;
+    const sinh = {0:2, 2:1, 1:3, 3:4, 4:0}; 
+    const khac = {0:1, 1:4, 4:2, 2:3, 3:0}; 
+    
+    if (sinh[m2] === m1 || sinh[m1] === m2) bScore += 5;
+    else if (khac[m2] === m1 || khac[m1] === m2) bScore -= 5;
+    else if (m1 === m2) bScore += 2;
+    
+    if (sinh[mDay] === m2 && sinh[m1] === mDay) bScore += 15; 
+    else if (sinh[mDay] === m1 && sinh[m2] === mDay) bScore += 15; 
+    else if (sinh[m1] === mDay && sinh[m2] === mDay) bScore += 8; 
+    else if (khac[m1] === mDay && khac[m2] === mDay) bScore -= 10; 
+    else if (khac[mDay] === m2 && sinh[m1] === mDay) bScore -= 5; 
+    else if (khac[mDay] === m1 && sinh[m2] === mDay) bScore -= 5; 
+    
+    return bScore;
+  };
+
+  const userMenh = getNguHanhNam(userYear);
+  const todayMenh = getNguHanhNgay(todayDate);
+  const menhScore = getTuongSinhTuongKhac(userMenh, todayMenh);
+
+  // 4. Moon Phase (0-29.53)
+  const moonScore = Math.sin(2 * Math.PI * diffDays / 29.53) * 10;
+
+  // 5. Random Entropy (-10 to 10)
+  const entropy = (parseInt(indexHex.substring(0,4), 16) % 21) - 10;
+
+  // Tính Luck Score (0 - 100)
+  let luckScore = 50 + Math.round(bioAvg * 15) + (personalDayScore * 10) + menhScore + moonScore + entropy;
+  luckScore = Math.max(0, Math.min(100, Math.round(luckScore)));
+
+  let targetArray;
+  let fortuneLevel = 'BINH_HOA';
+  if (luckScore >= 85) { targetArray = DAI_CAT; fortuneLevel = 'DAI_CAT'; }
+  else if (luckScore >= 65) { targetArray = TIEU_CAT; fortuneLevel = 'TIEU_CAT'; }
+  else if (luckScore >= 45) { targetArray = BINH_HOA; fortuneLevel = 'BINH_HOA'; }
+  else if (luckScore >= 25) { targetArray = TIEU_HUNG; fortuneLevel = 'TIEU_HUNG'; }
+  else { targetArray = DAI_HUNG; fortuneLevel = 'DAI_HUNG'; }
+
+  const colors = [
+    { hex: '#f43f5e', name: 'Đỏ hồng' }, { hex: '#ec4899', name: 'Hồng phấn' }, { hex: '#d946ef', name: 'Tím mộng mơ' },
+    { hex: '#8b5cf6', name: 'Tím huyền bí' }, { hex: '#6366f1', name: 'Xanh dương' }, { hex: '#3b82f6', name: 'Xanh da trời' },
+    { hex: '#0ea5e9', name: 'Xanh thiên thanh' }, { hex: '#06b6d4', name: 'Xanh ngọc bích' }, { hex: '#14b8a6', name: 'Xanh mòng két' },
+    { hex: '#10b981', name: 'Xanh lục bảo' }, { hex: '#22c55e', name: 'Xanh lá mạ' }, { hex: '#84cc16', name: 'Xanh non' },
+    { hex: '#eab308', name: 'Vàng chanh' }, { hex: '#f59e0b', name: 'Vàng hổ phách' }, { hex: '#f97316', name: 'Cam rực rỡ' },
+    { hex: '#ef4444', name: 'Đỏ thẫm' }, { hex: '#7f1d1d', name: 'Đỏ đô' }, { hex: '#451a03', name: 'Nâu đất nung' },
+    { hex: '#1e3a8a', name: 'Xanh navy' }, { hex: '#bfdbfe', name: 'Xanh dương pastel' }, { hex: '#3f6212', name: 'Xanh rêu' },
+    { hex: '#111827', name: 'Đen tuyền' }, { hex: '#4b5563', name: 'Xám khói' }, { hex: '#cbd5e1', name: 'Bạc lấp lánh' },
+    { hex: '#ffffff', name: 'Trắng tinh khôi' }, { hex: '#fdf8ff', name: 'Trắng ngọc trai' }, { hex: '#fef3c7', name: 'Vàng kem' },
+    { hex: '#b76e79', name: 'Vàng hồng' }
+  ];
+  const luckyColor = colors[parseInt(colorHex, 16) % colors.length];
+
+  const meaningfulNumbers = ['68', '86', '79', '39', '19', '09', '99', '88', '66', '33', '22', '11', '01', '10', '06', '08', '26', '62', '89', '98'];
+  let luckyNumber = '';
+  if (parseInt(luckyNumHex, 16) % 3 === 0) {
+    luckyNumber = meaningfulNumbers[parseInt(luckyNumHex, 16) % meaningfulNumbers.length];
+  } else {
+    luckyNumber = (parseInt(luckyNumHex, 16) % 100).toString().padStart(2, '0');
+  }
+
+  const fortuneIndex = parseInt(indexHex, 16) % targetArray.length;
+
+  let luckyPerson = { name: "Không có", id: null };
+  let unluckyPerson = { name: "Không có", id: null };
+
+  const getLP = (dobStr) => {
+    if (!dobStr) return 0;
+    const parts = dobStr.split('/');
+    if (parts.length !== 3) return 0;
+    let sum = parts.join('').split('').reduce((a,b) => a + (parseInt(b)||0), 0);
+    while (sum > 9 && ![11, 22, 33].includes(sum)) {
+      sum = String(sum).split('').reduce((a,b) => a + (parseInt(b)||0), 0);
+    }
+    return sum;
+  };
+
+  const getZodiac = (dobStr) => {
+    if (!dobStr) return 0;
+    const parts = dobStr.split('/');
+    return parts.length === 3 ? parseInt(parts[2]) % 12 : 0;
+  };
+
+  const otherUsers = allUsers.filter(u => u.fullName !== user.fullName);
+  if (otherUsers.length > 0) {
+    const userLP = getLP(user.dob);
+    const userZodiac = userYear % 12;
+    
+    const scoredUsers = otherUsers.map(u => {
+      let score = 0;
+      const uLP = getLP(u.dob);
+      const uZodiac = getZodiac(u.dob);
+      let uYear = 2000;
+      if (u.dob) {
+        const p = u.dob.split('/');
+        if(p.length===3) uYear = parseInt(p[2]);
+      }
+      const uMenh = getNguHanhNam(uYear);
+      
+      // Thần Số Học Compatibility
+      const g1 = [1,5,7], g2 = [2,4,8], g3 = [3,6,9];
+      const getG = (n) => g1.includes(n)?1:g2.includes(n)?2:g3.includes(n)?3:0;
+      if (uLP !== 0) {
+        if (getG(uLP) === getG(userLP)) score += 4;
+        else score -= 1;
+      }
+      
+      // Zodiac Compatibility
+      const zDiff = Math.abs(userZodiac - uZodiac);
+      if (zDiff === 4 || zDiff === 8) score += 4;
+      else if (zDiff === 6 || zDiff === 3 || zDiff === 9) score -= 4;
+
+      // Ngũ Hành Compatibility with Day Bridge
+      score += getBridgeScore(userMenh, todayMenh, uMenh);
+      
+      // Daily Vibe: Năng lượng tương tác giữa 2 người thay đổi theo từng ngày (-7 đến +7)
+      const dailyVibe = parseInt(crypto.createHash('md5').update(user.fullName + u.fullName + dateStr).digest('hex').substring(0,4), 16) % 15 - 7;
+      score += dailyVibe;
+      
+      // Tie breaker based on the pair (user + u) and date
+      const tieBreaker = parseInt(crypto.createHash('md5').update(user.fullName + u.fullName + dateStr + "tie").digest('hex').substring(0,4), 16) % 100;
+      score += (tieBreaker / 100);
+      
+      return { name: u.fullName, id: u._id, score };
+    });
+    
+    scoredUsers.sort((a, b) => b.score - a.score);
+    luckyPerson = { name: scoredUsers[0].name, id: scoredUsers[0].id };
+    unluckyPerson = { name: scoredUsers[scoredUsers.length - 1].name, id: scoredUsers[scoredUsers.length - 1].id };
+    if (luckyPerson.name === unluckyPerson.name && scoredUsers.length > 1) {
+      unluckyPerson = { name: scoredUsers[scoredUsers.length - 2].name, id: scoredUsers[scoredUsers.length - 2].id };
+    }
+  }
+
+  return {
+    text: targetArray[fortuneIndex],
+    fortuneLevel: fortuneLevel,
+    luckyNumber: luckyNumber,
+    luckyColor: luckyColor,
+    luckyPerson: luckyPerson,
+    unluckyPerson: unluckyPerson
+  };
+}
+
+app.get('/api/fortune/today', authMiddleware, async (req, res) => {
+  try {
+    const todayStr = getFortuneDayString();
+    const user = await User.findById(req.user._id).lean();
+    const hasDrawn = user.lastFortuneDate === todayStr;
+    const allUsers = hasDrawn ? await User.find({}, 'fullName').lean() : [];
+    
+    let aliveStreak = 0;
+    if (user.lastFortuneDate === todayStr) {
+      aliveStreak = user.fortuneStreak || 0;
+    } else if (user.lastFortuneDate) {
+      const lastDate = new Date(user.lastFortuneDate);
+      const todayDate = new Date(todayStr);
+      const diffDays = Math.ceil(Math.abs(todayDate - lastDate) / (1000 * 60 * 60 * 24));
+      if (diffDays === 1) {
+        aliveStreak = user.fortuneStreak || 0;
+      }
+    }
+    
+    res.json({
+      hasDrawn,
+      fortuneStreak: aliveStreak,
+      maxFortuneStreak: user.maxFortuneStreak || 0,
+      fortune: hasDrawn ? generateFortuneForUser(user, todayStr, allUsers) : null
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.post('/api/fortune/draw', authMiddleware, async (req, res) => {
+  try {
+    const todayStr = getFortuneDayString();
+    const user = await User.findById(req.user._id);
+    if (user.lastFortuneDate === todayStr) {
+      return res.status(400).json({ error: 'Hôm nay bạn đã bốc quẻ rồi. Vui lòng quay lại vào 7:00 sáng mai!' });
+    }
+
+    let newStreak = 1;
+    if (user.lastFortuneDate) {
+      const lastDate = new Date(user.lastFortuneDate);
+      const todayDate = new Date(todayStr);
+      const diffTime = Math.abs(todayDate - lastDate);
+      const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+      
+      if (diffDays === 1) {
+        newStreak = (user.fortuneStreak || 0) + 1;
+      }
+    }
+
+    user.lastFortuneDate = todayStr;
+    user.fortuneStreak = newStreak;
+    if (newStreak > (user.maxFortuneStreak || 0)) {
+      user.maxFortuneStreak = newStreak;
+    }
+    await user.save();
+
+    const allUsers = await User.find({}, 'fullName').lean();
+    const fortune = generateFortuneForUser(user, todayStr, allUsers);
+    res.json({
+      success: true,
+      fortuneStreak: newStreak,
+      maxFortuneStreak: user.maxFortuneStreak,
+      fortune
+    });
+  } catch (err) { res.status(500).json({ error: err.message }); }
+});
+
+app.get('/api/fortune/leaderboard', authMiddleware, async (req, res) => {
+  try {
+    const todayStr = getFortuneDayString();
+    const users = await User.find({ fortuneStreak: { $gt: 0 } }, 'fullName avatar fortuneStreak maxFortuneStreak lastFortuneDate').lean();
+    
+    const activeUsers = users.map(u => {
+      let isAlive = false;
+      if (u.lastFortuneDate === todayStr) isAlive = true;
+      else if (u.lastFortuneDate) {
+        const lastDate = new Date(u.lastFortuneDate);
+        const todayDate = new Date(todayStr);
+        const diffDays = Math.ceil(Math.abs(todayDate - lastDate) / (1000 * 60 * 60 * 24));
+        if (diffDays === 1) isAlive = true;
+      }
+      return {
+        ...u,
+        aliveStreak: isAlive ? u.fortuneStreak : 0
+      }
+    }).filter(u => u.aliveStreak > 0).sort((a, b) => b.aliveStreak - a.aliveStreak).slice(0, 50);
+
+    res.json(activeUsers);
   } catch (err) { res.status(500).json({ error: err.message }); }
 });
 

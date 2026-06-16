@@ -1183,6 +1183,10 @@ function switchAppTab(tabId, btn) {
     titleEl.textContent = 'CÀI ĐẶT';
     initSettingsTab();
   }
+  if (tabId === 'tab-tam-linh') {
+    titleEl.textContent = 'TÂM LINH';
+    fetchFortuneToday();
+  }
 }
 
 // ─── Notifications Logic ──────────────────────────────────────────────
@@ -1957,6 +1961,83 @@ document.addEventListener('contextmenu', e => {
 // ════════════════════════════════════════════════════════════════
 
 // Register Service Worker
+function getStreakBadgeData(streak) {
+  let icon = '🌱';
+  let color = 'var(--green)';
+  let shadow = 'rgba(34,197,94,0.5)';
+  
+  if (streak >= 3 && streak < 7) {
+    icon = '🔥';
+    color = '#f97316';
+    shadow = 'rgba(249,115,22,0.5)';
+  } else if (streak >= 7 && streak < 14) {
+    icon = '⚡';
+    color = '#eab308';
+    shadow = 'rgba(234,179,8,0.5)';
+  } else if (streak >= 14 && streak < 30) {
+    icon = '🌟';
+    color = 'var(--purple)';
+    shadow = 'rgba(139,92,246,0.5)';
+  } else if (streak >= 30 && streak < 100) {
+    icon = '👑';
+    color = 'var(--rose)';
+    shadow = 'rgba(244,63,94,0.5)';
+  } else if (streak >= 100) {
+    icon = '💎';
+    color = '#06b6d4';
+    shadow = 'rgba(6,182,212,0.8)';
+  }
+  return { icon, color, shadow };
+}
+
+function updateStreakBadge(streak) {
+  const countEl = document.getElementById('fortune-streak-count');
+  const iconEl = document.getElementById('fortune-streak-icon');
+  const textEl = document.getElementById('fortune-streak-text');
+  
+  if (countEl) countEl.textContent = streak;
+  
+  const badge = getStreakBadgeData(streak);
+  
+  if (iconEl) {
+    iconEl.textContent = badge.icon;
+    iconEl.style.filter = `drop-shadow(0 0 5px ${badge.shadow})`;
+  }
+  if (textEl) {
+    textEl.style.color = badge.color;
+  }
+}
+
+async function loadFortuneData() {
+  const undrawnEl = document.getElementById('fortune-undrawn');
+  const drawnEl = document.getElementById('fortune-drawn');
+  const loadingEl = document.getElementById('fortune-loading');
+  
+  if(!undrawnEl) return;
+  try {
+    const data = await API.get('/api/fortune/today');
+    updateStreakBadge(data.fortuneStreak || 0);
+    
+    loadingEl.classList.add('hidden');
+    if (data.hasDrawn && data.fortune) {
+      renderFortuneResult(data.fortune);
+      drawnEl.classList.remove('hidden');
+      
+      document.querySelectorAll('.tarot-card-back').forEach(c => {
+        c.classList.remove('selected', 'faded');
+      });
+    } else {
+      undrawnEl.classList.remove('hidden');
+      document.querySelectorAll('.tarot-card-back').forEach(c => {
+        c.classList.remove('selected', 'faded');
+      });
+    }
+  } catch (err) {
+    loadingEl.classList.add('hidden');
+    toast('Lỗi tải dữ liệu Tâm Linh: ' + err.message, 'error');
+  }
+}
+
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => {
     navigator.serviceWorker.register('/sw.js')
@@ -2055,4 +2136,220 @@ function openAvatarZoom() {
     textEl.style.display = 'block';
   }
   overlay.classList.remove('hidden');
+}
+
+// ─── Fortune Telling (Tâm Linh) Logic ─────────────────────────────────
+
+async function fetchFortuneToday() {
+  const undrawnEl = document.getElementById('fortune-undrawn');
+  const drawnEl = document.getElementById('fortune-drawn');
+  const loadingEl = document.getElementById('fortune-loading');
+  const streakEl = document.getElementById('fortune-streak-count');
+  
+  if(!undrawnEl) return;
+  
+  undrawnEl.classList.add('hidden');
+  drawnEl.classList.add('hidden');
+  loadingEl.classList.remove('hidden');
+
+  try {
+    const data = await API.get('/api/fortune/today');
+    streakEl.textContent = data.fortuneStreak || 0;
+    
+    loadingEl.classList.add('hidden');
+    if (data.hasDrawn && data.fortune) {
+      renderFortuneResult(data.fortune);
+      drawnEl.classList.remove('hidden');
+      
+      document.querySelectorAll('.tarot-card-back').forEach(c => {
+        c.classList.remove('selected', 'faded');
+      });
+    } else {
+      undrawnEl.classList.remove('hidden');
+      document.querySelectorAll('.tarot-card-back').forEach(c => {
+        c.classList.remove('selected', 'faded');
+      });
+    }
+  } catch (err) {
+    loadingEl.classList.add('hidden');
+    toast('Lỗi tải dữ liệu Tâm Linh: ' + err.message, 'error');
+  }
+}
+
+async function drawFortune(cardIndex) {
+  const cards = document.querySelectorAll('#fortune-undrawn .tarot-card-back');
+  
+  // Disable clicks
+  cards.forEach(c => c.style.pointerEvents = 'none');
+  
+  // Vanish others, zoom selected
+  cards.forEach((c, idx) => {
+    if (idx !== cardIndex) {
+      c.classList.add('vanish');
+    } else {
+      c.classList.add('zoomed');
+    }
+  });
+
+  try {
+    const dataPromise = API.post('/api/fortune/draw');
+    
+    // Wait for zoom/vanish animation (1.2s) + suspense (0.6s) = 1.8s
+    setTimeout(async () => {
+      try {
+        const data = await dataPromise;
+        
+        let levelText = '';
+        let bgGrad = '';
+        let glowColor = '';
+        switch (data.fortune.fortuneLevel) {
+          case 'DAI_CAT': levelText = '🔥 ĐẠI CÁT'; bgGrad = 'linear-gradient(135deg, #f43f5e, #ef4444)'; glowColor = 'rgba(244,63,94,0.5)'; break;
+          case 'TIEU_CAT': levelText = '✨ TIỂU CÁT'; bgGrad = 'linear-gradient(135deg, #f97316, #f59e0b)'; glowColor = 'rgba(249,115,22,0.5)'; break;
+          case 'BINH_HOA': levelText = '⚖️ BÌNH HÒA'; bgGrad = 'linear-gradient(135deg, #3b82f6, #0ea5e9)'; glowColor = 'rgba(59,130,246,0.5)'; break;
+          case 'TIEU_HUNG': levelText = '🌧️ TIỂU HUNG'; bgGrad = 'linear-gradient(135deg, #8b5cf6, #6366f1)'; glowColor = 'rgba(139,92,246,0.5)'; break;
+          case 'DAI_HUNG': levelText = '🌪️ ĐẠI HUNG'; bgGrad = 'linear-gradient(135deg, #6b7280, #4b5563)'; glowColor = 'rgba(107,114,128,0.5)'; break;
+          default: levelText = '🔮'; bgGrad = 'linear-gradient(135deg, #8b5cf6, #6366f1)'; glowColor = 'rgba(139,92,246,0.5)'; break;
+        }
+
+        cards[cardIndex].style.setProperty('--front-bg', bgGrad);
+        cards[cardIndex].style.setProperty('--front-glow', glowColor);
+
+        // Start flip
+        cards[cardIndex].classList.remove('zoomed');
+        cards[cardIndex].classList.add('flipping');
+        
+        // Halfway through flip (0.4s), change to front face
+        setTimeout(() => {
+          cards[cardIndex].classList.add('flip-front');
+          cards[cardIndex].innerHTML = `<span>${levelText}</span>`;
+        }, 400);
+
+        // Wait for flip to finish (0.8s) + read time (0.7s) = 1.5s
+        setTimeout(() => {
+          document.getElementById('fortune-undrawn').classList.add('hidden');
+          document.getElementById('fortune-drawn').classList.remove('hidden');
+          updateStreakBadge(data.fortuneStreak);
+          renderFortuneResult(data.fortune);
+          
+          cards.forEach((c) => {
+            c.classList.remove('vanish', 'zoomed', 'flipping', 'flip-front');
+            c.innerHTML = '✨';
+            c.style.pointerEvents = 'auto';
+          });
+          
+          if (data.fortuneStreak === 7 || data.fortuneStreak === 30 || data.fortuneStreak === 100) {
+            toast('🎉 Chúc mừng! Bạn đã đạt chuỗi ' + data.fortuneStreak + ' ngày!', 'success');
+            for(let i=0; i<50; i++) {
+              const confetti = document.createElement('div');
+              confetti.className = 'confetti-piece';
+              confetti.style.left = Math.random() * 100 + 'vw';
+              confetti.style.backgroundColor = ['#f43f5e', '#ec4899', '#8b5cf6', '#3b82f6', '#10b981', '#f59e0b'][Math.floor(Math.random()*6)];
+              confetti.style.animationDuration = (Math.random() * 3 + 2) + 's';
+              document.body.appendChild(confetti);
+              setTimeout(() => confetti.remove(), 5000);
+            }
+          } else {
+            toast('Đã lật bài thành công! ✨', 'success');
+          }
+        }, 1500);
+
+      } catch (err) {
+        toast(err.message, 'error');
+        cards.forEach(c => { c.classList.remove('vanish', 'zoomed', 'flipping', 'flip-front'); c.innerHTML = '✨'; c.style.pointerEvents = 'auto'; });
+      }
+    }, 1800);
+  } catch (err) {
+    cards.forEach(c => { c.classList.remove('vanish', 'zoomed'); c.style.pointerEvents = 'auto'; });
+    toast(err.message, 'error');
+  }
+}
+
+function renderFortuneResult(fortune) {
+  if (!fortune) return;
+  
+  const badge = document.getElementById('fortune-level-badge');
+  if (badge) {
+    let levelText = '';
+    let bgGrad = '';
+    switch (fortune.fortuneLevel) {
+      case 'DAI_CAT': levelText = '🔥 ĐẠI CÁT'; bgGrad = 'linear-gradient(135deg, #f43f5e, #ef4444)'; break;
+      case 'TIEU_CAT': levelText = '✨ TIỂU CÁT'; bgGrad = 'linear-gradient(135deg, #f97316, #f59e0b)'; break;
+      case 'BINH_HOA': levelText = '⚖️ BÌNH HÒA'; bgGrad = 'linear-gradient(135deg, #3b82f6, #0ea5e9)'; break;
+      case 'TIEU_HUNG': levelText = '🌧️ TIỂU HUNG'; bgGrad = 'linear-gradient(135deg, #8b5cf6, #6366f1)'; break;
+      case 'DAI_HUNG': levelText = '🌪️ ĐẠI HUNG'; bgGrad = 'linear-gradient(135deg, #6b7280, #4b5563)'; break;
+      default: levelText = '🔮 THÔNG ĐIỆP'; bgGrad = 'linear-gradient(135deg, #8b5cf6, #6366f1)'; break;
+    }
+    badge.textContent = levelText;
+    badge.style.background = bgGrad;
+    badge.style.boxShadow = '0 4px 10px rgba(0,0,0,0.15)';
+  }
+
+  document.getElementById('fortune-text').textContent = fortune.text;
+  document.getElementById('fortune-lucky-number').textContent = fortune.luckyNumber;
+  document.getElementById('fortune-lucky-color-dot').style.backgroundColor = fortune.luckyColor.hex;
+  document.getElementById('fortune-lucky-color-hex').textContent = fortune.luckyColor.name;
+  
+  const luckyCard = document.getElementById('fortune-lucky-card');
+  const unluckyCard = document.getElementById('fortune-unlucky-card');
+
+  if (document.getElementById('fortune-lucky-person') && fortune.luckyPerson) {
+    document.getElementById('fortune-lucky-person').textContent = fortune.luckyPerson.name || 'Không có';
+    if (luckyCard && fortune.luckyPerson.id) {
+      luckyCard.setAttribute('data-id', fortune.luckyPerson.id);
+    }
+  }
+  if (document.getElementById('fortune-unlucky-person') && fortune.unluckyPerson) {
+    document.getElementById('fortune-unlucky-person').textContent = fortune.unluckyPerson.name || 'Không có';
+    if (unluckyCard && fortune.unluckyPerson.id) {
+      unluckyCard.setAttribute('data-id', fortune.unluckyPerson.id);
+    }
+  }
+}
+
+function openFortunePerson(element) {
+  const userId = element.getAttribute('data-id');
+  if (userId && typeof showUserProfileModal === 'function') {
+    showUserProfileModal(userId);
+  }
+}
+
+async function showFortuneLeaderboard() {
+  const overlay = document.getElementById('fortune-leaderboard-overlay');
+  const body = document.getElementById('fortune-leaderboard-body');
+  if (!overlay || !body) return;
+
+  overlay.classList.remove('hidden');
+  body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-2);font-size:13px;">Đang tải...</div>';
+  
+  try {
+    const list = await API.get('/api/fortune/leaderboard');
+    if (list.length === 0) {
+      body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-3);font-size:13px;">Chưa có ai ghi nhận chuỗi.</div>';
+      return;
+    }
+    
+    body.innerHTML = list.map((u, i) => {
+      let medal = i === 0 ? '🥇' : i === 1 ? '🥈' : i === 2 ? '🥉' : '';
+      let style = i < 3 ? 'background: rgba(139,92,246,0.1); border-color: rgba(139,92,246,0.3); font-weight:700;' : 'background: var(--bg-card);';
+      const avatarHtml = u.avatar && u.avatar.startsWith('data:') ? `<img src="${u.avatar}" style="width:100%;height:100%;object-fit:cover;" />` : (u.avatar || u.fullName.charAt(0));
+      
+      const badge = getStreakBadgeData(u.aliveStreak);
+      
+      return `<div style="display:flex;align-items:center;padding:12px 16px;border:1px solid var(--border);border-radius:12px;margin-bottom:8px;cursor:pointer;transition:all 0.2s ease;${style}" onclick="showUserProfileModal('${u._id}')" onmouseover="this.style.transform='scale(1.02)'; this.style.borderColor='var(--purple)'" onmouseout="this.style.transform='scale(1)'; this.style.borderColor='${i < 3 ? 'rgba(139,92,246,0.3)' : 'var(--border)'}'">
+        <div style="width:24px;font-size:16px;font-weight:800;color:var(--text-2);text-align:center;">${medal || (i+1)}</div>
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--input-bg);display:flex;align-items:center;justify-content:center;font-size:18px;margin:0 12px;overflow:hidden;flex-shrink:0;">
+          ${avatarHtml}
+        </div>
+        <div style="flex:1;">
+          <div style="font-size:14px;color:var(--text-1);${i<3?'color:var(--purple);':''}">${escapeHTML(u.fullName)}</div>
+          <div style="font-size:11px;color:var(--text-2);">Max: ${u.maxFortuneStreak || 0} ngày</div>
+        </div>
+        <div style="text-align:right;">
+          <div style="font-size:20px;font-weight:900;color:${badge.color};"><span style="font-size:14px;filter:drop-shadow(0 0 5px ${badge.shadow})">${badge.icon}</span> ${u.aliveStreak}</div>
+        </div>
+      </div>`;
+    }).join('');
+  } catch (err) {
+    body.innerHTML = '<div style="padding:20px;text-align:center;color:var(--rose);font-size:13px;">Lỗi tải dữ liệu</div>';
+  }
 }
