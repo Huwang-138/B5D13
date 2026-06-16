@@ -528,7 +528,8 @@ app.get('/api/notifications', authMiddleware, async (req, res) => {
     }).sort('-createdAt').limit(50).lean();
 
     // Generate dynamic birthday notifications for the closest upcoming birthday
-    const today = new Date();
+    // Get date in Vietnam time
+    const today = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Ho_Chi_Minh"}));
     today.setHours(0, 0, 0, 0); // Normalize today to midnight for accurate day diff
     const users = await User.find({}, 'fullName dob').lean();
     let minDiff = Infinity;
@@ -904,7 +905,8 @@ app.get('*', (req, res) => {
 // ─── Cron Job: Chúc mừng sinh nhật lúc 07:00 sáng mỗi ngày ──────────
 cron.schedule('0 7 * * *', async () => {
   try {
-    const today = new Date();
+    // Get date in Vietnam time to avoid issues with server timezone (e.g. UTC)
+    const today = new Date(new Date().toLocaleString("en-US", {timeZone: "Asia/Ho_Chi_Minh"}));
     // Format ngày sinh theo định dạng trong DB (dd/mm/yyyy), ví dụ "08/06"
     const day = String(today.getDate()).padStart(2, '0');
     const month = String(today.getMonth() + 1).padStart(2, '0');
@@ -915,7 +917,7 @@ cron.schedule('0 7 * * *', async () => {
 
     if (birthdayUsers.length > 0) {
       const names = birthdayUsers.map(u => u.fullName).join(', ');
-      const messageText = `🎉 Chúc mừng sinh nhật: ${names}! Hãy gửi những lời chúc tốt đẹp nhất đến ${birthdayUsers.length > 1 ? 'các bạn ấy' : 'bạn ấy'} nhé! 🎂`;
+      const messageText = `🎉 Chúc mừng sinh nhật ${names}! Hãy gửi những lời chúc tốt đẹp nhất đến ${birthdayUsers.length > 1 ? 'các bạn ấy' : 'bạn ấy'} nhé! 🎂`;
 
       const pushPayload = JSON.stringify({
         title: 'Thông báo sinh nhật 🥳',
@@ -935,6 +937,8 @@ cron.schedule('0 7 * * *', async () => {
   } catch (err) {
     console.error('Lỗi khi chạy cron sinh nhật:', err);
   }
+}, {
+  timezone: "Asia/Ho_Chi_Minh"
 });
 
 // ─── Khởi động Server ─────────────────────────────────────────────
